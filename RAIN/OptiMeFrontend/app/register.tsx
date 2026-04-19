@@ -8,9 +8,12 @@ export default function Register() {
   const [education, setEducation] = useState("");
   const [employment, setEmployment] = useState("");
 
+  const API_URL = "http://localhost:3000";
+
   const handleRegister = async () => {
+    console.log("clicked register button"); 
     try {
-      const response = await fetch("http://localhost:3000/register", {
+      const response = await fetch(`${API_URL}/user/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
