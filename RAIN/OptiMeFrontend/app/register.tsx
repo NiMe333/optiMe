@@ -11,7 +11,6 @@ export default function Register() {
   const API_URL = "http://localhost:3000";
 
   const handleRegister = async () => {
-    console.log("clicked register button"); 
     try {
       const response = await fetch(`${API_URL}/user/register`, {
         method: "POST",
@@ -30,12 +29,14 @@ export default function Register() {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert("Success", "User registered successfully!");
+        Alert.alert("Success", data.message);
+        console.log("Register successful:", data.message);
       } else {
         Alert.alert("Error", data.message || "Something went wrong");
+        console.log("Register Error:", data.message);
       }
     } catch (error) {
-      Alert.alert("Network Error", "Could not connect to backend");
+      Alert.alert("Network Error:", "Could not connect to backend");
       console.log(error);
     }
   };

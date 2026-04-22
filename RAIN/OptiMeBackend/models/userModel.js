@@ -10,7 +10,7 @@ const UserSchema = new Schema({
     employment: { type: String, required: false }
 });
 
-UserSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function(next) { //pre ran before doc is saved to database
     if (!this.isModified('password')) return next();
     this.password = await bcrypt.hash(this.password, 10);
     next();
