@@ -1,11 +1,22 @@
-import { View, Text, TextInput, StyleSheet, Pressable, Alert} from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Pressable,
+  Alert,
+} from "react-native";
 import { useState } from "react";
+import { Platform } from "react-native";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const API_URL = "http://localhost:3000";
+  const API_URL =
+    Platform.OS === "android"
+      ? "http://10.0.2.2:3000"
+      : "http://localhost:3000";
 
   const handleLogin = async () => {
     try {
@@ -34,8 +45,6 @@ export default function Login() {
       console.log(error);
     }
   };
-
-
 
   return (
     <View style={styles.container}>
