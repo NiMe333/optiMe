@@ -17,3 +17,27 @@ export async function loginUser(email: string, password: string) {
 
   return data;
 }
+
+export async function registerUser(
+  username: string,
+  email: string,
+  date_of_birth: Date,
+  gender: string,
+  password: string,
+) {
+  const res = await fetch(`${API_URL}/api/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, email, date_of_birth, gender, password }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Register failed");
+  }
+
+  return data;
+}
