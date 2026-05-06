@@ -400,11 +400,3 @@ print(f"Sessions: {len(sessions)}")
 print(f"Exported: {EVENTS_CSV}")
 print(f"Exported: {DAILY_CSV}")
 print(f"Exported: {TOTALS_CSV}")
-
-#   iPhone
-#     ↓ iCloud sync
-#   macOS Biome cache
-#     ↓
-#   SEGB parsing
-#     ↓
-#   CSV / analytics
