@@ -8,8 +8,8 @@ import {
   Image,
   useWindowDimensions,
   Alert,
+  Platform,
 } from "react-native";
-
 import { loginUser } from "@/services/auth";
 
 export default function LoginScreen() {
@@ -18,6 +18,16 @@ export default function LoginScreen() {
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
+  const logo = Platform.select({
+    ios: require("@/assets/images/just_circle.png"),
+    android: require("@/assets/images/just_circle.png"),
+    web: require("@/assets/images/logo_no_back_big.svg"),
+  });
+  const logoStyle = Platform.select({
+    ios: styles.mobileLogo,
+    android: styles.mobileLogo,
+    web: styles.webLogo,
+  });
 
   async function handleLogin() {
     try {
@@ -36,19 +46,18 @@ export default function LoginScreen() {
       <View style={[styles.card, isMobile && styles.cardMobile]}>
         <View style={[styles.form, isMobile && styles.formMobile]}>
           {isMobile && (
-            <Image
-              source={require("../assets/images/optime_logo_1.png")}
-              style={styles.mobileLogo}
-              resizeMode="contain"
-            />
+            <Image source={logo} style={logoStyle} resizeMode="contain" />
           )}
 
           <Text style={[styles.title, isMobile && styles.titleMobile]}>
-            {isMobile ? "Login" : "Welcome Back!!"}
+            {isMobile ? "Login" : "Welcome Back!"}
           </Text>
 
           <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Email</Text>
+            <View style={styles.labelContainer}>
+              <Text style={styles.label}>Email</Text>
+            </View>
+
             <TextInput
               placeholder="email@gmail.com"
               placeholderTextColor="#777"
@@ -61,7 +70,9 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Password</Text>
+            <View style={styles.labelContainer}>
+              <Text style={styles.label}>Password</Text>
+            </View>{" "}
             <TextInput
               placeholder="Enter your password"
               placeholderTextColor="#999"
@@ -90,11 +101,7 @@ export default function LoginScreen() {
 
         {!isMobile && (
           <View style={styles.logoSection}>
-            <Image
-              source={require("../assets/images/optime_logo_1.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <Image source={logo} style={logoStyle} resizeMode="contain" />
           </View>
         )}
       </View>
@@ -105,7 +112,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#1E1E1E",
+    backgroundColor: "#F3FCFF",
   },
 
   card: {
@@ -116,8 +123,11 @@ const styles = StyleSheet.create({
   },
 
   cardMobile: {
+    flex: 1,
     flexDirection: "column",
-    borderRadius: 34,
+    borderRadius: 0,
+    width: "100%",
+    height: "100%",
   },
 
   form: {
@@ -127,6 +137,8 @@ const styles = StyleSheet.create({
   },
 
   formMobile: {
+    flex: 1,
+    width: "100%",
     paddingHorizontal: 30,
     paddingTop: 42,
     paddingBottom: 34,
@@ -152,12 +164,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
+  webLogo: {
+    width: 600,
+    height: 520,
+    alignSelf: "center",
+  },
+
   title: {
-    fontSize: 34,
-    fontWeight: "800",
-    color: "#3A3A3A",
-    textAlign: "center",
-    marginBottom: 44,
+    fontSize: 42,
+    fontWeight: "900",
+    color: "#333",
+    marginBottom: 50,
   },
 
   titleMobile: {
@@ -173,26 +190,36 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
 
-  label: {
+  labelContainer: {
     position: "absolute",
     top: -12,
-    left: 38,
-    backgroundColor: "#F3FCFFa",
+    left: 22,
+
+    backgroundColor: "#F3FCFF",
     paddingHorizontal: 10,
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#777",
+
     zIndex: 2,
+    alignSelf: "flex-start",
+  },
+
+  label: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#6B6B6B",
   },
 
   input: {
-    height: 56,
-    borderWidth: 1,
-    borderColor: "#9A9A9A",
-    borderRadius: 28,
-    paddingHorizontal: 36,
-    fontSize: 15,
-    color: "#24364A",
+    height: 45,
+
+    borderWidth: 1.5,
+    borderColor: "#8B8B8B",
+    borderRadius: 32,
+
+    paddingLeft: 20,
+    paddingRight: 20,
+
+    fontSize: 18,
+    color: "#555",
   },
 
   forgot: {
@@ -210,7 +237,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#204A78",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 100,
+    marginBottom: 40,
   },
 
   buttonText: {
