@@ -18,8 +18,6 @@ const DailyLogsSchema = new Schema({
 			screenTimeHours: { type: Number, required: false }
 		}
 	],
-}, {
-    timestamps: true
 });
 
 module.exports = mongoose.model('dailyLogs', DailyLogsSchema);
