@@ -11,11 +11,11 @@ const DailyLogsSchema = new Schema({
 			anxiety: { type: Number, required: false }
 		}
 	],
-    healthParameters: [
+    mentalHealthParameters: [
 		{
 			sleepHours: { type: Number, required: false },
 			steps: { type: Number, required: false },
-            screentime: { type: Number, required: false }
+			screenTimeHours: { type: Number, required: false }
 		}
 	],
 }, {

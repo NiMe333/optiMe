@@ -8,7 +8,7 @@ exports.register = async function(req, res) {
             email: req.body.email,
             password: req.body.password,
             gender: req.body.gender,
-            dateOfBirth: req.body.dateOfBirth
+            dateOfBirth: new Date(req.body.dateOfBirth)
         });
 
         await user.save();
