@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Platform } from "react-native";
 
 export default function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const API_URL =
@@ -25,9 +25,10 @@ export default function Login() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", //everything working with sessions needs this (allows cookies to be sent to backend and stored to browser)
         body: JSON.stringify({
-          username,
-          password,
+          email,
+          password
         }),
       });
 
@@ -52,9 +53,9 @@ export default function Login() {
 
       <TextInput
         style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
       />
 
       <TextInput

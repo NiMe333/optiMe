@@ -2,6 +2,7 @@ const User = require('../models/userModel');
 
 // REGISTER
 exports.register = async function(req, res) {
+            console.log(req.body)
     try {
         const user = new User({
             email: req.body.email,
@@ -48,7 +49,9 @@ exports.login = async function(req, res) {
             });
         }
 
-        req.session.userId = user._id;
+        req.session.userId = user._id; //almost like signing the session to be yours (session id auto generated gets stored to a cookie)
+        console.log(req.session.userId)
+        //cookie is sent after session is cretaed browser needs to accept it
 
         return res.status(201).json({
             success: true,
@@ -62,7 +65,7 @@ exports.login = async function(req, res) {
     } catch (err) {
         return res.status(500).json({
             success: true,
-            message: "Login Failed",
+            message: "Login Failed"
         });
     }
 };
@@ -73,15 +76,48 @@ exports.logout = function(req, res) {
 
         return res.status(201).json({
             success: true,
-            message: "User logout successfull",
+            message: "User logout successfull"
         });
 
     } catch (err) {
         return res.status(500).json({
             success: true,
-            message: "logout Failed",
+            message: "logout Failed"
+        });
+    }   
+};
+
+exports.saveForm = async function(req, res) {
+    console.log(req.session.userId)
+   try {
+       const user = await User.findOne({ _id: req.session.userId }); //cookie sends session id that has userid stored so the backend can find the wanted session
+
+       if (!user) {
+            return res.status(401).json({
+            message: "User with your ID not found"
+            });
+        }
+
+        user.username = req.body.username;
+        user.education = req.body.education;
+        user.employment = req.body.employment;
+
+        await user.save();
+
+        return res.status(201).json({
+            success: true,
+            message: "User form sucesfully saved",
+            user: {
+                username: user.username,
+                education: user.education
+            }
+        });
+
+
+    } catch (err) {
+        return res.status(500).json({
+            success: true,
+            message: "Form saving failed"
         });
     }
-    
-    
 };

@@ -55,6 +55,19 @@ export default function Index() {
         <Text style={{ color: "white" }}>Go to Login</Text>
       </Pressable>
 
+      <Pressable
+        onPress={() => router.push("/startingForm")}
+        style={{
+          backgroundColor: "black",
+          padding: 12,
+          marginTop: 20,
+          marginBottom: 10,
+          borderRadius: 8,
+        }}
+      >
+        <Text style={{ color: "white" }}>Go to Form</Text>
+      </Pressable>
+
       
       <Pressable
         onPress={handleLogout}

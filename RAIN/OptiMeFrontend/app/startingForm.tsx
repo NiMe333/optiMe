@@ -9,29 +9,28 @@ import {
 import { useState } from "react";
 import { Platform } from "react-native";
 
-export default function Register() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [gender, setGender] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
+export default function startingForm() {
+  const [username, setUsername] = useState("");
+  const [education, setEducation] = useState("");
+  const [employment, setEmployment] = useState("");
 
   const API_URL =
     Platform.OS === "android"
       ? "http://10.0.2.2:3000"
       : "http://localhost:3000";
 
-  const handleRegister = async () => {
+  const handleStartingForm = async () => {
     try {
-      const response = await fetch(`${API_URL}/user/register`, {
+      const response = await fetch(`${API_URL}/user/startingForm`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
-          email,
-          password,
-          gender,
-          dateOfBirth
+          username,
+          education,
+          employment
         }),
       });
 
@@ -52,39 +51,32 @@ export default function Register() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Register Screen</Text>
+      <Text style={styles.title}>Form</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
+        placeholder="Username"
+        value={username}
+        onChangeText={setUsername}
       />
 
       <TextInput
         style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
+        placeholder="Education"
+        value={education}
+        onChangeText={setEducation}
       />
+
 
       <TextInput
         style={styles.input}
-        placeholder="Gender"
-        value={gender}
-        onChangeText={setGender}
+        placeholder="Employement"
+        value={employment}
+        onChangeText={setEmployment}
       />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Date of birth"
-        value={dateOfBirth}
-        onChangeText={setDateOfBirth}
-      />
-
-      <Pressable style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Register</Text>
+      <Pressable style={styles.button} onPress={handleStartingForm}>
+        <Text style={styles.buttonText}>Submit</Text>
       </Pressable>
     </View>
   );
