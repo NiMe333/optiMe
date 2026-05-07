@@ -74,7 +74,7 @@ async function run() { //async allows await which block the function until the p
     .on('end', async () => { //.on('end') when all data is read
       try {
         if (batch.length) {
-          await csvModel.insertMany(toInsertLover);
+          await csvModel.insertMany(batch);
         }
 
         console.log('Import done');
