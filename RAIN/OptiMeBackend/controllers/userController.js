@@ -4,11 +4,10 @@ const User = require('../models/userModel');
 exports.register = async function(req, res) {
     try {
         const user = new User({
-            username: req.body.username,
+            email: req.body.email,
             password: req.body.password,
-            sex: req.body.sex,
-            education: req.body.education,
-            employment: req.body.employment
+            gender: req.body.gender,
+            dateOfBirth: req.body.dateOfBirth
         });
 
         await user.save();
@@ -18,7 +17,7 @@ exports.register = async function(req, res) {
             message: "User registered successfully",
             user: {
                 id: user._id,
-                username: user.username
+                email: user.email
             }
         });
 
@@ -33,11 +32,11 @@ exports.register = async function(req, res) {
 
 exports.login = async function(req, res) {
     try {
-        const user = await User.findOne({ username: req.body.username });
+        const user = await User.findOne({ email: req.body.email });
 
         if (!user) {
             return res.status(401).json({
-            message: "User not found"
+            message: "User with this email not found"
             });
         }
 
@@ -56,7 +55,7 @@ exports.login = async function(req, res) {
             message: "User login successfull",
             user: {
                 id: user._id,
-                username: user.username
+                email: user.email
             }
         });
 
