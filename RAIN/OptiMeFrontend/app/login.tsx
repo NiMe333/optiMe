@@ -24,7 +24,7 @@ export default function LoginScreen() {
   const logo = Platform.select({
     ios: require("@/assets/images/just_circle.png"),
     android: require("@/assets/images/just_circle.png"),
-    web: require("@/assets/images/logo_no_back_big.svg"),
+    web: require("@/assets/images/logo_final_web.svg"),
   });
 
   const logoStyle = Platform.select({
