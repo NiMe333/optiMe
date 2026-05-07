@@ -72,7 +72,7 @@ export default function LoginScreen() {
           <View style={styles.inputWrapper}>
             <View style={styles.labelContainer}>
               <Text style={styles.label}>Password</Text>
-            </View>{" "}
+            </View>
             <TextInput
               placeholder="Enter your password"
               placeholderTextColor="#999"
