@@ -28,12 +28,10 @@ function normalizeRow(row) {
 
 
 
-async function run() { 
+async function run(fileName) { 
   await mongoose.connect('mongodb://zigalebic02:jp8bQs3yA1FSR0sH@ac-rxpanwp-shard-00-00.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-01.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-02.yjssyxx.mongodb.net:27017/OptiMe?ssl=true&replicaSet=atlas-822hpm-shard-0&authSource=admin&appName=OptiMe');
 
-  const filePath = `services/iphone_realtime_daily_usage.csv`;
-
-  let totalTime = 0;
+  const filePath = `scripts/dataProcessing/data/${fileName}`;
 
   const stream = fs.createReadStream(filePath)
     .pipe(csv()) 
