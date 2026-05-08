@@ -3,7 +3,10 @@ const app = express();
 const cors = require("cors");
 const session = require("express-session");
 
-app.use(cors());
+app.use(cors({
+   origin: "http://localhost:8081", //allows frontend to use cookies with backend
+   credentials: true
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -11,7 +14,7 @@ app.use(
   session({
     secret: "sesVer2026",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
   }),
 );
 

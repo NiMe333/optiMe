@@ -1,7 +1,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const mongoose = require('mongoose');
-const logModel = require('../../models/dailyLogsModel');
+const logModel = require('../models/dailyLogsModel');
 const Stream = require('stream');
 
 const columns = ['date', 'daily_total_hours'];
@@ -41,12 +41,10 @@ async function run(fileName) {
       const pickedRow = pick(row);
 
       const date = pickedRow.date;
-      
-      var totalTime = 0;
 
       if (date == "2026-04-07")
       {
-        totalTime += calculateTime(pickedRow.daily_total_hours);
+        totalTime += parseFloat(pickedRow.daily_total_hours);
       }
 
     })
@@ -55,7 +53,7 @@ async function run(fileName) {
         
          const log = new logModel({
 
-            userId: 1,
+            userId: "69fc73e6ee18eab42b5f5c05",
 
             mentalHealthParameters: [
                 {
