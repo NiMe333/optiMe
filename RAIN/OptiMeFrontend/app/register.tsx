@@ -1,123 +1,109 @@
+import { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
-  StyleSheet,
-  Pressable,
+  TouchableOpacity,
+  Image,
+  useWindowDimensions,
   Alert,
+  Platform,
 } from "react-native";
-import { useState } from "react";
-import { Platform } from "react-native";
 
-export default function Register() {
+import { registerUser } from "@/services/auth";
+import AuthInput from "@/components/AuthInput";
+import AuthButton from "@/components/AuthButton";
+import { styles } from "@/styles/login.styles";
+
+export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
 
-  const API_URL =
-    Platform.OS === "android"
-      ? "http://10.0.2.2:3000"
-      : "http://localhost:3000";
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
 
-  const handleRegister = async () => {
+  const logo = Platform.select({
+    ios: require("@/assets/images/just_circle.png"),
+    android: require("@/assets/images/just_circle.png"),
+    web: require("@/assets/images/logo_final_web.svg"),
+  });
+
+  const logoStyle = isMobile ? styles.mobileLogo : styles.webLogo;
+
+  async function handleRegister() {
     try {
-      const response = await fetch(`${API_URL}/user/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          gender,
-          dateOfBirth
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert("Success", data.message);
-        console.log("Register successful:", data.message);
-      } else {
-        Alert.alert("Error", data.message || "Something went wrong");
-        console.log("Register Error:", data.message);
-      }
-    } catch (error) {
-      Alert.alert("Network Error:", "Could not connect to backend");
-      console.log(error);
+      const data = await registerUser(email, password, gender, dateOfBirth);
+      console.log("Register Success", data);
+      Alert.alert("Success", "Registered!");
+    } catch (error: any) {
+      console.log("Register failed", error);
+      Alert.alert("Error", error?.message || "Register failed");
     }
-  };
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Register Screen</Text>
+    <View style={styles.screen}>
+      <View style={[styles.card, isMobile && styles.cardMobile]}>
+        <View style={[styles.form, isMobile && styles.formMobile]}>
+          {isMobile && (
+            <Image source={logo} style={logoStyle} resizeMode="contain" />
+          )}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-      />
+          <Text style={[styles.title, isMobile && styles.titleMobile]}>
+            {isMobile ? "Register" : "Create Account"}
+          </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+          <AuthInput
+            label="Email"
+            placeholder="email@gmail.com"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Gender"
-        value={gender}
-        onChangeText={setGender}
-      />
+          <AuthInput
+            label="Password"
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor="#999"
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Date of birth"
-        value={dateOfBirth}
-        onChangeText={setDateOfBirth}
-      />
+          <AuthInput
+            label="Gender"
+            placeholder="Gender"
+            value={gender}
+            onChangeText={setGender}
+            placeholderTextColor="#999"
+          />
 
-      <Pressable style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Register</Text>
-      </Pressable>
+          <AuthInput
+            label="Date of birth"
+            placeholder="YYYY-MM-DD"
+            value={dateOfBirth}
+            onChangeText={setDateOfBirth}
+            placeholderTextColor="#999"
+          />
+
+          <AuthButton title="Register" onPress={handleRegister} />
+
+          <View style={styles.signupRow}>
+            <Text style={styles.signupText}>Already have an account? </Text>
+            <TouchableOpacity>
+              <Text style={styles.signupLink}>Login</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {!isMobile && (
+          <View style={styles.logoSection}>
+            <Image source={logo} style={logoStyle} resizeMode="contain" />
+          </View>
+        )}
+      </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 12,
-    marginBottom: 12,
-    borderRadius: 8,
-  },
-  button: {
-    backgroundColor: "black",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-});

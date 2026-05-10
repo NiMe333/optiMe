@@ -1,4 +1,4 @@
-import { Platform, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   screen: {
@@ -15,10 +15,9 @@ export const styles = StyleSheet.create({
 
   cardMobile: {
     flex: 1,
-    flexDirection: "column",
-    borderRadius: 0,
     width: "100%",
     height: "100%",
+    flexDirection: "column",
   },
 
   form: {
@@ -31,8 +30,8 @@ export const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     paddingHorizontal: 30,
-    paddingTop: 42,
-    paddingBottom: 34,
+    paddingTop: 32,
+    paddingBottom: 28,
     justifyContent: "flex-start",
   },
 
@@ -42,6 +41,12 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     paddingRight: 60,
     paddingBottom: 100,
+  },
+
+  logo: {
+    width: 500,
+    height: 500,
+    alignSelf: "center",
   },
 
   mobileLogo: {
@@ -61,30 +66,64 @@ export const styles = StyleSheet.create({
     fontSize: 42,
     fontWeight: "900",
     color: "#333",
-    marginBottom: 50,
+    marginBottom: 38,
   },
 
   titleMobile: {
-    fontSize: 46,
+    fontSize: 42,
     fontWeight: "700",
     color: "#24364A",
     textAlign: "left",
-    marginBottom: 50,
+    marginBottom: 34,
   },
 
-  forgot: {
-    alignSelf: "flex-end",
-    marginTop: -12,
-    marginBottom: 56,
-    fontSize: 13,
+  inputWrapper: {
+    position: "relative",
+    marginBottom: 24,
+  },
+
+  label: {
+    position: "absolute",
+    top: -12,
+    left: 38,
+    backgroundColor: "#F4EDE9",
+    paddingHorizontal: 10,
+    fontSize: 14,
     fontWeight: "700",
-    color: "#555",
+    color: "#777",
+    zIndex: 2,
+  },
+
+  input: {
+    height: 56,
+    borderWidth: 1,
+    borderColor: "#9A9A9A",
+    borderRadius: 28,
+    paddingHorizontal: 36,
+    fontSize: 15,
+    color: "#24364A",
+  },
+
+  button: {
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#204A78",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 18,
+  },
+
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
   },
 
   signupRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    marginTop: 26,
   },
 
   signupText: {
