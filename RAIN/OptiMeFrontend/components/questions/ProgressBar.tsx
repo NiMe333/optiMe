@@ -1,21 +1,21 @@
-import { View, StyleSheet } from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
 import { colors, radius } from "@/constants/theme";
 
 const theme = colors.light;
 
 type Props = {
-  current: number;
-  total: number;
+  progress: Animated.Value;
 };
 
-export default function ProgressBar({ current, total }: Props) {
-  const progress = total > 0 ? current / total : 0;
+export default function ProgressBar({ progress }: Props) {
+  const width = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0%", "100%"],
+  });
 
   return (
     <View style={styles.track}>
-      <View style={[styles.fill, { flex: progress }]} />
-
-      <View style={{ flex: 1 - progress }} />
+      <Animated.View style={[styles.fill, { width }]} />
     </View>
   );
 }
@@ -23,12 +23,10 @@ export default function ProgressBar({ current, total }: Props) {
 const styles = StyleSheet.create({
   track: {
     height: 8,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: theme.border,
     borderRadius: radius.full,
     overflow: "hidden",
-    flexDirection: "row",
   },
-
   fill: {
     height: "100%",
     backgroundColor: theme.primary,

@@ -38,6 +38,7 @@ export const styles = StyleSheet.create({
 
     paddingHorizontal: 48,
     paddingVertical: 40,
+
     justifyContent: "space-between",
 
     shadowColor: "#000",
@@ -56,14 +57,20 @@ export const styles = StyleSheet.create({
     flex: 1,
     minHeight: "auto",
     borderRadius: radius.xl,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
   },
 
   form: {
     width: "100%",
-    maxWidth: 460,
+    maxWidth: 760,
     alignSelf: "center",
     flex: 1,
     justifyContent: "space-between",
+  },
+
+  formMobile: {
+    maxWidth: "100%",
   },
 
   contentWrapper: {
@@ -71,8 +78,8 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  formMobile: {
-    maxWidth: "100%",
+  backButtonDisabled: {
+    opacity: 0,
   },
 
   mobileLogo: {
@@ -152,6 +159,8 @@ export const styles = StyleSheet.create({
 
     alignItems: "center",
     justifyContent: "space-between",
+
+    marginBottom: spacing.md,
   },
 
   backButton: {
@@ -181,6 +190,7 @@ export const styles = StyleSheet.create({
 
   headerCenter: {
     alignItems: "center",
+    flex: 1,
   },
 
   headerTitle: {
@@ -199,27 +209,14 @@ export const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  progressPill: {
-    backgroundColor: theme.primary,
-
-    borderRadius: radius.full,
-
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-
-  progressText: {
-    color: theme.white,
-
-    fontSize: 11,
-
-    fontWeight: "900",
+  headerRightPlaceholder: {
+    width: 38,
   },
 
   content: {
     flex: 1,
     justifyContent: "center",
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
   },
 
   questionNumber: {
@@ -235,8 +232,8 @@ export const styles = StyleSheet.create({
   },
 
   question: {
-    fontSize: 32,
-    lineHeight: 38,
+    fontSize: 42,
+    lineHeight: 48,
 
     fontWeight: "900",
 
@@ -244,7 +241,7 @@ export const styles = StyleSheet.create({
 
     color: theme.text,
 
-    letterSpacing: -0.7,
+    letterSpacing: -0.8,
   },
 
   questionMobile: {
@@ -263,8 +260,10 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
 
     minHeight: 56,
+
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 680,
+
     alignSelf: "center",
   },
 

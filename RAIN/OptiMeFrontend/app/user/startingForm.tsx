@@ -22,11 +22,14 @@ import { styles } from "@/styles/startingForm.styles";
 import { useToast } from "@/context/ToastContext";
 
 const theme = colors.light;
+
 type Answers = Record<string, string | number>;
 
 export default function StartingForm() {
   const { showToast } = useToast();
+
   const progressAnim = useRef(new Animated.Value(0)).current;
+
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [answers, setAnswers] = useState<Answers>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,12 +37,29 @@ export default function StartingForm() {
   const isIntro = currentIndex === -1;
   const isLastQuestion = currentIndex === startingQuestions.length - 1;
   const currentQuestion = isIntro ? null : startingQuestions[currentIndex];
+
   const selectedAnswer = currentQuestion
     ? answers[currentQuestion.id]
     : undefined;
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
+
+  const progressValue = isIntro
+    ? 0
+    : (currentIndex + 1) / startingQuestions.length;
+
+  const progressPercent = Math.round(progressValue * 100);
+  const canGoBack = currentIndex > 0;
+  const buttonDisabled = isSubmitting;
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progressValue,
+      duration: 350,
+      useNativeDriver: false,
+    }).start();
+  }, [progressValue, progressAnim]);
 
   const logo = Platform.select({
     ios: require("@/assets/images/just_circle.png"),
@@ -80,7 +100,7 @@ export default function StartingForm() {
   const handleBack = () => {
     if (isSubmitting) return;
 
-    if (currentIndex > -1) {
+    if (canGoBack) {
       setCurrentIndex((prev) => prev - 1);
     }
   };
@@ -114,8 +134,6 @@ export default function StartingForm() {
       setIsSubmitting(false);
     }
   };
-
-  const buttonDisabled = isSubmitting;
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -173,10 +191,12 @@ export default function StartingForm() {
               <>
                 <View style={styles.header}>
                   <Pressable
+                    disabled={!canGoBack}
                     onPress={handleBack}
                     style={({ pressed }) => [
                       styles.backButton,
-                      pressed && styles.backButtonPressed,
+                      !canGoBack && styles.backButtonDisabled,
+                      pressed && canGoBack && styles.backButtonPressed,
                     ]}
                   >
                     <Text style={styles.backText}>‹</Text>
@@ -188,21 +208,9 @@ export default function StartingForm() {
                       Question {currentIndex + 1} of {startingQuestions.length}
                     </Text>
                   </View>
-
-                  <View style={styles.progressPill}>
-                    <Text style={styles.progressText}>
-                      {Math.round(
-                        ((currentIndex + 1) / startingQuestions.length) * 100,
-                      )}
-                      %
-                    </Text>
-                  </View>
                 </View>
 
-                <ProgressBar
-                  current={currentIndex + 1}
-                  total={startingQuestions.length}
-                />
+                <ProgressBar progress={progressAnim} />
 
                 <View style={styles.content}>
                   <Text style={styles.questionNumber}>
