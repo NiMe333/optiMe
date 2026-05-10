@@ -1,4 +1,13 @@
-import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -6,12 +15,16 @@ import { API_URL } from "@/services/api";
 import { startingQuestions } from "@/data/startingQuestions";
 import ScaleQuestion from "@/components/questions/ScaleQuestion";
 import SingleChoiceQuestion from "@/components/questions/SingleChoiceQuestion";
+import ProgressBar from "@/components/questions/ProgressBar";
+import { colors, radius, spacing } from "@/constants/theme";
 
+const theme = colors.light;
 type Answers = Record<string, string | number>;
 
 export default function StartingForm() {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [answers, setAnswers] = useState<Answers>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isIntro = currentIndex === -1;
   const isLastQuestion = currentIndex === startingQuestions.length - 1;
@@ -52,6 +65,8 @@ export default function StartingForm() {
   };
 
   const handleBack = () => {
+    if (isSubmitting) return;
+
     if (currentIndex > -1) {
       setCurrentIndex((prev) => prev - 1);
     }
@@ -59,6 +74,8 @@ export default function StartingForm() {
 
   const submitForm = async () => {
     try {
+      setIsSubmitting(true);
+
       console.log("FORM DATA:", answers);
 
       const response = await fetch(`${API_URL}/user/startingForm`, {
@@ -80,77 +97,132 @@ export default function StartingForm() {
     } catch (error) {
       Alert.alert("Network Error", "Could not connect to backend.");
       console.log(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  console.log("STARTING FORM SCREEN LOADED");
+  const buttonDisabled = isSubmitting;
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.card}>
-        {isIntro ? (
-          <>
-            <View style={styles.introContent}>
-              <View style={styles.logoCircle}>
-                <Text style={styles.logoText}>✓</Text>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <View style={styles.card}>
+          {isIntro ? (
+            <>
+              <View style={styles.introTop}>
+                <View style={styles.logoCircle}>
+                  <Text style={styles.logoText}>✓</Text>
+                </View>
+
+                <Text style={styles.logo}>optiMe</Text>
+                <Text style={styles.subtitle}>A step toward a better you</Text>
               </View>
 
-              <Text style={styles.logo}>optiMe</Text>
-              <Text style={styles.subtitle}>A step toward a better you</Text>
+              <View style={styles.introCenter}>
+                <Text style={styles.introEyebrow}>Personal assessment</Text>
 
-              <View style={styles.introTextWrapper}>
                 <Text style={styles.introTitle}>
-                  Let’s get to know{"\n"}you better ...
+                  Let’s get to know{"\n"}you better
+                </Text>
+
+                <Text style={styles.introDescription}>
+                  Answer a few quick questions so we can personalize your
+                  experience.
                 </Text>
               </View>
-            </View>
 
-            <Pressable style={styles.button} onPress={handleNext}>
-              <Text style={styles.buttonText}>Start</Text>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            <View style={styles.header}>
-              <Pressable onPress={handleBack} style={styles.backButton}>
-                <Text style={styles.backText}>‹</Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.button,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={handleNext}
+              >
+                <Text style={styles.buttonText}>Start assessment</Text>
               </Pressable>
+            </>
+          ) : (
+            <>
+              <View style={styles.header}>
+                <Pressable
+                  onPress={handleBack}
+                  style={({ pressed }) => [
+                    styles.backButton,
+                    pressed && styles.backButtonPressed,
+                  ]}
+                >
+                  <Text style={styles.backText}>‹</Text>
+                </Pressable>
 
-              <Text style={styles.headerTitle}>Assessment</Text>
+                <View style={styles.headerCenter}>
+                  <Text style={styles.headerTitle}>Assessment</Text>
+                  <Text style={styles.headerSubtitle}>
+                    Question {currentIndex + 1} of {startingQuestions.length}
+                  </Text>
+                </View>
 
-              <View style={styles.progressPill}>
-                <Text style={styles.progressText}>
-                  {currentIndex + 1} OF {startingQuestions.length}
-                </Text>
+                <View style={styles.progressPill}>
+                  <Text style={styles.progressText}>
+                    {Math.round(
+                      ((currentIndex + 1) / startingQuestions.length) * 100,
+                    )}
+                    %
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            <View style={styles.content}>
-              <Text style={styles.question}>{currentQuestion?.question}</Text>
+              <ProgressBar
+                current={currentIndex + 1}
+                total={startingQuestions.length}
+              />
 
-              {currentQuestion?.type === "scale" ? (
-                <ScaleQuestion
-                  options={currentQuestion.options}
-                  selected={selectedAnswer as number}
-                  onSelect={handleSelect}
-                />
-              ) : (
-                <SingleChoiceQuestion
-                  options={currentQuestion?.options ?? []}
-                  selected={selectedAnswer as string}
-                  onSelect={handleSelect}
-                />
-              )}
-            </View>
+              <View style={styles.content}>
+                <Text style={styles.questionNumber}>
+                  {String(currentIndex + 1).padStart(2, "0")}
+                </Text>
 
-            <Pressable style={styles.button} onPress={handleNext}>
-              <Text style={styles.buttonText}>
-                {isLastQuestion ? "Finish" : "Continue"}
-              </Text>
-            </Pressable>
-          </>
-        )}
-      </View>
+                <Text style={styles.question}>{currentQuestion?.question}</Text>
+
+                {currentQuestion?.type === "scale" ? (
+                  <ScaleQuestion
+                    options={currentQuestion.options}
+                    selected={selectedAnswer as number}
+                    onSelect={handleSelect}
+                  />
+                ) : (
+                  <SingleChoiceQuestion
+                    options={currentQuestion?.options ?? []}
+                    selected={selectedAnswer as string}
+                    onSelect={handleSelect}
+                  />
+                )}
+              </View>
+
+              <Pressable
+                disabled={buttonDisabled}
+                style={({ pressed }) => [
+                  styles.button,
+                  buttonDisabled && styles.buttonDisabled,
+                  pressed && !buttonDisabled && styles.buttonPressed,
+                ]}
+                onPress={handleNext}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color={theme.white} />
+                ) : (
+                  <Text style={styles.buttonText}>
+                    {isLastQuestion ? "Finish" : "Continue"}
+                  </Text>
+                )}
+              </Pressable>
+            </>
+          )}
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -158,109 +230,174 @@ export default function StartingForm() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#1F1F1F",
-    padding: 20,
+    backgroundColor: theme.background,
+    padding: spacing.md,
+  },
+  keyboardView: {
+    flex: 1,
   },
   card: {
     flex: 1,
-    backgroundColor: "#FDFDFD",
-    borderRadius: 28,
-    padding: 22,
+    backgroundColor: theme.card,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
     justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    elevation: 8,
   },
+
+  introTop: {
+    alignItems: "center",
+    paddingTop: spacing.xl,
+  },
+  logoCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 3,
+    borderColor: theme.accent,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.xs,
+  },
+  logoText: {
+    color: theme.accent,
+    fontWeight: "900",
+    fontSize: 18,
+  },
+  logo: {
+    color: theme.primary,
+    fontSize: 28,
+    fontWeight: "900",
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    color: theme.muted,
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  introCenter: {
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+  },
+  introEyebrow: {
+    color: theme.accent,
+    fontSize: 13,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: spacing.md,
+  },
+  introTitle: {
+    color: theme.primary,
+    fontSize: 34,
+    lineHeight: 40,
+    fontWeight: "900",
+    textAlign: "center",
+    letterSpacing: -1,
+  },
+  introDescription: {
+    color: theme.muted,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: "center",
+    marginTop: spacing.md,
+  },
+
   header: {
-    height: 42,
+    minHeight: 46,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#163B63",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: theme.primary,
     alignItems: "center",
     justifyContent: "center",
   },
+  backButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
+  },
   backText: {
-    color: "white",
-    fontSize: 26,
-    marginTop: -2,
+    color: theme.white,
+    fontSize: 30,
+    marginTop: -3,
+  },
+  headerCenter: {
+    alignItems: "center",
   },
   headerTitle: {
-    color: "#163B63",
-    fontWeight: "700",
+    color: theme.primary,
+    fontWeight: "900",
+    fontSize: 15,
+  },
+  headerSubtitle: {
+    color: theme.muted,
+    fontSize: 11,
+    marginTop: 2,
   },
   progressPill: {
-    backgroundColor: "#163B63",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    backgroundColor: theme.primary,
+    borderRadius: radius.full,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
   },
   progressText: {
-    color: "white",
-    fontSize: 10,
-    fontWeight: "700",
+    color: theme.white,
+    fontSize: 11,
+    fontWeight: "900",
   },
+
   content: {
     flex: 1,
     justifyContent: "center",
+    paddingVertical: spacing.xl,
+  },
+  questionNumber: {
+    color: theme.accent,
+    fontSize: 13,
+    fontWeight: "900",
+    textAlign: "center",
+    marginBottom: spacing.sm,
   },
   question: {
-    fontSize: 26,
-    lineHeight: 32,
-    fontWeight: "800",
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: "900",
     textAlign: "center",
-    color: "#163B63",
+    color: theme.text,
+    letterSpacing: -0.7,
   },
+
   button: {
-    backgroundColor: "#163B63",
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: theme.primary,
+    paddingVertical: 17,
+    borderRadius: radius.lg,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 56,
+  },
+  buttonPressed: {
+    backgroundColor: theme.primaryDark,
+    transform: [{ scale: 0.98 }],
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
-    color: "white",
-    fontWeight: "800",
-  },
-  introContent: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 3,
-    borderColor: "#7E78F1",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  logoText: {
-    color: "#7E78F1",
+    color: theme.white,
     fontWeight: "900",
-    fontSize: 18,
-  },
-  logo: {
-    color: "#163B63",
-    fontSize: 26,
-    fontWeight: "900",
-  },
-  subtitle: {
-    color: "#163B63",
-    fontSize: 11,
-    marginTop: 4,
-  },
-  introTextWrapper: {
-    marginTop: 110,
-  },
-  introTitle: {
-    color: "#163B63",
-    fontSize: 26,
-    lineHeight: 34,
-    fontWeight: "900",
-    textAlign: "center",
+    fontSize: 15,
   },
 });
