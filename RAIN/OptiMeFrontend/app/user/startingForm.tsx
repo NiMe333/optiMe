@@ -29,7 +29,7 @@ export default function StartingForm() {
   const { showToast } = useToast();
 
   const progressAnim = useRef(new Animated.Value(0)).current;
-
+  const questionAnim = useRef(new Animated.Value(1)).current;
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [answers, setAnswers] = useState<Answers>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +60,16 @@ export default function StartingForm() {
       useNativeDriver: false,
     }).start();
   }, [progressValue, progressAnim]);
+
+  useEffect(() => {
+    questionAnim.setValue(0);
+
+    Animated.timing(questionAnim, {
+      toValue: 1,
+      duration: 280,
+      useNativeDriver: true,
+    }).start();
+  }, [currentIndex, questionAnim]);
 
   const logo = Platform.select({
     ios: require("@/assets/images/just_circle.png"),
@@ -212,7 +222,22 @@ export default function StartingForm() {
 
                 <ProgressBar progress={progressAnim} />
 
-                <View style={styles.content}>
+                <Animated.View
+                  style={[
+                    styles.content,
+                    {
+                      opacity: questionAnim,
+                      transform: [
+                        {
+                          translateY: questionAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [18, 0],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
                   <Text style={styles.questionNumber}>
                     {String(currentIndex + 1).padStart(2, "0")}
                   </Text>
@@ -236,8 +261,7 @@ export default function StartingForm() {
                       onSelect={handleSelect}
                     />
                   )}
-                </View>
-
+                </Animated.View>
                 <Pressable
                   disabled={buttonDisabled}
                   style={({ pressed }) => [
