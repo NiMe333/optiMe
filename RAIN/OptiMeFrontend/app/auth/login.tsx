@@ -60,7 +60,7 @@ export default function LoginScreen() {
       console.log("Login Success", data);
       showToast(data.message || "Logged in successfully", "success");
 
-      router.replace("/(tabs)");
+      router.replace("/user/startingForm");
     } catch (error: any) {
       console.log("Login failed", error);
       showToast(error?.message || "Login failed", "error");
