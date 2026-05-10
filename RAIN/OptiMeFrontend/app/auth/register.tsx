@@ -36,7 +36,10 @@ export default function RegisterScreen() {
 
   async function handleRegister() {
     try {
-      const formattedDate = dateOfBirth.toISOString().split("T")[0];
+      const formattedDate =
+        dateOfBirth instanceof Date && !isNaN(dateOfBirth.getTime())
+          ? dateOfBirth.toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0];
       const data = await registerUser(email, password, gender, formattedDate);
       console.log("Register Success", data);
       Alert.alert("Success", "Registered!");

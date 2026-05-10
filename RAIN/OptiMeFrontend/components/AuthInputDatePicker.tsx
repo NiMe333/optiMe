@@ -22,8 +22,12 @@ export default function AuthInputDatePicker({
 }: AuthInputDatePickerProps) {
   const [showPicker, setShowPicker] = useState(false);
 
-  const formattedDate = value.toISOString().split("T")[0];
+  const isValidDate = value instanceof Date && !isNaN(value.getTime());
+  const safeDate = isValidDate ? value : new Date();
+
   const maxDate = new Date();
+  const formattedDate = safeDate.toISOString().split("T")[0];
+  const maxDateString = maxDate.toISOString().split("T")[0];
 
   if (Platform.OS === "web") {
     return (
@@ -35,8 +39,14 @@ export default function AuthInputDatePicker({
         <input
           type="date"
           value={formattedDate}
-          max={maxDate.toISOString().split("T")[0]}
-          onChange={(e) => onChange(new Date(e.target.value))}
+          max={maxDateString}
+          onChange={(e) => {
+            const selected = new Date(e.target.value);
+
+            if (!isNaN(selected.getTime())) {
+              onChange(selected);
+            }
+          }}
           style={{
             width: "100%",
             height: 45,
@@ -82,12 +92,14 @@ export default function AuthInputDatePicker({
               </TouchableOpacity>
 
               <DateTimePicker
-                value={value}
+                value={safeDate}
                 mode="date"
                 display="spinner"
                 maximumDate={maxDate}
                 onChange={(_, selectedDate) => {
-                  if (selectedDate) onChange(selectedDate);
+                  if (selectedDate && !isNaN(selectedDate.getTime())) {
+                    onChange(selectedDate);
+                  }
                 }}
               />
             </View>
@@ -97,13 +109,16 @@ export default function AuthInputDatePicker({
 
       {Platform.OS === "android" && showPicker && (
         <DateTimePicker
-          value={value}
+          value={safeDate}
           mode="date"
           display="calendar"
           maximumDate={maxDate}
           onChange={(_, selectedDate) => {
             setShowPicker(false);
-            if (selectedDate) onChange(selectedDate);
+
+            if (selectedDate && !isNaN(selectedDate.getTime())) {
+              onChange(selectedDate);
+            }
           }}
         />
       )}
