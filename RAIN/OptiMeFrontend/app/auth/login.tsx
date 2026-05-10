@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 
 import { loginUser } from "@/services/auth";
 import AuthInput from "@/components/AuthInput";
@@ -20,6 +21,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
+  const { setUser } = useAuth();
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -56,10 +58,9 @@ export default function LoginScreen() {
       setLoading(true);
 
       const data = await loginUser(cleanEmail, password);
+      setUser(data.user);
 
-      console.log("Login Success", data);
       showToast(data.message || "Logged in successfully", "success");
-
       router.replace("/user/startingForm");
     } catch (error: any) {
       console.log("Login failed", error);
