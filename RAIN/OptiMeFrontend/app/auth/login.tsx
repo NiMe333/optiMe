@@ -5,10 +5,10 @@ import {
   TouchableOpacity,
   Image,
   useWindowDimensions,
-  Alert,
   Platform,
 } from "react-native";
 import { router } from "expo-router";
+import { useToast } from "@/context/ToastContext";
 
 import { loginUser } from "@/services/auth";
 import AuthInput from "@/components/AuthInput";
@@ -19,6 +19,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -37,17 +38,17 @@ export default function LoginScreen() {
     const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanEmail) {
-      Alert.alert("Error", "Email is required");
+      showToast("Email is required", "error");
       return;
     }
 
     if (!cleanEmail.includes("@")) {
-      Alert.alert("Error", "Invalid email format");
+      showToast("Invalid email format", "error");
       return;
     }
 
     if (!password) {
-      Alert.alert("Error", "Password is required");
+      showToast("Password is required", "error");
       return;
     }
 
@@ -57,12 +58,12 @@ export default function LoginScreen() {
       const data = await loginUser(cleanEmail, password);
 
       console.log("Login Success", data);
-      Alert.alert("Success", data.message || "Logged in!");
+      showToast(data.message || "Logged in successfully", "success");
 
       router.replace("/(tabs)");
     } catch (error: any) {
       console.log("Login failed", error);
-      Alert.alert("Error", error?.message || "Login failed");
+      showToast(error?.message || "Login failed", "error");
     } finally {
       setLoading(false);
     }

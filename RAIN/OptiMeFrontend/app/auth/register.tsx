@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   Image,
   useWindowDimensions,
-  Alert,
   Platform,
 } from "react-native";
 
@@ -16,6 +15,7 @@ import AuthInputDatePicker from "@/components/AuthInputDatePicker";
 import AuthInputGender from "@/components/AuthInputGender";
 import { styles } from "@/styles/login.styles";
 import { router } from "expo-router";
+import { useToast } from "@/context/ToastContext";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
@@ -23,6 +23,7 @@ export default function RegisterScreen() {
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState(new Date());
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -38,43 +39,59 @@ export default function RegisterScreen() {
   async function handleRegister() {
     if (loading) return;
 
-    setLoading(true);
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail) {
+      showToast("Email is required", "error");
+      return;
+    }
+
+    if (!cleanEmail.includes("@")) {
+      showToast("Invalid email format", "error");
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      showToast("Password must be at least 6 characters", "error");
+      return;
+    }
+
+    if (!gender) {
+      showToast("Please select gender", "error");
+      return;
+    }
+
+    if (!dateOfBirth || isNaN(dateOfBirth.getTime())) {
+      showToast("Please select a valid date of birth", "error");
+      return;
+    }
 
     try {
+      setLoading(true);
+
       const formattedDate =
         dateOfBirth instanceof Date && !isNaN(dateOfBirth.getTime())
           ? dateOfBirth.toISOString().split("T")[0]
           : new Date().toISOString().split("T")[0];
-      if (!email.trim()) {
-        Alert.alert("Error", "Email is required");
-        return;
-      }
 
-      if (!email.includes("@")) {
-        Alert.alert("Error", "Invalid email format");
-        return;
-      }
+      const data = await registerUser(
+        cleanEmail,
+        password,
+        gender,
+        formattedDate,
+      );
 
-      if (!password || password.length < 6) {
-        Alert.alert("Error", "Password must be at least 6 characters");
-        return;
-      }
-
-      if (!gender) {
-        Alert.alert("Error", "Please select gender");
-        return;
-      }
-
-      if (!dateOfBirth || isNaN(dateOfBirth.getTime())) {
-        Alert.alert("Error", "Please select a valid date of birth");
-        return;
-      }
-      const data = await registerUser(email, password, gender, formattedDate);
       console.log("Register Success", data);
-      Alert.alert("Success", "Registered!");
+
+      showToast(data.message || "User registered successfully", "success");
+
+      router.replace("/auth/login");
     } catch (error: any) {
       console.log("Register failed", error);
-      Alert.alert("Error", error?.message || "Register failed");
+
+      showToast(error?.message || "Registration failed", "error");
+    } finally {
+      setLoading(false);
     }
   }
 
