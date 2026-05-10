@@ -22,6 +22,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState(new Date());
+  const [loading, setLoading] = useState(false);
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -35,11 +36,39 @@ export default function RegisterScreen() {
   const logoStyle = isMobile ? styles.mobileLogo : styles.webLogo;
 
   async function handleRegister() {
+    if (loading) return;
+
+    setLoading(true);
+
     try {
       const formattedDate =
         dateOfBirth instanceof Date && !isNaN(dateOfBirth.getTime())
           ? dateOfBirth.toISOString().split("T")[0]
           : new Date().toISOString().split("T")[0];
+      if (!email.trim()) {
+        Alert.alert("Error", "Email is required");
+        return;
+      }
+
+      if (!email.includes("@")) {
+        Alert.alert("Error", "Invalid email format");
+        return;
+      }
+
+      if (!password || password.length < 6) {
+        Alert.alert("Error", "Password must be at least 6 characters");
+        return;
+      }
+
+      if (!gender) {
+        Alert.alert("Error", "Please select gender");
+        return;
+      }
+
+      if (!dateOfBirth || isNaN(dateOfBirth.getTime())) {
+        Alert.alert("Error", "Please select a valid date of birth");
+        return;
+      }
       const data = await registerUser(email, password, gender, formattedDate);
       console.log("Register Success", data);
       Alert.alert("Success", "Registered!");
@@ -87,8 +116,10 @@ export default function RegisterScreen() {
             onChange={setDateOfBirth}
           />
 
-          <AuthButton title="Register" onPress={handleRegister} />
-
+          <AuthButton
+            title={loading ? "Registering..." : "Register"}
+            onPress={handleRegister}
+          />
           <View style={styles.signupRow}>
             <Text style={styles.signupText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => router.push("/auth/login")}>

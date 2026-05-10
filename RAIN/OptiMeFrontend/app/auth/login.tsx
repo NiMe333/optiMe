@@ -3,21 +3,22 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Image,
   useWindowDimensions,
   Alert,
   Platform,
 } from "react-native";
+import { router } from "expo-router";
+
 import { loginUser } from "@/services/auth";
 import AuthInput from "@/components/AuthInput";
 import AuthButton from "@/components/AuthButton";
 import { styles } from "@/styles/login.styles";
-import { router } from "expo-router";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -28,20 +29,42 @@ export default function LoginScreen() {
     web: require("@/assets/images/logo_final_web.svg"),
   });
 
-  const logoStyle = Platform.select({
-    ios: styles.mobileLogo,
-    android: styles.mobileLogo,
-    web: styles.webLogo,
-  });
+  const logoStyle = isMobile ? styles.mobileLogo : styles.webLogo;
 
   async function handleLogin() {
+    if (loading) return;
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail) {
+      Alert.alert("Error", "Email is required");
+      return;
+    }
+
+    if (!cleanEmail.includes("@")) {
+      Alert.alert("Error", "Invalid email format");
+      return;
+    }
+
+    if (!password) {
+      Alert.alert("Error", "Password is required");
+      return;
+    }
+
     try {
-      const data = await loginUser(email, password);
+      setLoading(true);
+
+      const data = await loginUser(cleanEmail, password);
+
       console.log("Login Success", data);
-      Alert.alert("Success", "Logged in!");
+      Alert.alert("Success", data.message || "Logged in!");
+
+      router.replace("/(tabs)");
     } catch (error: any) {
       console.log("Login failed", error);
       Alert.alert("Error", error?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -79,7 +102,10 @@ export default function LoginScreen() {
             <Text style={styles.forgot}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <AuthButton title="Login" onPress={handleLogin} />
+          <AuthButton
+            title={loading ? "Logging in..." : "Login"}
+            onPress={handleLogin}
+          />
 
           <View style={styles.signupRow}>
             <Text style={styles.signupText}>Don’t have an account? </Text>

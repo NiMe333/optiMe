@@ -11,7 +11,14 @@ export async function loginUser(email: string, password: string) {
     body: JSON.stringify({ email, password }),
   });
 
-  const data = await response.json();
+  const text = await response.text();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("Server returned invalid response");
+  }
 
   if (!response.ok) {
     throw new Error(data.message || "Login failed");
@@ -47,8 +54,7 @@ export async function registerUser(
   try {
     data = JSON.parse(text);
   } catch {
-    console.log("Server did not return JSON:", text);
-    throw new Error("Server did not return JSON.");
+    throw new Error("Server returned invalid response");
   }
 
   if (!response.ok) {
