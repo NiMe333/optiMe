@@ -13,6 +13,7 @@ import { registerUser } from "@/services/auth";
 import AuthInput from "@/components/AuthInput";
 import AuthButton from "@/components/AuthButton";
 import { styles } from "@/styles/login.styles";
+import { router } from "expo-router";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
@@ -92,7 +93,7 @@ export default function RegisterScreen() {
 
           <View style={styles.signupRow}>
             <Text style={styles.signupText}>Already have an account? </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/login")}>
               <Text style={styles.signupLink}>Login</Text>
             </TouchableOpacity>
           </View>
