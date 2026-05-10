@@ -11,7 +11,14 @@ export async function loginUser(email: string, password: string) {
     body: JSON.stringify({ email, password }),
   });
 
-  const data = await response.json();
+  const text = await response.text();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("Server returned invalid response");
+  }
 
   if (!response.ok) {
     throw new Error(data.message || "Login failed");
@@ -21,23 +28,36 @@ export async function loginUser(email: string, password: string) {
 }
 
 export async function registerUser(
-  username: string,
   email: string,
-  date_of_birth: Date,
-  gender: string,
   password: string,
+  gender: string,
+  dateOfBirth: string,
 ) {
-  const res = await fetch(`${API_URL}/api/register`, {
+  const response = await fetch(`${API_URL}/user/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Accept: "application/json",
     },
-    body: JSON.stringify({ username, email, date_of_birth, gender, password }),
+    body: JSON.stringify({
+      email,
+      password,
+      gender,
+      dateOfBirth,
+    }),
   });
 
-  const data = await res.json();
+  const text = await response.text();
 
-  if (!res.ok) {
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("Server returned invalid response");
+  }
+
+  if (!response.ok) {
     throw new Error(data.message || "Register failed");
   }
 

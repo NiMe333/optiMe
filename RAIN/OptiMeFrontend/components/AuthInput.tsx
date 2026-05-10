@@ -35,10 +35,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -12,
     left: 22,
-    backgroundColor: "#F3FCFF",
+    backgroundColor: "#ffffff",
     paddingHorizontal: 10,
     zIndex: 2,
     alignSelf: "flex-start",
+    borderRadius: 5,
   },
   label: {
     fontSize: 18,
