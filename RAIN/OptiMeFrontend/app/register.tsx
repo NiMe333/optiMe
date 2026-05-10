@@ -12,6 +12,7 @@ import {
 import { registerUser } from "@/services/auth";
 import AuthInput from "@/components/AuthInput";
 import AuthButton from "@/components/AuthButton";
+import AuthInputDatePicker from "@/components/AuthInputDatePicker";
 import { styles } from "@/styles/login.styles";
 import { router } from "expo-router";
 
@@ -19,7 +20,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [gender, setGender] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState(new Date());
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -34,7 +35,8 @@ export default function RegisterScreen() {
 
   async function handleRegister() {
     try {
-      const data = await registerUser(email, password, gender, dateOfBirth);
+      const formattedDate = dateOfBirth.toISOString().split("T")[0];
+      const data = await registerUser(email, password, gender, formattedDate);
       console.log("Register Success", data);
       Alert.alert("Success", "Registered!");
     } catch (error: any) {
@@ -81,12 +83,10 @@ export default function RegisterScreen() {
             placeholderTextColor="#999"
           />
 
-          <AuthInput
+          <AuthInputDatePicker
             label="Date of birth"
-            placeholder="YYYY-MM-DD"
             value={dateOfBirth}
-            onChangeText={setDateOfBirth}
-            placeholderTextColor="#999"
+            onChange={setDateOfBirth}
           />
 
           <AuthButton title="Register" onPress={handleRegister} />
