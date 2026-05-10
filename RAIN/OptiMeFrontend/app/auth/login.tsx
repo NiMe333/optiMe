@@ -58,12 +58,21 @@ export default function LoginScreen() {
       setLoading(true);
 
       const data = await loginUser(cleanEmail, password);
-      setUser(data.user);
+
+      console.log("Login Success", data);
 
       showToast(data.message || "Logged in successfully", "success");
-      router.replace("/user/startingForm");
+
+      setUser(data.user);
+
+      if (data.user.hasCompletedStartingForm) {
+        router.replace("/(tabs)");
+      } else {
+        router.replace("/user/startingForm");
+      }
     } catch (error: any) {
       console.log("Login failed", error);
+
       showToast(error?.message || "Login failed", "error");
     } finally {
       setLoading(false);

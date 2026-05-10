@@ -20,6 +20,7 @@ import ProgressBar from "@/components/questions/ProgressBar";
 import { colors } from "@/constants/theme";
 import { styles } from "@/styles/startingForm.styles";
 import { useToast } from "@/context/ToastContext";
+import { router } from "expo-router";
 
 const theme = colors.light;
 
@@ -134,6 +135,8 @@ export default function StartingForm() {
 
       if (response.ok) {
         showToast(data.message || "Form submitted successfully.", "success");
+
+        router.replace("/auth/login"); // home kasneje -> /(tabs)/home
       } else {
         showToast(data.message || "Something went wrong.", "error");
       }
