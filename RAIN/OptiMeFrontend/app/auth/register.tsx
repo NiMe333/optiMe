@@ -13,6 +13,7 @@ import { registerUser } from "@/services/auth";
 import AuthInput from "@/components/AuthInput";
 import AuthButton from "@/components/AuthButton";
 import AuthInputDatePicker from "@/components/AuthInputDatePicker";
+import AuthInputGender from "@/components/AuthInputGender";
 import { styles } from "@/styles/login.styles";
 import { router } from "expo-router";
 
@@ -75,13 +76,7 @@ export default function RegisterScreen() {
             placeholderTextColor="#999"
           />
 
-          <AuthInput
-            label="Gender"
-            placeholder="Gender"
-            value={gender}
-            onChangeText={setGender}
-            placeholderTextColor="#999"
-          />
+          <AuthInputGender label="Gender" value={gender} onChange={setGender} />
 
           <AuthInputDatePicker
             label="Date of birth"
