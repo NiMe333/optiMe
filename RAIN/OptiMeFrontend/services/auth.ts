@@ -26,10 +26,11 @@ export async function registerUser(
   gender: string,
   dateOfBirth: string,
 ) {
-  const response = await fetch(`${API_URL}/api/register`, {
+  const response = await fetch(`${API_URL}/user/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Accept: "application/json",
     },
     body: JSON.stringify({
       email,
@@ -39,7 +40,16 @@ export async function registerUser(
     }),
   });
 
-  const data = await response.json();
+  const text = await response.text();
+
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch {
+    console.log("Server did not return JSON:", text);
+    throw new Error("Server did not return JSON.");
+  }
 
   if (!response.ok) {
     throw new Error(data.message || "Register failed");

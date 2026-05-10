@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
 
   overlayWeb: {
     alignItems: "flex-start",
-    paddingLeft: 200,
+    paddingLeft: "15%",
   },
 
   modalBox: {
