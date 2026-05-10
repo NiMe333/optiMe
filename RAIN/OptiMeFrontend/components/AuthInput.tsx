@@ -39,6 +39,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     zIndex: 2,
     alignSelf: "flex-start",
+    borderRadius: 5,
   },
   label: {
     fontSize: 18,
