@@ -8,16 +8,12 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { Platform } from "react-native";
+import { API_URL } from "@/services/api";
 
 export default function startingForm() {
   const [username, setUsername] = useState("");
   const [education, setEducation] = useState("");
   const [employment, setEmployment] = useState("");
-
-  const API_URL =
-    Platform.OS === "android"
-      ? "http://10.0.2.2:3000"
-      : "http://localhost:3000";
 
   const handleStartingForm = async () => {
     try {

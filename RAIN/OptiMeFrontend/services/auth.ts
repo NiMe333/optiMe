@@ -1,4 +1,4 @@
-import { API_URL } from "./api";
+import { API_URL } from "@/services/api";
 
 export async function loginUser(email: string, password: string) {
   const response = await fetch(`${API_URL}/user/login`, {
