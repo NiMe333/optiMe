@@ -36,11 +36,26 @@ const scrapeData = async (req, res) => {
     const savedUsers = [];
 
     for (const userData of newUsers) {
-      const user = new User(userData);
+      let counter = 0;
 
-      await user.save();
+      for (const userData of newUsers) {
+        try {
+          counter++;
 
-      savedUsers.push(user);
+          console.log(
+            `Saving user ${counter}/${newUsers.length}`
+          );
+
+          const user = new User(userData);
+
+          await user.save();
+
+          savedUsers.push(user);
+
+        } catch (err) {
+          console.log(err.message);
+        }
+      }
     }
 
     console.log("Users saved to MongoDB!");
