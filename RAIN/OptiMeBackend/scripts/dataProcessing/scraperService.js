@@ -81,17 +81,17 @@ $("#mw-content-text .div-col li a").each(
     ).values()
   );
 
-  if (!fs.existsSync("./data")) {
-    fs.mkdirSync("./data");
+  if (!fs.existsSync("./scripts/dataProcessing/data")) {
+    fs.mkdirSync("./scripts/dataProcessing/data");
   }
 
   fs.writeFileSync(
-    "./data/actors.json",
+    "./scripts/dataProcessing/data/actors.json",
     JSON.stringify(uniqueActors, null, 2)
   );
 
   fs.writeFileSync(
-    "./data/actors.txt",
+    "./scripts/dataProcessing/data/actors.txt",
     uniqueActors
       .map(
         (actor) =>
