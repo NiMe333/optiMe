@@ -1,65 +1,108 @@
 const fs = require("fs");
 const axios = require("axios");
-const csv = require("csv-parser");
+const cheerio = require("cheerio");
 
-const CSV_URL = "https://huggingface.co/datasets/jason1966/ak0212_anxiety-and-depression-mental-health-factors/resolve/main/anxiety_depression_data.csv";
+const URL =
+  "https://en.wikipedia.org/wiki/List_of_British_actors";
 
-const downloadCSV = async () => {
-  const response = await axios({
-    method: "GET",
-    url: CSV_URL,
-    responseType: "stream",
+const generateEmail = (fullName) => {
+  return (
+    fullName
+      .toLowerCase()
+      .replace(/\s+/g, ".")
+      .replace(/[^a-z.]/g, "") + "@email.com"
+  );
+};
+
+const scrapeActors = async () => {
+  const response = await axios.get(URL, {
+    timeout: 10000,
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    },
   });
 
-  // create data folder if it doesn't exist
-  if (!fs.existsSync("./scripts/dataProcessing/data")) {
-    fs.mkdirSync("./scripts/dataProcessing/data");
+  const html = response.data;
+
+  const $ = cheerio.load(html);
+
+  const actors = [];
+
+$("#mw-content-text .div-col li a").each(
+  (index, element) => {
+    const fullName = $(element).text().trim();
+
+    // ignore empty
+    if (!fullName) return;
+
+    // must contain at least 2 words
+    if (fullName.split(" ").length < 2) return;
+
+    // ignore wikipedia garbage
+    const bannedWords = [
+      "portal",
+      "wikipedia",
+      "category",
+      "list of",
+      "film",
+      "television",
+      "cinema",
+      "award",
+      "academy",
+      "united kingdom",
+      "south africa",
+      "lists of british people",
+      "lists of actors"
+    ];
+
+    const lowerName = fullName.toLowerCase();
+
+    const containsBannedWord = bannedWords.some(
+      (word) => lowerName.includes(word)
+    );
+
+    if (containsBannedWord) return;
+
+    // generate email
+    const email = generateEmail(fullName);
+
+    actors.push({
+      name: lowerName,
+      email,
+    });
+  }
+);
+
+  // remove duplicates
+  const uniqueActors = Array.from(
+    new Map(
+      actors.map((actor) => [actor.email, actor])
+    ).values()
+  );
+
+  if (!fs.existsSync("./data")) {
+    fs.mkdirSync("./data");
   }
 
-  const writer = fs.createWriteStream(
-    "./scripts/dataProcessing/data/anxiety_depression_data.csv"
-  );
-
-  response.data.pipe(writer);
-
-  return new Promise((resolve, reject) => {
-    writer.on("finish", resolve);
-    writer.on("error", reject);
-  });
-};
-
-const parseCSV = async () => {
-  return new Promise((resolve, reject) => {
-    const results = [];
-
-    fs.createReadStream("./scripts/dataProcessing/data/anxiety_depression_data.csv")
-      .pipe(csv())
-      .on("data", (data) => {
-        results.push(data);
-      })
-      .on("end", () => {
-        resolve(results);
-      })
-      .on("error", (error) => {
-        reject(error);
-      });
-  });
-};
-
-const scrapeMentalHealthData = async () => {
-  await downloadCSV();
-
-  const results = await parseCSV();
-
-  // save JSON
   fs.writeFileSync(
-    "./scripts/dataProcessing/data/output.json",
-    JSON.stringify(results, null, 2)
+    "./data/actors.json",
+    JSON.stringify(uniqueActors, null, 2)
   );
 
-  return results;
+  fs.writeFileSync(
+    "./data/actors.txt",
+    uniqueActors
+      .map(
+        (actor) =>
+          `Name: ${actor.name} | Email: ${actor.email}`
+      )
+      .join("\n")
+  );
+
+  return uniqueActors;
 };
 
 module.exports = {
-  scrapeMentalHealthData,
+  scrapeActors,
 };

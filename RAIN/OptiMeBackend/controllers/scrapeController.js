@@ -1,20 +1,15 @@
-const fs = require("fs");
-
-const {
-  scrapeMentalHealthData,
-} = require("../services/scraperService");
+const { scrapeActors } = require("../scripts/dataProcessing/scraperService");
 
 const scrapeData = async (req, res) => {
   try {
-    console.log("Starting scrape...");
+    console.log("Starting actor scrape...");
 
-    const results = await scrapeMentalHealthData();
+    const results = await scrapeActors();
 
     res.status(200).json({
       success: true,
-      message: "Data scraped successfully",
-      totalRecords: results.length,
-      preview: results.slice(0, 5),
+      totalActors: results.length,
+      preview: results.slice(0, 10),
     });
   } catch (error) {
     console.error(error);
@@ -27,29 +22,6 @@ const scrapeData = async (req, res) => {
   }
 };
 
-const getSavedData = async (req, res) => {
-  try {
-    const rawData = fs.readFileSync(
-      "./scripts/dataProcessing/data/output.json",
-      "utf-8"
-    );
-
-    const data = JSON.parse(rawData);
-
-    res.status(200).json({
-      success: true,
-      total: data.length,
-      data,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "No saved data found",
-    });
-  }
-};
-
 module.exports = {
   scrapeData,
-  getSavedData,
 };
