@@ -5,12 +5,56 @@ const cheerio = require("cheerio");
 const URL =
   "https://en.wikipedia.org/wiki/List_of_British_actors";
 
+/*
 const generateEmail = (fullName) => {
   return (
     fullName
       .toLowerCase()
       .replace(/\s+/g, ".")
       .replace(/[^a-z.]/g, "") + "@email.com"
+  );
+};
+*/
+const generateEmail = (fullName) => {
+  return (
+    fullName
+      .toLowerCase()
+
+      // remove wikipedia brackets
+      .replace(/\(.*?\)/g, "")
+
+      // replace spaces with dots
+      .replace(/\s+/g, ".")
+
+      // remove non letters/dots
+      .replace(/[^a-z.]/g, "")
+
+      // remove duplicate dots
+      .replace(/\.{2,}/g, ".")
+
+      // remove ending dot
+      .replace(/\.$/, "") +
+
+    "@email.com"
+  );
+};
+
+const generateRandomGender = () => {
+  const genders = ["Male", "Female", "Other"];
+
+  return genders[
+    Math.floor(Math.random() * genders.length)
+  ];
+};
+
+const generateRandomDate = () => {
+  const start = new Date(1950, 0, 1);
+
+  const end = new Date(2005, 11, 31);
+
+  return new Date(
+    start.getTime() +
+      Math.random() * (end.getTime() - start.getTime())
   );
 };
 
@@ -67,9 +111,16 @@ $("#mw-content-text .div-col li a").each(
     // generate email
     const email = generateEmail(fullName);
 
+    const cleanedName = lowerName
+      .replace(/\(.*?\)/g, "")
+      .trim();
+
     actors.push({
-      name: lowerName,
+      username: cleanedName,
       email,
+      password: cleanedName,
+      gender: generateRandomGender(),
+      dateOfBirth: generateRandomDate(),
     });
   }
 );
