@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const Auth = require("../services/auth")
 
 // Register
 exports.register = async function (req, res) {
@@ -121,28 +122,29 @@ exports.login = async function (req, res) {
       });
     }
 
-    // session
-    req.session.regenerate((err) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: "Session creation failed",
-        });
-      }
+    const accessToken = Auth.createAccessToken(user);
+    const refreshToken = Auth.createRefreshToken(user);
 
-      req.session.userId = user._id;
+    await Auth.storeRefreshToken(user, refreshToken);
 
-      console.log("SESSION:", req.session.userId);
-
-      return res.status(200).json({
-        success: true,
-        message: "User login successful",
-        user: {
-          id: user._id,
-          email: user.email,
-        },
-      });
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      path: "/refresh"
     });
+
+    return res.status(200).json({
+      accessToken,
+      refreshToken,
+      success: true,
+      message: "User login successful",
+      user: {
+        id: user._id,
+        email: user.email,
+      },
+    });
+
   } catch (err) {
     console.log(err);
 
@@ -154,9 +156,13 @@ exports.login = async function (req, res) {
   }
 };
 
-exports.logout = function (req, res) {
+exports.logout = async function (req, res) {
   try {
-    req.session.destroy();
+    const refreshToken = req.cookies.refreshToken;
+
+    await Auth.revokeRefreshToken(refreshToken); //from DB
+
+    res.clearCookie("refreshToken"); //from local
 
     return res.status(201).json({
       success: true,
@@ -171,9 +177,8 @@ exports.logout = function (req, res) {
 };
 
 exports.saveForm = async function (req, res) {
-  console.log(req.session.userId);
   try {
-    const user = await User.findOne({ _id: req.session.userId }); //cookie sends session id that has userid stored so the backend can find the wanted session
+    const user = await User.findOne({ _id: req.user.userId }); //jwt based
 
     if (!user) {
       return res.status(401).json({

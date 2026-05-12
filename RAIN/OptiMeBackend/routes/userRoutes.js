@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/userController');
+const authMiddleware = require('../middleware/authMiddleware')
 
 router.post('/register', controller.register);
-router.post('/startingForm', controller.saveForm);
+router.post('/startingForm', authMiddleware, controller.saveForm); //middleware works best in routes just before controller is called
 
 
 router.post('/login', controller.login);
