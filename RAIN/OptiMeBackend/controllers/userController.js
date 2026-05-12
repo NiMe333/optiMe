@@ -189,6 +189,12 @@ exports.saveForm = async function (req, res) {
     user.username = req.body.username;
     user.education = req.body.education;
     user.employment = req.body.employment;
+    user.mood = req.body.mood;
+    user.sleepHours = req.body.sleepHours;
+    user.activity = req.body.activity;
+    user.socialConection = req.body.socialConection;
+    user.phoneScreenTime = req.body.phoneScreenTime;
+    user.stress = req.body.stress;
 
     await user.save();
 

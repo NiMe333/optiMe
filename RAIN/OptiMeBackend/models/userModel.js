@@ -9,7 +9,13 @@ const UserSchema = new Schema({
     dateOfBirth: { type: Date, required: true },
     username: { type: String, required: false }, //What should the application call you?
     education: { type: String, required: false },
-    employment: { type: String, required: false }
+    employment: { type: String, required: false },
+    mood: { type: Number, required: false },
+    sleepHours: { type: String, required: false },
+    activity: { type: String, required: false },
+    socialConection: { type: Number, required: false },
+    phoneScreenTime: { type: String, required: false },
+    stress: { type: String, required: false }
 });
 
 UserSchema.pre('save', async function(next) { //pre ran before doc is saved to database
