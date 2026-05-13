@@ -7,11 +7,19 @@ async function newUserStDataModel()
 
     try
     {
-        const userStData  = new UserStData({
+        /*const userStData  = new UserStData({
             userId: "69fd9faac176d3f352b24d4e",
             storagePath: `userData/69fd9faac176d3f352b24d4e/2026-05-09.csv`,
             importedForDate: "2026-05-09"
+        });*/
+
+        const userStData  = new UserStData({
+            userId: "6a00757a09d2f4b306241bdc",
+            storagePath: `userData/6a00757a09d2f4b306241bdc/2026-05-12.csv`,
+            importedForDate: "2026-05-12",
+            typeOfOS: "Android"
         });
+
 
         await userStData.save();
 

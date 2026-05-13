@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-OUTPUT_DIR = Path("./exports")
+OUTPUT_DIR = Path("./scripts/dataProcessing/data")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
