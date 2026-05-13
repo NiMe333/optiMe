@@ -1,34 +1,38 @@
 import axios from "axios";
 import { API_URL } from "@/services/api";
 
-let accessToken = localStorage.getItem("accessToken");
-
-export function setAccessToken(token) {
-  accessToken = token;
-
-  if (token) {
-    localStorage.setItem("accessToken", token);
-  } else {
-    localStorage.removeItem("accessToken");
-  }
-}
+import {
+  getAccessToken,
+  saveAccessToken,
+  deleteAccessToken,
+} from "@/services/authStorage";
 
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true
 });
 
-api.interceptors.request.use((config) => {
-  if (accessToken) {
-    config.headers.Authorization =
-      `Bearer ${accessToken}`;
-  }
-
-  return config;
+const refreshApi = axios.create({
+  baseURL: API_URL,
+  withCredentials: true
 });
 
+api.interceptors.request.use(
+  async (config) => {
+    console.log("TOKEN that should be gotten", await getAccessToken());
+    const token = await getAccessToken();
+
+    if (token) {
+      config.headers.Authorization =
+        `Bearer ${token}`;
+    }
+
+    return config;
+  }
+);
+
 api.interceptors.response.use(
-  (response) => response,
+   (response) => response,
 
   async (error) => {
     const originalRequest = error.config;
@@ -40,12 +44,18 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const response = await api.post("/refresh");
+        const response = await refreshApi.post(
+          "/token/refresh"
+        );
 
         const newAccessToken =
           response.data.accessToken;
 
-        setAccessToken(newAccessToken);
+        console.log("newAccessToken", newAccessToken);
+
+        await saveAccessToken(
+          newAccessToken
+        );
 
         originalRequest.headers.Authorization =
           `Bearer ${newAccessToken}`;
@@ -54,6 +64,8 @@ api.interceptors.response.use(
 
       } catch (err) {
         console.log("Refresh failed");
+
+        await deleteAccessToken();
 
         // logout user here
       }

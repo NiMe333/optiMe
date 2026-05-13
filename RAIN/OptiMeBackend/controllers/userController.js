@@ -129,9 +129,9 @@ exports.login = async function (req, res) {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      path: "/refresh"
+      secure: false,
+      sameSite: "lax",
+      path: "/"
     });
 
     return res.status(200).json({

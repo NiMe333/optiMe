@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
+  console.log("auth header", authHeader);
+
   if (!authHeader) {
     return res.status(401).json({
       success: false,
@@ -12,12 +14,12 @@ function authMiddleware(req, res, next) {
 
   const token = authHeader.split(" ")[1];
 
-  console.log("SECRET:", process.env.ACCESS_SECRET);
 
   jwt.verify(
     token,
     process.env.ACCESS_SECRET,
     (err, payload) => {
+       console.log("auth payload", payload);
       if (err) {
         return res.status(401).json({
             success: false,
@@ -25,6 +27,7 @@ function authMiddleware(req, res, next) {
         });
       }
 
+      console.log("payload after error", payload);
       req.user = payload;
       next();
     }
