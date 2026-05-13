@@ -1,6 +1,7 @@
 import {
   View,
   Text,
+  TextInput,
   Animated,
   Pressable,
   ActivityIndicator,
@@ -12,7 +13,6 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { API_URL } from "@/services/api";
 import { submitStartingForm } from "@/services/auth";
 import { startingQuestions } from "@/data/startingQuestions";
 import ScaleQuestion from "@/components/questions/ScaleQuestion";
@@ -51,7 +51,6 @@ export default function StartingForm() {
     ? 0
     : (currentIndex + 1) / startingQuestions.length;
 
-  const progressPercent = Math.round(progressValue * 100);
   const canGoBack = currentIndex > 0;
   const buttonDisabled = isSubmitting;
 
@@ -118,23 +117,36 @@ export default function StartingForm() {
   };
 
   const submitForm = async () => {
-  try {
-    setIsSubmitting(true);
+    try {
+      setIsSubmitting(true);
 
-    const data = await submitStartingForm(answers);
+      const payload = {
+        username: String(answers.username ?? "").trim(),
+        education: String(answers.education ?? ""),
+        employment: String(answers.employment ?? ""),
+        mood: Number(answers.mood ?? 0),
+        sleepHours: String(answers.sleepHours ?? ""),
+        activity: String(answers.activity ?? ""),
+        socialConnection: Number(answers.socialConnection ?? 0),
+        phoneScreenTime: String(answers.phoneScreenTime ?? ""),
+        stress: String(answers.stress ?? ""),
+        formFinished: true,
+      };
 
-    showToast(
-      data.message || "Form submitted successfully.",
-      "success"
-    );
+      console.log("STARTING FORM PAYLOAD:", payload);
 
-    router.replace("/auth/login");
-  } catch (error: any) {
-    showToast(error.message || "Something went wrong.", "error");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      const data = await submitStartingForm(payload);
+
+      showToast(data.message || "Form submitted successfully.", "success");
+
+      router.replace("/(tabs)/home");
+    } catch (error: any) {
+      console.log("STARTING FORM ERROR:", error);
+      showToast(error.message || "Something went wrong.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -244,6 +256,15 @@ export default function StartingForm() {
                       options={currentQuestion.options}
                       selected={selectedAnswer as number}
                       onSelect={handleSelect}
+                    />
+                  ) : currentQuestion?.type === "text" ? (
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder={currentQuestion.placeholder}
+                      placeholderTextColor="#999"
+                      value={(selectedAnswer as string) ?? ""}
+                      onChangeText={handleSelect}
+                      autoCapitalize="words"
                     />
                   ) : (
                     <SingleChoiceQuestion
