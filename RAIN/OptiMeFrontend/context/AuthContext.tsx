@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { getCurrentUser, logoutUser } from "@/services/auth";
+import { getAccessToken } from "@/services/authStorage";
 
 type AuthUser = {
   id: string;
@@ -33,14 +34,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function restoreUser() {
       try {
+        const token = await getAccessToken();
+
+        if (!token) {
+          setUser(null);
+          return;
+        }
+
         const data = await getCurrentUser();
 
         console.log("RESTORED USER DATA:", data);
 
         if (data.user) {
-          console.log("RESTORED USER:", data.user);
-          console.log("RESTORED formFinished:", data.user.formFinished);
-
           setUser(data.user);
         } else {
           setUser(null);
