@@ -23,6 +23,6 @@ app.get("/", (req, res) => {
 app.use("/api", require("./routes/scrapeRoutes")); //sends to userRoutes if /user
 app.use("/user", require("./routes/userRoutes"));
 app.use("/token", require("./routes/tokenRoutes"));
-app.use("/user", userRoutes);
+app.use("/user", require("./routes/userRoutes"));
 
 module.exports = app;
