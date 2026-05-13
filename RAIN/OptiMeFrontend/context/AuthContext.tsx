@@ -35,12 +35,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const data = await getCurrentUser();
 
+        console.log("RESTORED USER DATA:", data);
+
         if (data.user) {
+          console.log("RESTORED USER:", data.user);
+          console.log("RESTORED formFinished:", data.user.formFinished);
+
           setUser(data.user);
         } else {
           setUser(null);
         }
       } catch (error) {
+        console.log("RESTORE USER FAILED:", error);
         setUser(null);
       } finally {
         setAuthLoading(false);

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/context/AuthContext";
 
 import { submitStartingForm } from "@/services/auth";
 import { startingQuestions } from "@/data/startingQuestions";
@@ -21,7 +22,7 @@ import ProgressBar from "@/components/questions/ProgressBar";
 import { colors } from "@/constants/theme";
 import { styles } from "@/styles/startingForm.styles";
 import { useToast } from "@/context/ToastContext";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 
 const theme = colors.light;
 
@@ -29,6 +30,7 @@ type Answers = Record<string, string | number>;
 
 export default function StartingForm() {
   const { showToast } = useToast();
+  const { user, authLoading } = useAuth();
 
   const progressAnim = useRef(new Animated.Value(0)).current;
   const questionAnim = useRef(new Animated.Value(1)).current;
@@ -147,6 +149,27 @@ export default function StartingForm() {
       setIsSubmitting(false);
     }
   };
+  if (authLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <ActivityIndicator color={theme.primary} />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return <Redirect href="/auth/login" />;
+  }
+
+  if (user.formFinished === true) {
+    return <Redirect href="/(tabs)/home" />;
+  }
 
   return (
     <SafeAreaView style={styles.screen}>

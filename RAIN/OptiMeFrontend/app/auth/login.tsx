@@ -7,7 +7,7 @@ import {
   useWindowDimensions,
   Platform,
 } from "react-native";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -21,7 +21,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
-  const { setUser } = useAuth();
+  const { user, setUser, authLoading } = useAuth();
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -81,6 +81,17 @@ export default function LoginScreen() {
     } finally {
       setLoading(false);
     }
+  }
+  if (authLoading) {
+    return null;
+  }
+
+  if (user?.formFinished === true) {
+    return <Redirect href="/(tabs)/home" />;
+  }
+
+  if (user) {
+    return <Redirect href="/user/startingForm" />;
   }
 
   return (
