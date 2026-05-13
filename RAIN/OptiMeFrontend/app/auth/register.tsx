@@ -16,6 +16,7 @@ import AuthInputGender from "@/components/AuthInputGender";
 import { styles } from "@/styles/login.styles";
 import { router } from "expo-router";
 import { useToast } from "@/context/ToastContext";
+import AuthPasswordInput from "@/components/AuthPasswordInput";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
@@ -116,12 +117,11 @@ export default function RegisterScreen() {
             keyboardType="email-address"
           />
 
-          <AuthInput
+          <AuthPasswordInput
             label="Password"
             placeholder="Enter your password"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
             placeholderTextColor="#999"
           />
 
