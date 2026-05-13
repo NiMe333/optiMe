@@ -175,6 +175,19 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  textInput: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#111",
+    backgroundColor: "#FFF",
+    marginTop: 20,
+  },
+
   backButtonPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.96 }],
