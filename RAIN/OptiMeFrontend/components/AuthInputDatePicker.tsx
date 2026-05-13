@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Platform,
   Modal,
+  TextInput,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -21,13 +22,55 @@ export default function AuthInputDatePicker({
   onChange,
 }: AuthInputDatePickerProps) {
   const [showPicker, setShowPicker] = useState(false);
+  const [textValue, setTextValue] = useState("");
 
   const isValidDate = value instanceof Date && !isNaN(value.getTime());
   const safeDate = isValidDate ? value : new Date();
 
   const maxDate = new Date();
-  const formattedDate = safeDate.toISOString().split("T")[0];
-  const maxDateString = maxDate.toISOString().split("T")[0];
+
+  function formatDateForDisplay(date: Date) {
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+
+    return `${day}.${month}.${year}`;
+  }
+
+  function parseDisplayDate(input: string) {
+    const match = input.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+
+    if (!match) {
+      return null;
+    }
+
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+
+    const parsedDate = new Date(year, month - 1, day);
+
+    const isValid =
+      parsedDate.getFullYear() === year &&
+      parsedDate.getMonth() === month - 1 &&
+      parsedDate.getDate() === day;
+
+    if (!isValid) {
+      return null;
+    }
+
+    if (parsedDate > maxDate) {
+      return null;
+    }
+
+    return parsedDate;
+  }
+
+  const displayDateValue = formatDateForDisplay(safeDate);
+
+  useEffect(() => {
+    setTextValue(displayDateValue);
+  }, [displayDateValue]);
 
   if (Platform.OS === "web") {
     return (
@@ -36,32 +79,31 @@ export default function AuthInputDatePicker({
           <Text style={styles.label}>{label}</Text>
         </View>
 
-        <input
-          type="date"
-          value={formattedDate}
-          max={maxDateString}
-          onChange={(e) => {
-            const selected = new Date(e.target.value);
+        <TextInput
+          style={styles.input}
+          value={textValue}
+          onChangeText={(text) => {
+            setTextValue(text);
 
-            if (!isNaN(selected.getTime())) {
-              onChange(selected);
+            const parsedDate = parseDisplayDate(text);
+
+            if (parsedDate) {
+              onChange(parsedDate);
             }
           }}
-          style={{
-            width: "100%",
-            height: 45,
-            paddingLeft: 20,
-            paddingRight: 20,
-            borderRadius: 32,
-            border: "1.5px solid #8B8B8B",
-            fontSize: 18,
-            fontFamily:
-              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
-            color: "#555",
-            backgroundColor: "#FFFFFF",
-            outline: "none",
-            boxSizing: "border-box",
+          onBlur={() => {
+            const parsedDate = parseDisplayDate(textValue);
+
+            if (parsedDate) {
+              onChange(parsedDate);
+              setTextValue(formatDateForDisplay(parsedDate));
+            } else {
+              setTextValue(displayDateValue);
+            }
           }}
+          placeholder="13.5.2026"
+          placeholderTextColor="#777"
+          keyboardType="numbers-and-punctuation"
         />
       </View>
     );
@@ -77,7 +119,7 @@ export default function AuthInputDatePicker({
         style={styles.input}
         onPress={() => setShowPicker(true)}
       >
-        <Text style={styles.inputText}>{formattedDate}</Text>
+        <Text style={styles.inputText}>{displayDateValue}</Text>
       </TouchableOpacity>
 
       {Platform.OS === "ios" && (
@@ -157,6 +199,8 @@ const styles = StyleSheet.create({
     paddingRight: 20,
     justifyContent: "center",
     backgroundColor: "#fff",
+    fontSize: 18,
+    color: "#555",
   },
 
   inputText: {

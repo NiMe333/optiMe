@@ -37,6 +37,13 @@ export default function RegisterScreen() {
 
   const logoStyle = isMobile ? styles.mobileLogo : styles.webLogo;
 
+  function formatDateForBackend(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
   async function handleRegister() {
     if (loading) return;
 
@@ -70,10 +77,7 @@ export default function RegisterScreen() {
     try {
       setLoading(true);
 
-      const formattedDate =
-        dateOfBirth instanceof Date && !isNaN(dateOfBirth.getTime())
-          ? dateOfBirth.toISOString().split("T")[0]
-          : new Date().toISOString().split("T")[0];
+      const formattedDate = formatDateForBackend(dateOfBirth);
 
       const data = await registerUser(
         cleanEmail,
