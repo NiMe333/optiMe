@@ -69,7 +69,7 @@ export default function LoginScreen() {
 
       setUser(data.user);
 
-      if (data.user.formFinished) {
+      if (data.user.formFinished === true) {
         router.replace("/(tabs)/home");
       } else {
         router.replace("/user/startingForm");

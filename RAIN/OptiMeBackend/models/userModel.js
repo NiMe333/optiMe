@@ -16,7 +16,7 @@ const UserSchema = new Schema({
   socialConnection: { type: Number, required: false },
   phoneScreenTime: { type: String, required: false },
   stress: { type: String, required: false },
-  formFinished: { type: Boolean, required: false },
+  formFinished: { type: Boolean, default: false },
 });
 
 UserSchema.pre("save", async function (next) {
