@@ -9,6 +9,7 @@ import {
   Platform,
   useWindowDimensions,
   Image,
+  ScrollView,
 } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,10 +31,11 @@ type Answers = Record<string, string | number>;
 
 export default function StartingForm() {
   const { showToast } = useToast();
-  const { user, authLoading } = useAuth();
+  const { user, authLoading, setUser } = useAuth();
 
   const progressAnim = useRef(new Animated.Value(0)).current;
   const questionAnim = useRef(new Animated.Value(1)).current;
+
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [answers, setAnswers] = useState<Answers>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,6 +141,10 @@ export default function StartingForm() {
 
       const data = await submitStartingForm(payload);
 
+      if (data.user) {
+        setUser(data.user);
+      }
+
       showToast(data.message || "Form submitted successfully.", "success");
 
       router.replace("/(tabs)/home");
@@ -149,6 +155,7 @@ export default function StartingForm() {
       setIsSubmitting(false);
     }
   };
+
   if (authLoading) {
     return (
       <View
@@ -274,46 +281,55 @@ export default function StartingForm() {
                     {currentQuestion?.question}
                   </Text>
 
-                  {currentQuestion?.type === "scale" ? (
-                    <ScaleQuestion
-                      options={currentQuestion.options}
-                      selected={selectedAnswer as number}
-                      onSelect={handleSelect}
-                    />
-                  ) : currentQuestion?.type === "text" ? (
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder={currentQuestion.placeholder}
-                      placeholderTextColor="#999"
-                      value={(selectedAnswer as string) ?? ""}
-                      onChangeText={handleSelect}
-                      autoCapitalize="words"
-                    />
-                  ) : (
-                    <SingleChoiceQuestion
-                      options={currentQuestion?.options ?? []}
-                      selected={selectedAnswer as string}
-                      onSelect={handleSelect}
-                    />
-                  )}
+                  <ScrollView
+                    style={styles.answersScroll}
+                    contentContainerStyle={styles.answersScrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {currentQuestion?.type === "scale" ? (
+                      <ScaleQuestion
+                        options={currentQuestion.options}
+                        selected={selectedAnswer as number}
+                        onSelect={handleSelect}
+                      />
+                    ) : currentQuestion?.type === "text" ? (
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder={currentQuestion.placeholder}
+                        placeholderTextColor="#999"
+                        value={(selectedAnswer as string) ?? ""}
+                        onChangeText={handleSelect}
+                        autoCapitalize="words"
+                      />
+                    ) : (
+                      <SingleChoiceQuestion
+                        options={currentQuestion?.options ?? []}
+                        selected={selectedAnswer as string}
+                        onSelect={handleSelect}
+                      />
+                    )}
+                  </ScrollView>
                 </Animated.View>
-                <Pressable
-                  disabled={buttonDisabled}
-                  style={({ pressed }) => [
-                    styles.button,
-                    buttonDisabled && styles.buttonDisabled,
-                    pressed && !buttonDisabled && styles.buttonPressed,
-                  ]}
-                  onPress={handleNext}
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator color={theme.white} />
-                  ) : (
-                    <Text style={styles.buttonText}>
-                      {isLastQuestion ? "Finish" : "Continue"}
-                    </Text>
-                  )}
-                </Pressable>
+                <View style={styles.footer}>
+                  <Pressable
+                    disabled={buttonDisabled}
+                    style={({ pressed }) => [
+                      styles.button,
+                      buttonDisabled && styles.buttonDisabled,
+                      pressed && !buttonDisabled && styles.buttonPressed,
+                    ]}
+                    onPress={handleNext}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator color={theme.white} />
+                    ) : (
+                      <Text style={styles.buttonText}>
+                        {isLastQuestion ? "Finish" : "Continue"}
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
               </>
             )}
           </View>

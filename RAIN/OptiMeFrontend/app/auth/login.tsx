@@ -10,6 +10,7 @@ import {
 import { Redirect, router } from "expo-router";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
+import AuthPasswordInput from "@/components/AuthPasswordInput";
 
 import { loginUser } from "@/services/auth";
 import AuthInput from "@/components/AuthInput";
@@ -115,12 +116,11 @@ export default function LoginScreen() {
             keyboardType="email-address"
           />
 
-          <AuthInput
+          <AuthPasswordInput
             label="Password"
             placeholder="Enter your password"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
             placeholderTextColor="#999"
           />
 
