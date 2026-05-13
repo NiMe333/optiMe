@@ -1,41 +1,49 @@
 import { API_URL } from "@/services/api";
+import api from "./apiI";
 
-export async function loginUser(email: string, password: string) {
-  const response = await fetch(`${API_URL}/user/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({ email, password }),
-  });
+import {
+  saveAccessToken,
+  getAccessToken
+} from "@/services/authStorage";
 
-  const text = await response.text();
-
-  let data;
-
+export async function loginUser(
+  email: string,
+  password: string
+) {
   try {
-    data = JSON.parse(text);
-  } catch {
-    console.log("LOGIN RAW RESPONSE:", text);
-    throw new Error("Server returned invalid response");
+    const response = await api.post(
+      "/user/login",
+      {
+        email,
+        password,
+      }
+    );
+
+    const accessToken =
+      response.data.accessToken;
+
+    await saveAccessToken(
+      accessToken
+    );
+    console.log("saved token", accessToken);
+    console.log("token from storage", await getAccessToken());
+
+    return response.data;
+
+  } catch (error: any) {
+    throw new Error(
+      error?.response?.data?.message ||
+      "Login failed"
+    );
   }
-
-  console.log("LOGIN RESPONSE:", data);
-
-  if (!response.ok) {
-    throw new Error(data.error || data.message || "Login failed");
-  }
-
-  return data;
 }
+
 
 export async function registerUser(
   email: string,
   password: string,
   gender: string,
-  dateOfBirth: string,
+  dateOfBirth: string
 ) {
   const body = {
     email,
@@ -46,32 +54,82 @@ export async function registerUser(
 
   console.log("REGISTER REQUEST BODY:", body);
 
-  const response = await fetch(`${API_URL}/user/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(body),
-  });
+  try {
+    const response = await api.post(
+      "/user/register",
+      body
+    );
 
-  const text = await response.text();
+    console.log(
+      "REGISTER RESPONSE DATA:",
+      response.data
+    );
 
-  let data;
+    if (response.data.accessToken) {
+      await saveAccessToken(
+        response.data.accessToken
+      );
+    }
+
+    return response.data;
+
+  } catch (error: any) {
+    console.log("REGISTER ERROR:", error);
+
+    console.log(
+      "REGISTER ERROR RESPONSE:",
+      error.response
+    );
+
+    throw new Error(
+      error?.response?.data?.error ||
+      error?.response?.data?.message ||
+      "Register failed"
+    );
+  }
+}
+
+export async function submitStartingForm(
+  answers: any
+) {
+  console.log("FORM DATA:", answers);
 
   try {
-    data = JSON.parse(text);
-  } catch {
-    console.log("REGISTER RAW RESPONSE:", text);
-    throw new Error("Server returned invalid response");
+    const response = await api.post(
+      "/user/startingForm",
+      answers
+    );
+
+    console.log(
+      "FORM RAW RESPONSE:",
+      response
+    );
+
+    console.log(
+      "FORM RESPONSE DATA:",
+      response.data
+    );
+
+    if (response.data.accessToken) {
+      await saveAccessToken(
+        response.data.accessToken
+      );
+    }
+
+    return response.data;
+
+  } catch (error: any) {
+    console.log("FORM ERROR:", error);
+
+    console.log(
+      "FORM ERROR RESPONSE:",
+      error.response
+    );
+
+    throw new Error(
+      error?.response?.data?.error ||
+      error?.response?.data?.message ||
+      "Form submission failed"
+    );
   }
-
-  console.log("REGISTER RESPONSE:", data);
-
-  if (!response.ok) {
-    throw new Error(data.error || data.message || "Register failed");
-  }
-
-  return data;
 }

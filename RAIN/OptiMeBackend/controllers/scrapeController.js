@@ -2,7 +2,7 @@ const fs = require("fs");
 
 const {
   scrapeMentalHealthData,
-} = require("../services/scraperService");
+} = require("../scripts/dataProcessing/scraperService");
 
 const scrapeData = async (req, res) => {
   try {

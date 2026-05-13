@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { API_URL } from "@/services/api";
+import { submitStartingForm } from "@/services/auth";
 import { startingQuestions } from "@/data/startingQuestions";
 import ScaleQuestion from "@/components/questions/ScaleQuestion";
 import SingleChoiceQuestion from "@/components/questions/SingleChoiceQuestion";
@@ -117,36 +118,23 @@ export default function StartingForm() {
   };
 
   const submitForm = async () => {
-    try {
-      setIsSubmitting(true);
+  try {
+    setIsSubmitting(true);
 
-      console.log("FORM DATA:", answers);
+    const data = await submitStartingForm(answers);
 
-      const response = await fetch(`${API_URL}/user/startingForm`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(answers),
-      });
+    showToast(
+      data.message || "Form submitted successfully.",
+      "success"
+    );
 
-      const data = await response.json();
-
-      if (response.ok) {
-        showToast(data.message || "Form submitted successfully.", "success");
-
-        router.replace("/auth/login"); // home kasneje -> /(tabs)/home
-      } else {
-        showToast(data.message || "Something went wrong.", "error");
-      }
-    } catch (error) {
-      showToast("Could not connect to backend.", "error");
-      console.log(error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    router.replace("/auth/login");
+  } catch (error: any) {
+    showToast(error.message || "Something went wrong.", "error");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <SafeAreaView style={styles.screen}>
