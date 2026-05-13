@@ -99,6 +99,11 @@ export async function submitStartingForm(answers: any) {
 export async function logoutUser() {
   try {
     await publicApi.post("/user/logout");
+  } catch (error: any) {
+    console.log(
+      "Logout backend failed:",
+      error?.response?.data || error?.message,
+    );
   } finally {
     await deleteAccessToken();
   }

@@ -9,6 +9,6 @@ router.post("/register", controller.register);
 router.post("/startingForm", authMiddleware, controller.saveForm); //middleware works best in routes just before controller is called
 
 router.post("/login", controller.login);
-router.get("/logout", controller.logout);
+router.post("/logout", controller.logout);
 
 module.exports = router;
