@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Platform,
   Modal,
-  TextInput,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -22,7 +21,6 @@ export default function AuthInputDatePicker({
   onChange,
 }: AuthInputDatePickerProps) {
   const [showPicker, setShowPicker] = useState(false);
-  const [textValue, setTextValue] = useState("");
 
   const isValidDate = value instanceof Date && !isNaN(value.getTime());
   const safeDate = isValidDate ? value : new Date();
@@ -37,16 +35,20 @@ export default function AuthInputDatePicker({
     return `${day}.${month}.${year}`;
   }
 
-  function parseDisplayDate(input: string) {
-    const match = input.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  function formatDateForInput(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
 
-    if (!match) {
+    return `${year}-${month}-${day}`;
+  }
+
+  function parseInputDate(value: string) {
+    if (!value) {
       return null;
     }
 
-    const day = Number(match[1]);
-    const month = Number(match[2]);
-    const year = Number(match[3]);
+    const [year, month, day] = value.split("-").map(Number);
 
     const parsedDate = new Date(year, month - 1, day);
 
@@ -59,18 +61,12 @@ export default function AuthInputDatePicker({
       return null;
     }
 
-    if (parsedDate > maxDate) {
-      return null;
-    }
-
     return parsedDate;
   }
 
   const displayDateValue = formatDateForDisplay(safeDate);
-
-  useEffect(() => {
-    setTextValue(displayDateValue);
-  }, [displayDateValue]);
+  const inputDateValue = formatDateForInput(safeDate);
+  const maxDateValue = formatDateForInput(maxDate);
 
   if (Platform.OS === "web") {
     return (
@@ -79,31 +75,32 @@ export default function AuthInputDatePicker({
           <Text style={styles.label}>{label}</Text>
         </View>
 
-        <TextInput
-          style={styles.input}
-          value={textValue}
-          onChangeText={(text) => {
-            setTextValue(text);
+        <input
+          type="date"
+          value={inputDateValue}
+          max={maxDateValue}
+          onChange={(e) => {
+            const selected = parseInputDate(e.currentTarget.value);
 
-            const parsedDate = parseDisplayDate(text);
-
-            if (parsedDate) {
-              onChange(parsedDate);
+            if (selected && !isNaN(selected.getTime())) {
+              onChange(selected);
             }
           }}
-          onBlur={() => {
-            const parsedDate = parseDisplayDate(textValue);
-
-            if (parsedDate) {
-              onChange(parsedDate);
-              setTextValue(formatDateForDisplay(parsedDate));
-            } else {
-              setTextValue(displayDateValue);
-            }
+          style={{
+            width: "100%",
+            height: 45,
+            paddingLeft: 20,
+            paddingRight: 20,
+            borderRadius: 32,
+            border: "1.5px solid #8B8B8B",
+            fontSize: 18,
+            fontFamily:
+              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+            color: "#555",
+            backgroundColor: "#FFFFFF",
+            outline: "none",
+            boxSizing: "border-box",
           }}
-          placeholder="13.5.2026"
-          placeholderTextColor="#777"
-          keyboardType="numbers-and-punctuation"
         />
       </View>
     );
@@ -130,7 +127,7 @@ export default function AuthInputDatePicker({
                 style={styles.doneButton}
                 onPress={() => setShowPicker(false)}
               >
-                <Text style={styles.doneText}>Zapri</Text>
+                <Text style={styles.doneText}>Close</Text>
               </TouchableOpacity>
 
               <DateTimePicker
@@ -199,8 +196,6 @@ const styles = StyleSheet.create({
     paddingRight: 20,
     justifyContent: "center",
     backgroundColor: "#fff",
-    fontSize: 18,
-    color: "#555",
   },
 
   inputText: {
