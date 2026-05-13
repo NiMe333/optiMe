@@ -9,70 +9,74 @@ import {
 
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true
+  withCredentials: true,
+});
+
+export const publicApi = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
 });
 
 const refreshApi = axios.create({
   baseURL: API_URL,
-  withCredentials: true
+  withCredentials: true,
 });
 
 api.interceptors.request.use(
   async (config) => {
-    console.log("TOKEN that should be gotten", await getAccessToken());
     const token = await getAccessToken();
 
     if (token) {
-      config.headers.Authorization =
-        `Bearer ${token}`;
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
-  }
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
 );
 
 api.interceptors.response.use(
-   (response) => response,
+  (response) => response,
 
   async (error) => {
     const originalRequest = error.config;
 
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry
-    ) {
+    if (!error.response || !originalRequest) {
+      return Promise.reject(error);
+    }
+
+    if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const response = await refreshApi.post(
-          "/token/refresh"
-        );
+        const response = await refreshApi.post("/token/refresh");
 
-        const newAccessToken =
-          response.data.accessToken;
+        const newAccessToken = response.data?.accessToken;
 
-        console.log("newAccessToken", newAccessToken);
+        if (!newAccessToken) {
+          throw new Error("Missing refreshed access token");
+        }
 
-        await saveAccessToken(
-          newAccessToken
-        );
+        await saveAccessToken(newAccessToken);
 
-        originalRequest.headers.Authorization =
-          `Bearer ${newAccessToken}`;
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
         return api(originalRequest);
-
-      } catch (err) {
-        console.log("Refresh failed");
+      } catch (refreshError) {
+        console.log("Refresh failed", refreshError);
 
         await deleteAccessToken();
 
-        // logout user here
+        return Promise.reject(refreshError);
       }
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
