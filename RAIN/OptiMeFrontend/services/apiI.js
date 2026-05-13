@@ -1,4 +1,5 @@
 import axios from "axios";
+import { router } from "expo-router";
 import { API_URL } from "@/services/api";
 
 import {
@@ -22,6 +23,21 @@ const refreshApi = axios.create({
   withCredentials: true,
 });
 
+let isRefreshing = false;
+let failedQueue = [];
+
+function processQueue(error, token = null) {
+  failedQueue.forEach((request) => {
+    if (error) {
+      request.reject(error);
+    } else {
+      request.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+}
+
 api.interceptors.request.use(
   async (config) => {
     const token = await getAccessToken();
@@ -33,9 +49,7 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
 api.interceptors.response.use(
@@ -48,34 +62,57 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (error.response.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const response = await refreshApi.post("/token/refresh");
-
-        const newAccessToken = response.data?.accessToken;
-
-        if (!newAccessToken) {
-          throw new Error("Missing refreshed access token");
-        }
-
-        await saveAccessToken(newAccessToken);
-
-        originalRequest.headers = originalRequest.headers || {};
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-        return api(originalRequest);
-      } catch (refreshError) {
-        console.log("Refresh failed", refreshError);
-
-        await deleteAccessToken();
-
-        return Promise.reject(refreshError);
-      }
+    if (error.response.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    originalRequest._retry = true;
+
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      })
+        .then((newAccessToken) => {
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+          return api(originalRequest);
+        })
+        .catch((queueError) => {
+          return Promise.reject(queueError);
+        });
+    }
+
+    isRefreshing = true;
+
+    try {
+      const response = await refreshApi.post("/token/refresh");
+
+      const newAccessToken = response.data?.accessToken;
+
+      if (!newAccessToken) {
+        throw new Error("Missing refreshed access token");
+      }
+
+      await saveAccessToken(newAccessToken);
+
+      processQueue(null, newAccessToken);
+
+      originalRequest.headers = originalRequest.headers || {};
+      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+      return api(originalRequest);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+
+      await deleteAccessToken();
+
+      router.replace("/auth/login");
+
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   },
 );
 
