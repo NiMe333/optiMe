@@ -103,3 +103,16 @@ export async function logoutUser() {
     await deleteAccessToken();
   }
 }
+
+export async function getCurrentUser() {
+  try {
+    const response = await api.get("/user/me");
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error?.response?.data?.message ||
+        error?.message ||
+        "Failed to get current user",
+    );
+  }
+}

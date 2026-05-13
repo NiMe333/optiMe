@@ -202,7 +202,7 @@ exports.saveForm = async function (req, res) {
     user.mood = req.body.mood;
     user.sleepHours = req.body.sleepHours;
     user.activity = req.body.activity;
-    user.socialConnection = req.body.socialConection;
+    user.socialConnection = req.body.socialConnection;
     user.phoneScreenTime = req.body.phoneScreenTime;
     user.stress = req.body.stress;
     user.formFinished = true;
@@ -231,6 +231,42 @@ exports.saveForm = async function (req, res) {
     return res.status(500).json({
       success: false,
       message: "Form saving failed",
+    });
+  }
+};
+
+exports.me = async function (req, res) {
+  try {
+    const user = await User.findById(req.user.userId);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        education: user.education,
+        employment: user.employment,
+        mood: user.mood,
+        sleepHours: user.sleepHours,
+        activity: user.activity,
+        socialConnection: user.socialConnection,
+        phoneScreenTime: user.phoneScreenTime,
+        stress: user.stress,
+        formFinished: user.formFinished,
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get user",
     });
   }
 };
