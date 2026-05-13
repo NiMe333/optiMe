@@ -63,10 +63,14 @@ export default function LoginScreen() {
 
       showToast(data.message || "Logged in successfully", "success");
 
+      if (!data.user) {
+        throw new Error("User data missing from login response");
+      }
+
       setUser(data.user);
 
-      if (data.user.hasCompletedStartingForm) {
-        router.replace("/(tabs)");
+      if (data.user.formFinished) {
+        router.replace("/(tabs)/home");
       } else {
         router.replace("/user/startingForm");
       }
