@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const Auth = require("../services/auth");
 
 // Register
 exports.register = async function (req, res) {
@@ -121,27 +122,37 @@ exports.login = async function (req, res) {
       });
     }
 
-    // session
-    req.session.regenerate((err) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: "Session creation failed",
-        });
-      }
+    const accessToken = Auth.createAccessToken(user);
+    const refreshToken = Auth.createRefreshToken(user);
 
-      req.session.userId = user._id;
+    await Auth.storeRefreshToken(user, refreshToken);
 
-      console.log("SESSION:", req.session.userId);
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+    });
 
-      return res.status(200).json({
-        success: true,
-        message: "User login successful",
-        user: {
-          id: user._id,
-          email: user.email,
-        },
-      });
+    return res.status(200).json({
+      accessToken,
+      refreshToken,
+      success: true,
+      message: "User login successful",
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        education: user.education,
+        employment: user.employment,
+        mood: user.mood,
+        sleepHours: user.sleepHours,
+        activity: user.activity,
+        socialConnection: user.socialConnection,
+        phoneScreenTime: user.phoneScreenTime,
+        stress: user.stress,
+        formFinished: user.formFinished,
+      },
     });
   } catch (err) {
     console.log(err);
@@ -154,9 +165,13 @@ exports.login = async function (req, res) {
   }
 };
 
-exports.logout = function (req, res) {
+exports.logout = async function (req, res) {
   try {
-    req.session.destroy();
+    const refreshToken = req.cookies.refreshToken;
+
+    await Auth.revokeRefreshToken(refreshToken); //from DB
+
+    res.clearCookie("refreshToken"); //from local
 
     return res.status(201).json({
       success: true,
@@ -164,19 +179,19 @@ exports.logout = function (req, res) {
     });
   } catch (err) {
     return res.status(500).json({
-      success: true,
+      success: false,
       message: "logout Failed",
     });
   }
 };
 
 exports.saveForm = async function (req, res) {
-  console.log(req.session.userId);
   try {
-    const user = await User.findOne({ _id: req.session.userId }); //cookie sends session id that has userid stored so the backend can find the wanted session
+    const user = await User.findOne({ _id: req.user.userId }); //jwt based
 
     if (!user) {
       return res.status(401).json({
+        success: false,
         message: "User with your ID not found",
       });
     }
@@ -184,21 +199,74 @@ exports.saveForm = async function (req, res) {
     user.username = req.body.username;
     user.education = req.body.education;
     user.employment = req.body.employment;
+    user.mood = req.body.mood;
+    user.sleepHours = req.body.sleepHours;
+    user.activity = req.body.activity;
+    user.socialConnection = req.body.socialConnection;
+    user.phoneScreenTime = req.body.phoneScreenTime;
+    user.stress = req.body.stress;
+    user.formFinished = true;
 
     await user.save();
 
     return res.status(201).json({
       success: true,
-      message: "User form sucesfully saved",
+      message: "User form successfully saved",
       user: {
+        id: user._id,
+        email: user.email,
         username: user.username,
         education: user.education,
+        employment: user.employment,
+        mood: user.mood,
+        sleepHours: user.sleepHours,
+        activity: user.activity,
+        socialConnection: user.socialConnection,
+        phoneScreenTime: user.phoneScreenTime,
+        stress: user.stress,
+        formFinished: user.formFinished,
       },
     });
   } catch (err) {
     return res.status(500).json({
-      success: true,
+      success: false,
       message: "Form saving failed",
+    });
+  }
+};
+
+exports.me = async function (req, res) {
+  try {
+    const user = await User.findById(req.user.userId);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        education: user.education,
+        employment: user.employment,
+        mood: user.mood,
+        sleepHours: user.sleepHours,
+        activity: user.activity,
+        socialConnection: user.socialConnection,
+        phoneScreenTime: user.phoneScreenTime,
+        stress: user.stress,
+        formFinished: user.formFinished,
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get user",
     });
   }
 };

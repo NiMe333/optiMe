@@ -1,6 +1,7 @@
 import {
   View,
   Text,
+  TextInput,
   Animated,
   Pressable,
   ActivityIndicator,
@@ -8,11 +9,13 @@ import {
   Platform,
   useWindowDimensions,
   Image,
+  ScrollView,
 } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/context/AuthContext";
 
-import { API_URL } from "@/services/api";
+import { submitStartingForm } from "@/services/auth";
 import { startingQuestions } from "@/data/startingQuestions";
 import ScaleQuestion from "@/components/questions/ScaleQuestion";
 import SingleChoiceQuestion from "@/components/questions/SingleChoiceQuestion";
@@ -20,7 +23,7 @@ import ProgressBar from "@/components/questions/ProgressBar";
 import { colors } from "@/constants/theme";
 import { styles } from "@/styles/startingForm.styles";
 import { useToast } from "@/context/ToastContext";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 
 const theme = colors.light;
 
@@ -28,9 +31,11 @@ type Answers = Record<string, string | number>;
 
 export default function StartingForm() {
   const { showToast } = useToast();
+  const { user, authLoading, setUser } = useAuth();
 
   const progressAnim = useRef(new Animated.Value(0)).current;
   const questionAnim = useRef(new Animated.Value(1)).current;
+
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [answers, setAnswers] = useState<Answers>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,7 +55,6 @@ export default function StartingForm() {
     ? 0
     : (currentIndex + 1) / startingQuestions.length;
 
-  const progressPercent = Math.round(progressValue * 100);
   const canGoBack = currentIndex > 0;
   const buttonDisabled = isSubmitting;
 
@@ -120,33 +124,59 @@ export default function StartingForm() {
     try {
       setIsSubmitting(true);
 
-      console.log("FORM DATA:", answers);
+      const payload = {
+        username: String(answers.username ?? "").trim(),
+        education: String(answers.education ?? ""),
+        employment: String(answers.employment ?? ""),
+        mood: Number(answers.mood ?? 0),
+        sleepHours: String(answers.sleepHours ?? ""),
+        activity: String(answers.activity ?? ""),
+        socialConnection: Number(answers.socialConnection ?? 0),
+        phoneScreenTime: String(answers.phoneScreenTime ?? ""),
+        stress: String(answers.stress ?? ""),
+        formFinished: true,
+      };
 
-      const response = await fetch(`${API_URL}/user/startingForm`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(answers),
-      });
+      console.log("STARTING FORM PAYLOAD:", payload);
 
-      const data = await response.json();
+      const data = await submitStartingForm(payload);
 
-      if (response.ok) {
-        showToast(data.message || "Form submitted successfully.", "success");
-
-        router.replace("/auth/login"); // home kasneje -> /(tabs)/home
-      } else {
-        showToast(data.message || "Something went wrong.", "error");
+      if (data.user) {
+        setUser(data.user);
       }
-    } catch (error) {
-      showToast("Could not connect to backend.", "error");
-      console.log(error);
+
+      showToast(data.message || "Form submitted successfully.", "success");
+
+      router.replace("/(tabs)/home");
+    } catch (error: any) {
+      console.log("STARTING FORM ERROR:", error);
+      showToast(error.message || "Something went wrong.", "error");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <ActivityIndicator color={theme.primary} />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return <Redirect href="/auth/login" />;
+  }
+
+  if (user.formFinished === true) {
+    return <Redirect href="/(tabs)/home" />;
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -251,37 +281,55 @@ export default function StartingForm() {
                     {currentQuestion?.question}
                   </Text>
 
-                  {currentQuestion?.type === "scale" ? (
-                    <ScaleQuestion
-                      options={currentQuestion.options}
-                      selected={selectedAnswer as number}
-                      onSelect={handleSelect}
-                    />
-                  ) : (
-                    <SingleChoiceQuestion
-                      options={currentQuestion?.options ?? []}
-                      selected={selectedAnswer as string}
-                      onSelect={handleSelect}
-                    />
-                  )}
+                  <ScrollView
+                    style={styles.answersScroll}
+                    contentContainerStyle={styles.answersScrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {currentQuestion?.type === "scale" ? (
+                      <ScaleQuestion
+                        options={currentQuestion.options}
+                        selected={selectedAnswer as number}
+                        onSelect={handleSelect}
+                      />
+                    ) : currentQuestion?.type === "text" ? (
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder={currentQuestion.placeholder}
+                        placeholderTextColor="#999"
+                        value={(selectedAnswer as string) ?? ""}
+                        onChangeText={handleSelect}
+                        autoCapitalize="words"
+                      />
+                    ) : (
+                      <SingleChoiceQuestion
+                        options={currentQuestion?.options ?? []}
+                        selected={selectedAnswer as string}
+                        onSelect={handleSelect}
+                      />
+                    )}
+                  </ScrollView>
                 </Animated.View>
-                <Pressable
-                  disabled={buttonDisabled}
-                  style={({ pressed }) => [
-                    styles.button,
-                    buttonDisabled && styles.buttonDisabled,
-                    pressed && !buttonDisabled && styles.buttonPressed,
-                  ]}
-                  onPress={handleNext}
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator color={theme.white} />
-                  ) : (
-                    <Text style={styles.buttonText}>
-                      {isLastQuestion ? "Finish" : "Continue"}
-                    </Text>
-                  )}
-                </Pressable>
+                <View style={styles.footer}>
+                  <Pressable
+                    disabled={buttonDisabled}
+                    style={({ pressed }) => [
+                      styles.button,
+                      buttonDisabled && styles.buttonDisabled,
+                      pressed && !buttonDisabled && styles.buttonPressed,
+                    ]}
+                    onPress={handleNext}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator color={theme.white} />
+                    ) : (
+                      <Text style={styles.buttonText}>
+                        {isLastQuestion ? "Finish" : "Continue"}
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
               </>
             )}
           </View>

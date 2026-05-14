@@ -1,34 +1,38 @@
-import { API_URL } from "@/services/api";
+import api, { publicApi } from "./apiI";
+
+import {
+  saveAccessToken,
+  getAccessToken,
+  deleteAccessToken,
+} from "@/services/authStorage";
 
 export async function loginUser(email: string, password: string) {
-  const response = await fetch(`${API_URL}/user/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({ email, password }),
-  });
-
-  const text = await response.text();
-
-  let data;
-
   try {
-    data = JSON.parse(text);
-  } catch {
-    console.log("LOGIN RAW RESPONSE:", text);
-    throw new Error("Server returned invalid response");
+    const response = await publicApi.post("/user/login", {
+      email,
+      password,
+    });
+
+    const accessToken = response.data?.accessToken;
+
+    if (!accessToken) {
+      throw new Error("Access token missing from login response");
+    }
+
+    await saveAccessToken(accessToken);
+
+    console.log("saved token", accessToken);
+    console.log("token from storage", await getAccessToken());
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Login failed",
+    );
   }
-
-  console.log("LOGIN RESPONSE:", data);
-
-  if (!response.ok) {
-    throw new Error(data.error || data.message || "Login failed");
-  }
-
-  return data;
 }
 
 export async function registerUser(
@@ -46,32 +50,74 @@ export async function registerUser(
 
   console.log("REGISTER REQUEST BODY:", body);
 
-  const response = await fetch(`${API_URL}/user/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(body),
-  });
+  try {
+    const response = await publicApi.post("/user/register", body);
 
-  const text = await response.text();
+    console.log("REGISTER RESPONSE DATA:", response.data);
 
-  let data;
+    if (response.data?.accessToken) {
+      await saveAccessToken(response.data.accessToken);
+    }
+
+    return response.data;
+  } catch (error: any) {
+    console.log("REGISTER ERROR:", error);
+    console.log("REGISTER ERROR RESPONSE:", error.response);
+
+    throw new Error(
+      error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Register failed",
+    );
+  }
+}
+
+export async function submitStartingForm(answers: any) {
+  console.log("FORM DATA:", answers);
 
   try {
-    data = JSON.parse(text);
-  } catch {
-    console.log("REGISTER RAW RESPONSE:", text);
-    throw new Error("Server returned invalid response");
+    const response = await api.post("/user/startingForm", answers);
+
+    console.log("FORM RAW RESPONSE:", response);
+    console.log("FORM RESPONSE DATA:", response.data);
+
+    return response.data;
+  } catch (error: any) {
+    console.log("FORM ERROR:", error);
+    console.log("FORM ERROR RESPONSE:", error.response);
+
+    throw new Error(
+      error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Form submission failed",
+    );
   }
+}
 
-  console.log("REGISTER RESPONSE:", data);
-
-  if (!response.ok) {
-    throw new Error(data.error || data.message || "Register failed");
+export async function logoutUser() {
+  try {
+    await publicApi.post("/user/logout");
+  } catch (error: any) {
+    console.log(
+      "Logout backend failed:",
+      error?.response?.data || error?.message,
+    );
+  } finally {
+    await deleteAccessToken();
   }
+}
 
-  return data;
+export async function getCurrentUser() {
+  try {
+    const response = await api.get("/user/me");
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error?.response?.data?.message ||
+        error?.message ||
+        "Failed to get current user",
+    );
+  }
 }

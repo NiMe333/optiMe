@@ -175,11 +175,38 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  textInput: {
+    width: "100%",
+    height: 52,
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 0,
+    fontSize: 16,
+    color: "#111",
+    backgroundColor: "#FFF",
+    marginTop: 30,
+    textAlignVertical: "center",
+  },
+
+  answersScroll: {
+    flex: 1,
+    width: "100%",
+  },
+
+  answersScrollContent: {
+    paddingBottom: 24,
+  },
   backButtonPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.96 }],
   },
 
+  footer: {
+    width: "100%",
+    paddingTop: 12,
+  },
   backText: {
     color: theme.white,
 
@@ -217,6 +244,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     paddingVertical: spacing.lg,
+    width: "100%",
   },
 
   questionNumber: {

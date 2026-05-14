@@ -26,8 +26,47 @@ export default function AuthInputDatePicker({
   const safeDate = isValidDate ? value : new Date();
 
   const maxDate = new Date();
-  const formattedDate = safeDate.toISOString().split("T")[0];
-  const maxDateString = maxDate.toISOString().split("T")[0];
+
+  function formatDateForDisplay(date: Date) {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    return `${day}.${month}.${year}`;
+  }
+
+  function formatDateForInput(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function parseInputDate(value: string) {
+    if (!value) {
+      return null;
+    }
+
+    const [year, month, day] = value.split("-").map(Number);
+
+    const parsedDate = new Date(year, month - 1, day);
+
+    const isValid =
+      parsedDate.getFullYear() === year &&
+      parsedDate.getMonth() === month - 1 &&
+      parsedDate.getDate() === day;
+
+    if (!isValid) {
+      return null;
+    }
+
+    return parsedDate;
+  }
+
+  const displayDateValue = formatDateForDisplay(safeDate);
+  const inputDateValue = formatDateForInput(safeDate);
+  const maxDateValue = formatDateForInput(maxDate);
 
   if (Platform.OS === "web") {
     return (
@@ -38,12 +77,12 @@ export default function AuthInputDatePicker({
 
         <input
           type="date"
-          value={formattedDate}
-          max={maxDateString}
+          value={inputDateValue}
+          max={maxDateValue}
           onChange={(e) => {
-            const selected = new Date(e.target.value);
+            const selected = parseInputDate(e.currentTarget.value);
 
-            if (!isNaN(selected.getTime())) {
+            if (selected && !isNaN(selected.getTime())) {
               onChange(selected);
             }
           }}
@@ -77,7 +116,7 @@ export default function AuthInputDatePicker({
         style={styles.input}
         onPress={() => setShowPicker(true)}
       >
-        <Text style={styles.inputText}>{formattedDate}</Text>
+        <Text style={styles.inputText}>{displayDateValue}</Text>
       </TouchableOpacity>
 
       {Platform.OS === "ios" && (
@@ -88,7 +127,7 @@ export default function AuthInputDatePicker({
                 style={styles.doneButton}
                 onPress={() => setShowPicker(false)}
               >
-                <Text style={styles.doneText}>Zapri</Text>
+                <Text style={styles.doneText}>Close</Text>
               </TouchableOpacity>
 
               <DateTimePicker
