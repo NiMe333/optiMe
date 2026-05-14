@@ -1,4 +1,4 @@
-const UserStData = require('../../models/userStDataModel');
+const UserStData = require('../models/userStDataModel');
 const mongoose = require('mongoose');
 
 async function newUserStDataModel()
@@ -8,9 +8,9 @@ async function newUserStDataModel()
     try
     {
         const userStData  = new UserStData({
-            userId: "69fd9faac176d3f352b24d4e",
-            storagePath: `userData/69fd9faac176d3f352b24d4e/2026-05-09.csv`,
-            importedForDate: "2026-05-09"
+            userId: "6a05fe492a7cf4be350a8eaa",
+            storagePath: `userData/6a05fe492a7cf4be350a8eaa/2026-05-14.csv`,
+            importedForDate: "2026-05-14"
         });
 
         await userStData.save();
@@ -21,7 +21,7 @@ async function newUserStDataModel()
     {
         console.log("data creation failed", err);
     }
-    finally
+    finally 
     {
         await mongoose.disconnect();
     }

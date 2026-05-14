@@ -167,9 +167,14 @@ exports.login = async function (req, res) {
 
 exports.logout = async function (req, res) {
   try {
+
     const refreshToken = req.cookies.refreshToken;
 
-    await Auth.revokeRefreshToken(refreshToken); //from DB
+    if (refreshToken) {
+
+      await Auth.revokeRefreshToken(refreshToken); //from DB
+      
+    }
 
     res.clearCookie("refreshToken"); //from local
 
@@ -177,11 +182,14 @@ exports.logout = async function (req, res) {
       success: true,
       message: "User logout successfull",
     });
+
   } catch (err) {
+
     return res.status(500).json({
       success: false,
       message: "logout Failed",
     });
+
   }
 };
 
