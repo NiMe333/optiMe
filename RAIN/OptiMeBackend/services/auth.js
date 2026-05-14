@@ -57,5 +57,6 @@ module.exports = {
   createAccessToken,
   createRefreshToken,
   storeRefreshToken,
-  revokeRefreshToken
+  revokeRefreshToken,
+  hashToken
 };

@@ -1,7 +1,9 @@
 const User = require('../models/userModel');
+const RefreshToken = require('../models/refreshTokenModel');
 const jwt = require('jsonwebtoken');
 const util = require('util');
-const Auth = require('../services/auth')
+const Auth = require('../services/auth');
+const { debug } = require('console');
 
 const verifyAsync = util.promisify(jwt.verify);
 
@@ -20,21 +22,21 @@ exports.refresh = async (req, res) => {
 
     }
 
-    const tokenHash = hashToken(token);
-
     const payload = await verifyAsync(token, process.env.REFRESH_SECRET);
 
-    const storedToken = await RefreshToken.findOne({
-    tokenHash,
-    userId: payload.userId
+    const tokenHash = Auth.hashToken(token);
+
+    const storedToken = await RefreshToken.findOne({ 
+      tokenHash,
+      userId: payload.userId
     });
 
     if (!storedToken) {
-    return res.status(403).json({ message: "Refresh token revoked (token controller)" });
+      return res.status(403).json({ message: "token revoked (token controller)" });
     }
 
     if (storedToken.expiresAt < new Date()) {
-    return res.status(403).json({ message: "Refresh token expired (token controller)" });
+      return res.status(403).json({ message: "Refresh token expired (token controller)" });
     }
 
     const user = await User.findById(payload.userId);
