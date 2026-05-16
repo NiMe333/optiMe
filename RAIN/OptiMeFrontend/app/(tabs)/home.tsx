@@ -1,21 +1,13 @@
 import { ScrollView, View, Text, Pressable, StyleSheet } from "react-native";
-import { router } from "expo-router";
 import { useWindowDimensions } from "react-native";
-import { useAuth } from "@/context/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import MobileBottomNav from "@/components/navigation/MobileBottomNav";
 import WebSidebar from "@/components/navigation/WebSidebar";
 export default function HomeScreen() {
-  const { logout } = useAuth();
   const { width } = useWindowDimensions();
 
   const isWebLayout = width >= 900;
-
-  async function handleLogout() {
-    await logout();
-    router.replace("/auth/login");
-  }
 
   if (isWebLayout) {
     return (
@@ -28,14 +20,6 @@ export default function HomeScreen() {
           style={styles.webContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.webTop}>
-            <Text style={styles.webPageTitle}>Home</Text>
-
-            <Pressable onPress={handleLogout} style={styles.bellButton}>
-              <Text>🔔</Text>
-            </Pressable>
-          </View>
-
           <View style={styles.webGrid}>
             <View style={styles.webLeftColumn}>
               <HeroCard />
@@ -231,13 +215,6 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     borderRadius: 34,
     padding: 28,
-  },
-
-  webTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
   },
 
   webPageTitle: {
