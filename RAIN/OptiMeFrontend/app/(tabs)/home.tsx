@@ -16,6 +16,8 @@ import { useAuth } from "@/context/AuthContext";
 import { getHomeDashboardData } from "@/services/homeService";
 import type { HomeDashboardData } from "@/types/home";
 
+import MentalHealthScoreCard from "@/components/home/MentalHealthScoreCard";
+
 const days = ["M", "T", "W", "T", "F", "S", "S"];
 
 export default function HomeScreen() {
@@ -69,7 +71,7 @@ export default function HomeScreen() {
           <DashboardHeader username={username} />
 
           <View style={styles.webTopRow}>
-            <MentalScoreCard score={homeData.mentalHealthScore} />
+            <MentalHealthScoreCard score={homeData.mentalHealthScore} />
 
             <View style={styles.metricsPanel}>
               <View style={styles.panelHeader}>
@@ -130,7 +132,7 @@ export default function HomeScreen() {
       >
         <DashboardHeader username={username} mobile />
 
-        <MentalScoreCard score={homeData.mentalHealthScore} mobile />
+        <MentalHealthScoreCard score={homeData.mentalHealthScore} mobile />
 
         <View style={styles.mobileSectionHeader}>
           <Text style={styles.panelTitle}>Tracked Metrics</Text>
@@ -200,43 +202,6 @@ function DashboardHeader({
           </Pressable>
         </View>
       )}
-    </View>
-  );
-}
-
-function MentalScoreCard({
-  score,
-  mobile = false,
-}: {
-  score: HomeDashboardData["mentalHealthScore"];
-  mobile?: boolean;
-}) {
-  return (
-    <View style={mobile ? styles.mobileScoreCard : styles.scoreCard}>
-      <View style={styles.scoreCardHeader}>
-        <Text style={styles.scoreCardTitle}>Mental Health Score</Text>
-        <Text style={styles.moreDots}>•••</Text>
-      </View>
-
-      <View style={mobile ? styles.mobileRing : styles.scoreRing}>
-        <View style={mobile ? styles.mobileRingInner : styles.scoreRingInner}>
-          <Text style={mobile ? styles.mobileScoreValue : styles.scoreValue}>
-            {score.value}
-          </Text>
-          <Text style={styles.scoreState}>{score.label}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.scoreDescription}>
-        Composite score from{"\n"}all tracked metrics
-      </Text>
-
-      <View style={styles.scoreChangePill}>
-        <Text style={styles.scoreChangeText}>
-          ↑ {score.changeFromLastWeek} pts
-        </Text>
-        <Text style={styles.scoreChangeMuted}> vs last week</Text>
-      </View>
     </View>
   );
 }

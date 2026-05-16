@@ -27,7 +27,14 @@ export const mockHomeData: HomeDashboardData = {
   mentalHealthScore: {
     value: 80,
     label: "Healthy",
+
+    // Status controls the score color:
+    // "healthy"  -> green
+    // "okay"     -> yellow
+    // "warning"  -> orange
+    // "critical" -> red
     status: "healthy",
+
     changeFromLastWeek: 12,
   },
 
