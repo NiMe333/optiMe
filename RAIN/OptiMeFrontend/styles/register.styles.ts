@@ -1,4 +1,17 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
+
+const cardShadow =
+  Platform.OS === "web"
+    ? ({
+        boxShadow: "0px 18px 45px rgba(24, 63, 104, 0.14)",
+      } as any)
+    : {
+        shadowColor: "#B7D5E5",
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.25,
+        shadowRadius: 24,
+        elevation: 8,
+      };
 
 export const styles = StyleSheet.create({
   screen: {
@@ -11,6 +24,9 @@ export const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "#ffffff",
     flexDirection: "row",
+    borderRadius: 28,
+    overflow: Platform.OS === "web" ? "hidden" : "visible",
+    ...cardShadow,
   },
 
   cardMobile: {

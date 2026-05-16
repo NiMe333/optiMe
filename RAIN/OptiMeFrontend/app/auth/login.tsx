@@ -7,7 +7,7 @@ import {
   useWindowDimensions,
   Platform,
 } from "react-native";
-import { Redirect, router } from "expo-router";
+import { router } from "expo-router";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import AuthPasswordInput from "@/components/AuthPasswordInput";
@@ -83,16 +83,9 @@ export default function LoginScreen() {
       setLoading(false);
     }
   }
-  if (authLoading) {
+
+  if (authLoading || user) {
     return null;
-  }
-
-  if (user?.formFinished === true) {
-    return <Redirect href="/(tabs)/home" />;
-  }
-
-  if (user) {
-    return <Redirect href="/user/startingForm" />;
   }
 
   return (

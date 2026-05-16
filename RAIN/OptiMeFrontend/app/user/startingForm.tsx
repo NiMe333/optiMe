@@ -65,7 +65,7 @@ export default function StartingForm() {
     Animated.timing(progressAnim, {
       toValue: progressValue,
       duration: 350,
-      useNativeDriver: false,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
   }, [progressValue, progressAnim]);
 
@@ -75,7 +75,7 @@ export default function StartingForm() {
     Animated.timing(questionAnim, {
       toValue: 1,
       duration: 280,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
   }, [currentIndex, questionAnim]);
 
@@ -97,6 +97,8 @@ export default function StartingForm() {
   };
 
   const handleNext = async () => {
+    if (isSubmitting) return;
+
     if (isIntro) {
       setCurrentIndex(0);
       return;
@@ -124,6 +126,8 @@ export default function StartingForm() {
   };
 
   const submitForm = async () => {
+    if (isSubmitting) return;
+
     try {
       setIsSubmitting(true);
 

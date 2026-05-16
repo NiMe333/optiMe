@@ -1,7 +1,23 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors, radius, spacing } from "@/constants/theme";
 
 const theme = colors.light;
+
+const cardShadow =
+  Platform.OS === "web"
+    ? ({
+        boxShadow: "0px 18px 45px rgba(0, 0, 0, 0.08)",
+      } as any)
+    : {
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        shadowOffset: {
+          width: 0,
+          height: 12,
+        },
+        elevation: 8,
+      };
 
 export const styles = StyleSheet.create({
   screen: {
@@ -41,16 +57,7 @@ export const styles = StyleSheet.create({
 
     justifyContent: "space-between",
 
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-
-    elevation: 8,
+    ...cardShadow,
   },
 
   cardMobile: {
