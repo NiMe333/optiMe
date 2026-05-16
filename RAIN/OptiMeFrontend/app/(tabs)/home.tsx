@@ -18,7 +18,9 @@ export default function HomeScreen() {
   if (isWebLayout) {
     return (
       <View style={styles.webRoot}>
-        <WebSidebar />
+        <View style={styles.webSidebarShell}>
+          <WebSidebar />
+        </View>
 
         <ScrollView
           style={styles.webContent}
@@ -478,5 +480,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     marginTop: 12,
+  },
+  webSidebarShell: {
+    width: 112,
+    padding: 12,
   },
 });
