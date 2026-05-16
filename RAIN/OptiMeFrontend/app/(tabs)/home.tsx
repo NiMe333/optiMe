@@ -187,71 +187,99 @@ function Article({ title }: { title: string }) {
     </View>
   );
 }
-
 const colors = {
+  background: "#F4F8FC",
+  white: "#FFFFFF",
+
   navy: "#183F68",
-  dark: "#453024",
-  lightBlue: "#B8D5E9",
-  bgDark: "#1F1F1F",
-  soft: "#F5EFE9",
+  navySoft: "#355C86",
+
+  blue: "#6EC6E8",
+  blueSoft: "#D9EEF8",
+
+  text: "#233548",
+  textSoft: "#6E8092",
+
+  card: "rgba(255,255,255,0.78)",
+  cardStrong: "#FFFFFF",
+
+  border: "rgba(24,63,104,0.08)",
+  shadow: "#B7D5E5",
+
+  mobileDark: "#F4F8FC",
 };
 
 const styles = StyleSheet.create({
   webRoot: {
     flex: 1,
     flexDirection: "row",
-    backgroundColor: colors.bgDark,
+    backgroundColor: colors.background,
   },
 
-  logo: {
-    fontSize: 28,
-    marginBottom: 24,
+  webSidebarShell: {
+    width: 112,
+    padding: 12,
   },
+
   webContent: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "transparent",
     marginTop: 18,
     marginRight: 18,
     marginBottom: 18,
     borderRadius: 34,
     padding: 28,
   },
+
   webTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
   },
+
   webPageTitle: {
     fontSize: 34,
-    fontWeight: "700",
-    color: "#6B6B6B",
+    fontWeight: "800",
+    color: colors.text,
   },
+
   webGrid: {
     flexDirection: "row",
     gap: 28,
   },
+
   webLeftColumn: {
     flex: 1,
   },
+
   webRightColumn: {
     flex: 1,
   },
+
   webScoreCircle: {
     width: 360,
     height: 360,
     borderRadius: 180,
-    borderWidth: 12,
+    borderWidth: 10,
     borderColor: colors.navy,
+    backgroundColor: "rgba(255,255,255,0.55)",
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 20,
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.22,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 12 },
   },
+
   webMetricsRow: {
     flexDirection: "row",
     gap: 18,
   },
+
   webMetricCardDark: {
     flex: 1,
     height: 220,
@@ -259,29 +287,50 @@ const styles = StyleSheet.create({
     backgroundColor: colors.navy,
     padding: 20,
     justifyContent: "space-between",
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.24,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
   },
+
   webMetricCardLight: {
     flex: 1,
     height: 220,
     borderRadius: 28,
-    backgroundColor: colors.lightBlue,
+    backgroundColor: colors.blueSoft,
     padding: 20,
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.18,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 8 },
   },
+
   webBadgesBox: {
-    backgroundColor: colors.soft,
+    backgroundColor: colors.card,
     padding: 24,
-    borderRadius: 18,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
     gap: 24,
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
   },
+
   webArticlesHeader: {
     marginTop: 24,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   webArticlesRow: {
     flexDirection: "row",
     gap: 18,
@@ -291,50 +340,66 @@ const styles = StyleSheet.create({
 
   mobileRoot: {
     flex: 1,
-    backgroundColor: colors.bgDark,
+    backgroundColor: colors.mobileDark,
   },
+
   mobileContent: {
     margin: 18,
-    paddingBottom: 95,
+    paddingBottom: 105,
     backgroundColor: "#fff",
     borderRadius: 36,
     padding: 16,
   },
+
   mobilePageTitle: {
     fontSize: 24,
     color: "#6B6B6B",
     marginBottom: 14,
+    fontWeight: "700",
   },
 
   heroCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.card,
     borderRadius: 32,
-    padding: 16,
+    padding: 18,
     flexDirection: "row",
     justifyContent: "space-between",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 3,
-  },
-  heroTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: colors.dark,
-  },
-  heroSub: {
-    fontSize: 12,
-    marginTop: 6,
-  },
-  bellButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
     borderWidth: 1,
-    borderColor: colors.navy,
+    borderColor: colors.border,
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 4,
+  },
+
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: colors.text,
+  },
+
+  heroSub: {
+    fontSize: 13,
+    marginTop: 6,
+    color: colors.textSoft,
+  },
+
+  bellButton: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "rgba(255,255,255,0.75)",
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
   },
 
   sectionTitle: {
@@ -344,25 +409,34 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 12,
   },
+
   mobileScoreCircle: {
     width: 230,
     height: 230,
     borderRadius: 115,
     borderWidth: 9,
     borderColor: colors.navy,
+    backgroundColor: "rgba(255,255,255,0.55)",
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 14,
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
   },
+
   scoreNumber: {
     fontSize: 76,
-    fontWeight: "800",
+    fontWeight: "900",
     color: colors.navy,
   },
+
   scoreLabel: {
     fontSize: 34,
-    color: colors.navy,
+    color: colors.navySoft,
   },
 
   mobileMetricCardDark: {
@@ -373,23 +447,37 @@ const styles = StyleSheet.create({
     padding: 16,
     marginRight: 10,
     justifyContent: "space-between",
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
   },
+
   mobileMetricCardLight: {
     width: 154,
     height: 190,
     borderRadius: 28,
-    backgroundColor: colors.lightBlue,
+    backgroundColor: colors.blueSoft,
     padding: 16,
     marginRight: 10,
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 7 },
   },
+
   metricTitle: {
     color: "#fff",
     fontWeight: "700",
   },
+
   metricTitleLight: {
-    color: "#fff",
+    color: colors.navy,
     fontWeight: "700",
   },
+
   miniCircle: {
     alignSelf: "center",
     width: 100,
@@ -400,42 +488,57 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   metricBig: {
     color: "#fff",
     fontSize: 24,
     fontWeight: "800",
   },
+
   metricSmall: {
     color: "#fff",
     fontSize: 12,
   },
+
   moodText: {
-    color: "#fff",
+    color: colors.navy,
     fontSize: 22,
     fontWeight: "800",
     marginTop: 12,
   },
+
   chartIcon: {
-    color: "#fff",
+    color: colors.navy,
     fontSize: 52,
     marginTop: 34,
   },
 
   mobileBadgesBox: {
-    backgroundColor: colors.soft,
+    backgroundColor: colors.card,
     padding: 20,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
     gap: 16,
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 7 },
   },
+
   badge: {
     width: 92,
     alignItems: "center",
   },
+
   badgeEmoji: {
     fontSize: 42,
   },
+
   badgeText: {
     fontSize: 11,
     fontWeight: "700",
@@ -448,26 +551,35 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   seeAll: {
-    color: colors.dark,
+    color: colors.navySoft,
     fontSize: 12,
+    fontWeight: "700",
   },
+
   articleCard: {
     width: 220,
     height: 185,
-    borderRadius: 24,
-    backgroundColor: "#fff",
+    borderRadius: 28,
+    backgroundColor: colors.cardStrong,
     padding: 18,
-    marginRight: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
+    marginRight: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
     elevation: 3,
   },
+
   articleImage: {
     fontSize: 60,
+    color: colors.navy,
   },
+
   articleTag: {
     color: colors.navy,
     fontSize: 10,
@@ -475,14 +587,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginTop: 8,
   },
+
   articleTitle: {
-    color: colors.dark,
+    color: colors.text,
     fontSize: 15,
     fontWeight: "800",
     marginTop: 12,
-  },
-  webSidebarShell: {
-    width: 112,
-    padding: 12,
   },
 });

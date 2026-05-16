@@ -1,6 +1,27 @@
 import { Image, View, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+const colors = {
+  background: "#F4F8FC",
+
+  white: "#FFFFFF",
+
+  navy: "#183F68",
+  navySoft: "#355C86",
+
+  blue: "#6EC6E8",
+  blueSoft: "#D9EEF8",
+
+  text: "#233548",
+  textSoft: "#6E8092",
+
+  border: "rgba(24,63,104,0.08)",
+
+  shadow: "#B7D5E5",
+
+  danger: "#EF5350",
+};
+
 export default function WebSidebar() {
   return (
     <View style={styles.sidebar}>
@@ -13,25 +34,29 @@ export default function WebSidebar() {
 
       <View style={styles.center}>
         <Pressable style={styles.activeItem}>
-          <Ionicons name="home" size={24} color="#fff" />
+          <Ionicons name="home" size={24} color="#FFFFFF" />
         </Pressable>
 
         <Pressable style={styles.item}>
-          <Ionicons name="stats-chart-outline" size={27} color="#183F68" />
+          <Ionicons name="stats-chart-outline" size={27} color={colors.navy} />
         </Pressable>
 
         <Pressable style={styles.item}>
-          <Ionicons name="heart-outline" size={28} color="#183F68" />
+          <Ionicons name="heart-outline" size={28} color={colors.navy} />
         </Pressable>
 
         <Pressable style={styles.item}>
-          <Ionicons name="person-outline" size={28} color="#183F68" />
+          <Ionicons name="person-outline" size={28} color={colors.navy} />
         </Pressable>
       </View>
 
       <View style={styles.bottom}>
         <Pressable style={styles.item}>
-          <Ionicons name="settings-outline" size={25} color="#183F68" />
+          <Ionicons name="settings-outline" size={24} color={colors.navy} />
+        </Pressable>
+
+        <Pressable style={styles.logoutItem}>
+          <Ionicons name="log-out-outline" size={24} color={colors.danger} />
         </Pressable>
       </View>
     </View>
@@ -42,15 +67,22 @@ const styles = StyleSheet.create({
   sidebar: {
     width: 92,
     height: "100%",
-    backgroundColor: "#FFFFFF",
+
+    backgroundColor: "rgba(255,255,255,0.82)",
+
     borderRadius: 34,
+
+    borderWidth: 1,
+    borderColor: colors.border,
+
     paddingVertical: 28,
     alignItems: "center",
 
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.22,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 12 },
+
     elevation: 8,
   },
 
@@ -59,8 +91,8 @@ const styles = StyleSheet.create({
   },
 
   logo: {
-    width: 48,
-    height: 48,
+    width: 50,
+    height: 50,
     resizeMode: "contain",
   },
 
@@ -73,22 +105,42 @@ const styles = StyleSheet.create({
 
   bottom: {
     alignItems: "center",
+    gap: 18,
   },
 
   activeItem: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: "#183F68",
+    width: 50,
+    height: 50,
+    borderRadius: 18,
+
+    backgroundColor: colors.navy,
+
+    alignItems: "center",
+    justifyContent: "center",
+
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+  },
+
+  item: {
+    width: 50,
+    height: 50,
+    borderRadius: 18,
+
     alignItems: "center",
     justifyContent: "center",
   },
 
-  item: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+  logoutItem: {
+    width: 50,
+    height: 50,
+    borderRadius: 18,
+
     alignItems: "center",
     justifyContent: "center",
+
+    backgroundColor: "rgba(239,83,80,0.08)",
   },
 });
