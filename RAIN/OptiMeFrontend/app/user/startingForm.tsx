@@ -129,8 +129,6 @@ export default function StartingForm() {
 
       const payload = buildStartingFormPayload(answers);
 
-      console.log("Starting form payload:", payload);
-
       const data = await submitStartingForm(payload);
 
       if (data.user) {
