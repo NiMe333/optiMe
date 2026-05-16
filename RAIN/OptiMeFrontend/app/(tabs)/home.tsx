@@ -2,6 +2,8 @@ import { ScrollView, View, Text, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { useWindowDimensions } from "react-native";
 import { useAuth } from "@/context/AuthContext";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import MobileBottomNav from "@/components/navigation/MobileBottomNav";
 import WebSidebar from "@/components/navigation/WebSidebar";
 export default function HomeScreen() {
@@ -81,7 +83,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.mobileRoot}>
+    <SafeAreaView style={styles.mobileRoot} edges={["top", "left", "right"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.mobileContent}
@@ -125,7 +127,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       <MobileBottomNav />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -344,7 +346,8 @@ const styles = StyleSheet.create({
   },
 
   mobileContent: {
-    margin: 18,
+    marginHorizontal: 18,
+    marginBottom: 18,
     paddingBottom: 105,
     backgroundColor: "#fff",
     borderRadius: 36,
