@@ -2,7 +2,8 @@ import { ScrollView, View, Text, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { useWindowDimensions } from "react-native";
 import { useAuth } from "@/context/AuthContext";
-
+import MobileBottomNav from "@/components/navigation/MobileBottomNav";
+import WebSidebar from "@/components/navigation/WebSidebar";
 export default function HomeScreen() {
   const { logout } = useAuth();
   const { width } = useWindowDimensions();
@@ -17,13 +18,7 @@ export default function HomeScreen() {
   if (isWebLayout) {
     return (
       <View style={styles.webRoot}>
-        <View style={styles.webSidebar}>
-          <Text style={styles.logo}>💙</Text>
-          <Text style={styles.webNavActive}>⌂</Text>
-          <Text style={styles.webNav}>▥</Text>
-          <Text style={styles.webNav}>♡</Text>
-          <Text style={styles.webNav}>♙</Text>
-        </View>
+        <WebSidebar />
 
         <ScrollView
           style={styles.webContent}
@@ -127,7 +122,7 @@ export default function HomeScreen() {
         </ScrollView>
       </ScrollView>
 
-      <BottomNav />
+      <MobileBottomNav />
     </View>
   );
 }
@@ -191,17 +186,6 @@ function Article({ title }: { title: string }) {
   );
 }
 
-function BottomNav() {
-  return (
-    <View style={styles.bottomNav}>
-      <Text style={styles.navActiveMobile}>⌂</Text>
-      <Text style={styles.navMobile}>▥</Text>
-      <Text style={styles.navMobile}>♡</Text>
-      <Text style={styles.navMobile}>♙</Text>
-    </View>
-  );
-}
-
 const colors = {
   navy: "#183F68",
   dark: "#453024",
@@ -216,32 +200,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: colors.bgDark,
   },
-  webSidebar: {
-    width: 92,
-    backgroundColor: "#fff",
-    margin: 18,
-    borderRadius: 34,
-    paddingVertical: 24,
-    alignItems: "center",
-    gap: 28,
-  },
+
   logo: {
     fontSize: 28,
     marginBottom: 24,
-  },
-  webNavActive: {
-    color: "#fff",
-    backgroundColor: colors.navy,
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    textAlign: "center",
-    lineHeight: 42,
-    fontSize: 24,
-  },
-  webNav: {
-    color: colors.navy,
-    fontSize: 28,
   },
   webContent: {
     flex: 1,
@@ -516,32 +478,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     marginTop: 12,
-  },
-
-  bottomNav: {
-    position: "absolute",
-    left: 34,
-    right: 34,
-    bottom: 18,
-    height: 64,
-    backgroundColor: "#fff",
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-  },
-  navActiveMobile: {
-    color: "#fff",
-    backgroundColor: colors.navy,
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  navMobile: {
-    color: colors.navy,
-    fontSize: 24,
   },
 });
