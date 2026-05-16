@@ -1,4 +1,5 @@
 import api, { publicApi } from "./apiI";
+import type { StartingFormPayload } from "@/data/startingQuestions";
 
 import {
   saveAccessToken,
@@ -73,11 +74,9 @@ export async function registerUser(
   }
 }
 
-export async function submitStartingForm(answers: any) {
-  console.log("FORM DATA:", answers);
-
+export async function submitStartingForm(payload: StartingFormPayload) {
   try {
-    const response = await api.post("/user/startingForm", answers);
+    const response = await api.post("/user/startingForm", payload);
 
     console.log("FORM RAW RESPONSE:", response);
     console.log("FORM RESPONSE DATA:", response.data);
