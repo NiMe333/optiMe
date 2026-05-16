@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   ScrollView,
   View,
@@ -12,6 +13,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import MobileBottomNav from "@/components/navigation/MobileBottomNav";
 import WebSidebar from "@/components/navigation/WebSidebar";
 import { useAuth } from "@/context/AuthContext";
+import { getHomeDashboardData } from "@/services/homeService";
+import type { HomeDashboardData } from "@/types/home";
 
 const colors = {
   background: "#F4F8FC",
@@ -65,213 +68,43 @@ const strongShadow =
         elevation: 8,
       };
 
-const dashboardData = {
-  score: {
-    value: 80,
-    label: "Healthy",
-    change: 12,
-  },
-
-  trackedMetrics: [
-    {
-      icon: "☾",
-      title: "Sleep",
-      subtitle: "Sleep tracking",
-      valueLabel: "AVG",
-      value: "7.2h",
-      dotColor: colors.blue,
-      trend: "↑ 6%",
-      trendGood: true,
-      chartColor: colors.purple,
-      chart: [58, 48, 42, 56, 70, 63, 60, 74, 68, 55],
-    },
-    {
-      icon: "🚶",
-      title: "Movement",
-      subtitle: "6,232 steps",
-      valueLabel: "AVG",
-      value: "1.8h",
-      dotColor: colors.blue,
-      trend: "↑ 18%",
-      trendGood: true,
-      chartColor: colors.green,
-      chart: [55, 48, 52, 64, 58, 50, 44, 56, 70, 63],
-    },
-    {
-      icon: "♟",
-      title: "Socialization",
-      subtitle: "Social score / Loneliness",
-      valueLabel: "",
-      value: "74",
-      secondValue: "28",
-      dotColor: colors.green,
-      trend: "↑ 10%",
-      trendGood: true,
-      chartColor: colors.purple,
-      chart: [46, 60, 52, 66, 44, 55, 60, 42, 36, 40],
-    },
-    {
-      icon: "▯",
-      title: "Screen Time",
-      subtitle: "Device tracked",
-      valueLabel: "AVG",
-      value: "4.3h",
-      dotColor: colors.blue,
-      trend: "↑ 8%",
-      trendGood: false,
-      chartColor: colors.orange,
-      chart: [68, 55, 52, 54, 70, 74, 66, 54, 72, 62],
-    },
-    {
-      icon: "$",
-      title: "Financial Stress",
-      subtitle: "Entered",
-      valueLabel: "Stress Score",
-      value: "56",
-      suffix: "/100",
-      dotColor: colors.green,
-      trend: "↓ 12%",
-      trendGood: true,
-      chartColor: colors.pink,
-      chart: [42, 43, 45, 40, 48, 58, 66, 55, 42, 46],
-    },
-    {
-      icon: "💼",
-      title: "Work/School Stress",
-      subtitle: "Entered",
-      valueLabel: "Stress Score",
-      value: "62",
-      suffix: "/100",
-      dotColor: colors.green,
-      trend: "↓ 8%",
-      trendGood: true,
-      chartColor: colors.blue,
-      chart: [40, 38, 39, 45, 46, 54, 58, 56, 45, 54],
-    },
-    {
-      icon: "☆",
-      title: "Self-Esteem",
-      subtitle: "Entered",
-      valueLabel: "Self-Esteem Score",
-      value: "68",
-      suffix: "/100",
-      dotColor: colors.green,
-      trend: "↑ 5%",
-      trendGood: true,
-      chartColor: colors.green,
-      chart: [35, 35, 36, 45, 48, 54, 60, 54, 48, 58],
-    },
-    {
-      icon: "☺",
-      title: "Life Satisfaction",
-      subtitle: "Entered",
-      valueLabel: "Life Satisfaction",
-      value: "72",
-      suffix: "/100",
-      dotColor: colors.green,
-      trend: "↑ 9%",
-      trendGood: true,
-      chartColor: colors.yellow,
-      chart: [48, 42, 38, 46, 47, 56, 52, 43, 46, 51],
-    },
-  ],
-
-  calculatedScores: [
-    {
-      icon: "🧠",
-      title: "Anxiety Score",
-      value: "42",
-      suffix: "/100",
-      color: colors.purple,
-      chart: [44, 40, 55, 45, 48, 54, 56, 62, 58, 52],
-    },
-    {
-      icon: "☁",
-      title: "Depression Score",
-      value: "38",
-      suffix: "/100",
-      color: colors.purple,
-      chart: [42, 39, 52, 48, 44, 43, 55, 51, 53, 54],
-    },
-    {
-      icon: "ϟ",
-      title: "Stress Level",
-      value: "Moderate",
-      suffix: "",
-      color: colors.purple,
-      chart: [54, 50, 43, 48, 51, 44, 42, 50, 55, 54],
-    },
-    {
-      icon: "♡",
-      title: "Mental Health Score",
-      value: "80",
-      suffix: "/100",
-      color: colors.purple,
-      chart: [42, 42, 36, 40, 42, 40, 48, 45, 55, 44],
-    },
-  ],
-
-  achievements: [
-    { emoji: "🌙", title: "Sleep Balance", streak: "7-day streak" },
-    { emoji: "🧠", title: "Active Mind", streak: "5-day streak" },
-    { emoji: "📵", title: "Digital Detox", streak: "3-day streak" },
-    { emoji: "☯️", title: "Inner Balance", streak: "10-day streak" },
-  ],
-
-  articles: [
-    {
-      category: "MENTAL HEALTH",
-      title: "The Hidden Impact of Screen Time on Your Mind",
-      readTime: "5 min read",
-      emoji: "🌄",
-      color: colors.purpleSoft,
-    },
-    {
-      category: "SLEEP",
-      title: "Better Sleep, Better Mind: Simple Changes",
-      readTime: "4 min read",
-      emoji: "🌙",
-      color: colors.blueSoft,
-    },
-    {
-      category: "MINDFULNESS",
-      title: "How Breathing Changes Your Mood",
-      readTime: "3 min read",
-      emoji: "🧘",
-      color: colors.purpleSoft,
-    },
-    {
-      category: "PRODUCTIVITY",
-      title: "Small Habits for a Calmer Workday",
-      readTime: "3 min read",
-      emoji: "✏️",
-      color: colors.orangeSoft,
-    },
-    {
-      category: "RELATIONSHIPS",
-      title: "Building Stronger Social Connections",
-      readTime: "4 min read",
-      emoji: "👥",
-      color: colors.pinkSoft,
-    },
-    {
-      category: "SELF-CARE",
-      title: "Weekend Reset: Recharge Your Mind and Body",
-      readTime: "5 min read",
-      emoji: "🏔️",
-      color: colors.greenSoft,
-    },
-  ],
-};
-
 const days = ["M", "T", "W", "T", "F", "S", "S"];
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const { user } = useAuth();
 
+  const [homeData, setHomeData] = useState<HomeDashboardData | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadHomeData() {
+      const data = await getHomeDashboardData();
+
+      if (mounted) {
+        setHomeData(data);
+      }
+    }
+
+    loadHomeData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const isWebLayout = width >= 1000;
-  const username = user?.username || "Nik";
+
+  if (!homeData) {
+    return (
+      <View style={styles.loadingRoot}>
+        <Text style={styles.loadingText}>Loading dashboard...</Text>
+      </View>
+    );
+  }
+
+  const username = (user as any)?.username || homeData.user.username || "Nik";
 
   if (isWebLayout) {
     return (
@@ -288,7 +121,7 @@ export default function HomeScreen() {
           <DashboardHeader username={username} />
 
           <View style={styles.webTopRow}>
-            <MentalScoreCard />
+            <MentalScoreCard score={homeData.mentalHealthScore} />
 
             <View style={styles.metricsPanel}>
               <View style={styles.panelHeader}>
@@ -309,8 +142,8 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.metricsGrid}>
-                {dashboardData.trackedMetrics.map((metric) => (
-                  <TrackedMetricCard key={metric.title} metric={metric} />
+                {homeData.trackedMetrics.map((metric) => (
+                  <TrackedMetricCard key={metric.id} metric={metric} />
                 ))}
               </View>
             </View>
@@ -324,18 +157,18 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.calculatedGrid}>
-                {dashboardData.calculatedScores.map((score) => (
-                  <CalculatedScoreCard key={score.title} score={score} />
+                {homeData.calculatedScores.map((score) => (
+                  <CalculatedScoreCard key={score.id} score={score} />
                 ))}
               </View>
             </View>
 
-            <AchievementsPanel />
+            <AchievementsPanel achievements={homeData.achievements} />
           </View>
 
-          <TrendOverview />
+          <TrendOverview trends={homeData.trends} />
 
-          <ArticlesSection />
+          <ArticlesSection articles={homeData.articles} />
         </ScrollView>
       </View>
     );
@@ -349,7 +182,7 @@ export default function HomeScreen() {
       >
         <DashboardHeader username={username} mobile />
 
-        <MentalScoreCard mobile />
+        <MentalScoreCard score={homeData.mentalHealthScore} mobile />
 
         <View style={styles.mobileSectionHeader}>
           <Text style={styles.panelTitle}>Tracked Metrics</Text>
@@ -357,8 +190,8 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.mobileMetricGrid}>
-          {dashboardData.trackedMetrics.map((metric) => (
-            <TrackedMetricCard key={metric.title} metric={metric} mobile />
+          {homeData.trackedMetrics.map((metric) => (
+            <TrackedMetricCard key={metric.id} metric={metric} mobile />
           ))}
         </View>
 
@@ -368,16 +201,16 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.mobileCalculatedGrid}>
-          {dashboardData.calculatedScores.map((score) => (
-            <CalculatedScoreCard key={score.title} score={score} mobile />
+          {homeData.calculatedScores.map((score) => (
+            <CalculatedScoreCard key={score.id} score={score} mobile />
           ))}
         </View>
 
-        <AchievementsPanel mobile />
+        <AchievementsPanel achievements={homeData.achievements} mobile />
 
-        <TrendOverview mobile />
+        <TrendOverview trends={homeData.trends} mobile />
 
-        <ArticlesSection mobile />
+        <ArticlesSection articles={homeData.articles} mobile />
       </ScrollView>
 
       <MobileBottomNav />
@@ -423,7 +256,13 @@ function DashboardHeader({
   );
 }
 
-function MentalScoreCard({ mobile = false }: { mobile?: boolean }) {
+function MentalScoreCard({
+  score,
+  mobile = false,
+}: {
+  score: HomeDashboardData["mentalHealthScore"];
+  mobile?: boolean;
+}) {
   return (
     <View style={mobile ? styles.mobileScoreCard : styles.scoreCard}>
       <View style={styles.scoreCardHeader}>
@@ -434,9 +273,9 @@ function MentalScoreCard({ mobile = false }: { mobile?: boolean }) {
       <View style={mobile ? styles.mobileRing : styles.scoreRing}>
         <View style={mobile ? styles.mobileRingInner : styles.scoreRingInner}>
           <Text style={mobile ? styles.mobileScoreValue : styles.scoreValue}>
-            {dashboardData.score.value}
+            {score.value}
           </Text>
-          <Text style={styles.scoreState}>{dashboardData.score.label}</Text>
+          <Text style={styles.scoreState}>{score.label}</Text>
         </View>
       </View>
 
@@ -446,7 +285,7 @@ function MentalScoreCard({ mobile = false }: { mobile?: boolean }) {
 
       <View style={styles.scoreChangePill}>
         <Text style={styles.scoreChangeText}>
-          ↑ {dashboardData.score.change} pts
+          ↑ {score.changeFromLastWeek} pts
         </Text>
         <Text style={styles.scoreChangeMuted}> vs last week</Text>
       </View>
@@ -458,23 +297,35 @@ function TrackedMetricCard({
   metric,
   mobile = false,
 }: {
-  metric: any;
+  metric: HomeDashboardData["trackedMetrics"][number];
   mobile?: boolean;
 }) {
+  const dotColor =
+    metric.source === "measured"
+      ? colors.blue
+      : metric.source === "entered"
+        ? colors.green
+        : colors.purple;
+
+  const trendSymbol =
+    metric.trend.direction === "up"
+      ? "↑"
+      : metric.trend.direction === "down"
+        ? "↓"
+        : "→";
+
   return (
     <View style={mobile ? styles.mobileMetricCard : styles.metricCard}>
       <View style={styles.metricTopRow}>
         <View style={styles.metricTitleBlock}>
-          <Text style={[styles.metricIcon, { color: metric.chartColor }]}>
+          <Text style={[styles.metricIcon, { color: metric.color }]}>
             {metric.icon}
           </Text>
 
           <View style={styles.metricTextBlock}>
             <View style={styles.metricTitleRow}>
               <Text style={styles.metricTitle}>{metric.title}</Text>
-              <View
-                style={[styles.metricDot, { backgroundColor: metric.dotColor }]}
-              />
+              <View style={[styles.metricDot, { backgroundColor: dotColor }]} />
             </View>
 
             {!!metric.valueLabel && (
@@ -486,7 +337,9 @@ function TrackedMetricCard({
 
               {!!metric.secondValue && (
                 <>
-                  <Text style={styles.metricSecondLabel}>Loneliness</Text>
+                  <Text style={styles.metricSecondLabel}>
+                    {metric.secondLabel || "Second"}
+                  </Text>
                   <Text style={styles.metricValue}>{metric.secondValue}</Text>
                 </>
               )}
@@ -503,21 +356,21 @@ function TrackedMetricCard({
         <View
           style={[
             styles.trendPill,
-            metric.trendGood ? styles.trendGood : styles.trendBad,
+            metric.trend.isGood ? styles.trendGood : styles.trendBad,
           ]}
         >
           <Text
             style={[
               styles.trendText,
-              metric.trendGood ? styles.trendTextGood : styles.trendTextBad,
+              metric.trend.isGood ? styles.trendTextGood : styles.trendTextBad,
             ]}
           >
-            {metric.trend}
+            {trendSymbol} {metric.trend.value}%
           </Text>
         </View>
       </View>
 
-      <MiniSparkline data={metric.chart} color={metric.chartColor} />
+      <MiniSparkline data={metric.chart} color={metric.color} />
     </View>
   );
 }
@@ -526,7 +379,7 @@ function CalculatedScoreCard({
   score,
   mobile = false,
 }: {
-  score: any;
+  score: HomeDashboardData["calculatedScores"][number];
   mobile?: boolean;
 }) {
   return (
@@ -547,6 +400,7 @@ function CalculatedScoreCard({
         >
           {score.value}
         </Text>
+
         {!!score.suffix && (
           <Text style={styles.calculatedSuffix}>{score.suffix}</Text>
         )}
@@ -554,12 +408,18 @@ function CalculatedScoreCard({
 
       <MiniSparkline data={score.chart} color={score.color} small />
 
-      <Text style={styles.autoCalculated}>Auto-calculated</Text>
+      <Text style={styles.autoCalculated}>{score.subtitle}</Text>
     </View>
   );
 }
 
-function AchievementsPanel({ mobile = false }: { mobile?: boolean }) {
+function AchievementsPanel({
+  achievements,
+  mobile = false,
+}: {
+  achievements: HomeDashboardData["achievements"];
+  mobile?: boolean;
+}) {
   return (
     <View
       style={mobile ? styles.mobileAchievementsPanel : styles.achievementsPanel}
@@ -569,50 +429,30 @@ function AchievementsPanel({ mobile = false }: { mobile?: boolean }) {
         <Text style={styles.seeAll}>See All</Text>
       </View>
 
-      {dashboardData.achievements.map((achievement) => (
-        <View key={achievement.title} style={styles.achievementRow}>
+      {achievements.map((achievement) => (
+        <View key={achievement.id} style={styles.achievementRow}>
           <Text style={styles.achievementEmoji}>{achievement.emoji}</Text>
 
           <Text style={styles.achievementTitle}>{achievement.title}</Text>
 
           <Text style={styles.achievementStreak}>{achievement.streak}</Text>
 
-          <Text style={styles.achievementCheck}>✓</Text>
+          <Text style={styles.achievementCheck}>
+            {achievement.completed ? "✓" : "○"}
+          </Text>
         </View>
       ))}
     </View>
   );
 }
 
-function TrendOverview({ mobile = false }: { mobile?: boolean }) {
-  const series = [
-    {
-      label: "Sleep (hrs)",
-      color: colors.purple,
-      data: [78, 84, 88, 82, 76, 80, 68],
-    },
-    {
-      label: "Movement (hrs)",
-      color: colors.green,
-      data: [32, 48, 54, 42, 39, 44, 34],
-    },
-    {
-      label: "Social Score",
-      color: colors.blue,
-      data: [42, 36, 76, 70, 48, 72, 58],
-    },
-    {
-      label: "Stress Level",
-      color: colors.pink,
-      data: [16, 22, 28, 18, 24, 20, 18],
-    },
-    {
-      label: "Screen Time (hrs)",
-      color: colors.orange,
-      data: [12, 18, 20, 24, 18, 22, 32],
-    },
-  ];
-
+function TrendOverview({
+  trends,
+  mobile = false,
+}: {
+  trends: HomeDashboardData["trends"];
+  mobile?: boolean;
+}) {
   return (
     <View style={mobile ? styles.mobileTrendPanel : styles.trendPanel}>
       <View style={styles.trendHeader}>
@@ -623,12 +463,8 @@ function TrendOverview({ mobile = false }: { mobile?: boolean }) {
 
         {!mobile && (
           <View style={styles.trendLegend}>
-            {series.map((item) => (
-              <LegendDot
-                key={item.label}
-                color={item.color}
-                label={item.label}
-              />
+            {trends.map((item) => (
+              <LegendDot key={item.id} color={item.color} label={item.label} />
             ))}
           </View>
         )}
@@ -656,18 +492,19 @@ function TrendOverview({ mobile = false }: { mobile?: boolean }) {
           <View style={styles.chartBars}>
             {days.map((day, index) => (
               <View key={`${day}-${index}`} style={styles.chartDayColumn}>
-                {series.map((item) => (
+                {trends.map((item) => (
                   <View
-                    key={item.label}
+                    key={item.id}
                     style={[
                       styles.chartPoint,
                       {
                         backgroundColor: item.color,
-                        bottom: `${item.data[index]}%`,
+                        bottom: `${item.data[index] ?? 0}%`,
                       } as any,
                     ]}
                   />
                 ))}
+
                 <Text style={styles.chartDay}>
                   {index === 0 ? "May 8" : day}
                 </Text>
@@ -690,7 +527,13 @@ function TrendOverview({ mobile = false }: { mobile?: boolean }) {
   );
 }
 
-function ArticlesSection({ mobile = false }: { mobile?: boolean }) {
+function ArticlesSection({
+  articles,
+  mobile = false,
+}: {
+  articles: HomeDashboardData["articles"];
+  mobile?: boolean;
+}) {
   return (
     <View style={styles.articlesSection}>
       <View style={styles.articlesHeader}>
@@ -703,8 +546,8 @@ function ArticlesSection({ mobile = false }: { mobile?: boolean }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.articlesRow}
       >
-        {dashboardData.articles.map((article) => (
-          <ArticleCard key={article.title} article={article} mobile={mobile} />
+        {articles.map((article) => (
+          <ArticleCard key={article.id} article={article} mobile={mobile} />
         ))}
       </ScrollView>
     </View>
@@ -715,7 +558,7 @@ function ArticleCard({
   article,
   mobile = false,
 }: {
-  article: any;
+  article: HomeDashboardData["articles"][number];
   mobile?: boolean;
 }) {
   return (
@@ -793,6 +636,19 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
+  loadingRoot: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
+
+  loadingText: {
+    color: colors.navy,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+
   webRoot: {
     flex: 1,
     flexDirection: "row",
