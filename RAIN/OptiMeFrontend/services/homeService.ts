@@ -10,18 +10,18 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
 
   try {
     const api = await import("@/services/apiI");
+
     const response = await api.default.get("/home");
 
-    if (response.data?.homeData) {
-      return response.data.homeData;
+    const homeData = response.data?.homeData ?? response.data;
+
+    if (!homeData) {
+      return mockHomeData;
     }
 
-    if (response.data) {
-      return response.data;
-    }
-
-    return mockHomeData;
-  } catch {
+    return homeData;
+  } catch (error) {
+    console.log("Home data fetch failed, using mock data:", error);
     return mockHomeData;
   }
 }
