@@ -293,20 +293,26 @@ export const styles = StyleSheet.create({
   metricsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 14,
   },
 
   metricCard: {
-    width: "24%",
-    minWidth: 240,
     flexGrow: 1,
-    height: 132,
+    flexShrink: 1,
+    flexBasis: "23%",
+    minWidth: 245,
+    minHeight: 155,
+    borderRadius: 20,
     backgroundColor: colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 14,
-    ...softShadow,
+    padding: 16,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    elevation: 3,
   },
 
   mobileMetricGrid: {
@@ -314,18 +320,26 @@ export const styles = StyleSheet.create({
   },
 
   mobileMetricCard: {
+    width: "100%",
+    minHeight: 165,
+    borderRadius: 20,
     backgroundColor: colors.white,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 15,
-    ...softShadow,
+    padding: 16,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    elevation: 3,
   },
 
   metricTopRow: {
-    flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
   },
 
   metricTitleBlock: {
@@ -353,7 +367,7 @@ export const styles = StyleSheet.create({
 
   metricTitle: {
     color: colors.navy,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "900",
   },
 
@@ -379,8 +393,9 @@ export const styles = StyleSheet.create({
 
   metricValue: {
     color: colors.navy,
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "900",
+    letterSpacing: -0.6,
   },
 
   metricSecondLabel: {
@@ -393,9 +408,9 @@ export const styles = StyleSheet.create({
 
   metricSuffix: {
     color: colors.navySoft,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "800",
-    marginBottom: 4,
+    marginBottom: 6,
   },
 
   metricSubtitle: {
@@ -859,5 +874,208 @@ export const styles = StyleSheet.create({
     gap: 8,
     marginTop: 18,
     marginBottom: 12,
+  },
+
+  trackedMetricContent: {
+    marginTop: 8,
+  },
+
+  trackedAverageBody: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
+  trackedMainValueBlock: {
+    minWidth: 86,
+  },
+
+  trackedDoubleBody: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
+  trackedDoubleItem: {
+    flex: 1,
+  },
+
+  trackedDoubleDivider: {
+    width: 1,
+    height: 38,
+    backgroundColor: "rgba(24,63,104,0.12)",
+  },
+
+  trackedScoreBody: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
+  trackedProgressTrack: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(24,63,104,0.08)",
+    overflow: "hidden",
+    marginTop: 10,
+  },
+
+  trackedProgressFill: {
+    height: "100%",
+    borderRadius: 999,
+  },
+
+  trackedScoreChartRow: {
+    marginTop: 8,
+  },
+
+  trackedMiniChart: {
+    height: 42,
+    minWidth: 92,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "flex-end",
+    gap: 4,
+  },
+
+  trackedMiniChartCompact: {
+    height: 28,
+    minWidth: "100%",
+    justifyContent: "flex-start",
+  },
+
+  trackedMiniChartColumn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+
+  trackedMiniChartBar: {
+    width: 5,
+    borderRadius: 999,
+  },
+
+  valueOnlyBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    marginTop: 14,
+  },
+
+  valueOnlyIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  valueOnlyIcon: {
+    fontSize: 26,
+    fontWeight: "900",
+  },
+
+  valueOnlyValue: {
+    fontSize: 30,
+    fontWeight: "900",
+    color: colors.navy,
+    letterSpacing: -1,
+  },
+
+  valueOnlyLabel: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "800",
+    color: colors.textSoft,
+  },
+  metricBody: {
+    flex: 1,
+    marginTop: 8,
+  },
+
+  metricStatsRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+
+  metricPrimaryBlock: {
+    flex: 1,
+  },
+
+  metricSecondaryBlock: {
+    alignItems: "flex-end",
+  },
+
+  metricSecondaryLabel: {
+    color: colors.navySoft,
+    fontSize: 11,
+    fontWeight: "800",
+    marginBottom: 2,
+    textTransform: "capitalize",
+  },
+
+  metricSecondaryValue: {
+    color: colors.navy,
+    fontSize: 22,
+    fontWeight: "900",
+    letterSpacing: -0.4,
+  },
+
+  metricChartBox: {
+    marginTop: 10,
+    height: 54,
+    width: "100%",
+    overflow: "hidden",
+  },
+
+  metricValueOnlyWrapper: {
+    flex: 1,
+    justifyContent: "center",
+  },
+
+  metricValueOnlyBoxLarge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    marginTop: 10,
+  },
+
+  metricValueOnlyIconBoxLarge: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  metricValueOnlyIconLarge: {
+    fontSize: 24,
+    fontWeight: "900",
+  },
+
+  metricValueOnlyValueLarge: {
+    color: colors.navy,
+    fontSize: 30,
+    fontWeight: "900",
+    letterSpacing: -0.8,
+  },
+
+  metricValueOnlyLabelLarge: {
+    marginTop: 0,
+    color: colors.textSoft,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+
+  metricValueOnlyHint: {
+    marginTop: 10,
+    color: colors.textSoft,
+    fontSize: 11,
+    fontWeight: "700",
   },
 });

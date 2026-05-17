@@ -17,6 +17,7 @@ import { getHomeDashboardData } from "@/services/homeService";
 import type { HomeDashboardData } from "@/types/home";
 
 import MentalHealthScoreCard from "@/components/home/MentalHealthScoreCard";
+import TrackedMetricCard from "@/components/home/TrackedMetricCard";
 
 const days = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -192,88 +193,6 @@ function DashboardHeader({
           </Pressable>
         </View>
       )}
-    </View>
-  );
-}
-
-function TrackedMetricCard({
-  metric,
-  mobile = false,
-}: {
-  metric: HomeDashboardData["trackedMetrics"][number];
-  mobile?: boolean;
-}) {
-  const dotColor =
-    metric.source === "measured"
-      ? colors.blue
-      : metric.source === "entered"
-        ? colors.green
-        : colors.purple;
-
-  const trendSymbol =
-    metric.trend.direction === "up"
-      ? "↑"
-      : metric.trend.direction === "down"
-        ? "↓"
-        : "→";
-
-  return (
-    <View style={mobile ? styles.mobileMetricCard : styles.metricCard}>
-      <View style={styles.metricTopRow}>
-        <View style={styles.metricTitleBlock}>
-          <Text style={[styles.metricIcon, { color: metric.color }]}>
-            {metric.icon}
-          </Text>
-
-          <View style={styles.metricTextBlock}>
-            <View style={styles.metricTitleRow}>
-              <Text style={styles.metricTitle}>{metric.title}</Text>
-              <View style={[styles.metricDot, { backgroundColor: dotColor }]} />
-            </View>
-
-            {!!metric.valueLabel && (
-              <Text style={styles.metricValueLabel}>{metric.valueLabel}</Text>
-            )}
-
-            <View style={styles.metricValueRow}>
-              <Text style={styles.metricValue}>{metric.value}</Text>
-
-              {!!metric.secondValue && (
-                <>
-                  <Text style={styles.metricSecondLabel}>
-                    {metric.secondLabel || "Second"}
-                  </Text>
-                  <Text style={styles.metricValue}>{metric.secondValue}</Text>
-                </>
-              )}
-
-              {!!metric.suffix && (
-                <Text style={styles.metricSuffix}>{metric.suffix}</Text>
-              )}
-            </View>
-
-            <Text style={styles.metricSubtitle}>{metric.subtitle}</Text>
-          </View>
-        </View>
-
-        <View
-          style={[
-            styles.trendPill,
-            metric.trend.isGood ? styles.trendGood : styles.trendBad,
-          ]}
-        >
-          <Text
-            style={[
-              styles.trendText,
-              metric.trend.isGood ? styles.trendTextGood : styles.trendTextBad,
-            ]}
-          >
-            {trendSymbol} {metric.trend.value}%
-          </Text>
-        </View>
-      </View>
-
-      <MiniSparkline data={metric.chart} color={metric.color} />
     </View>
   );
 }

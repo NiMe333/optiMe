@@ -31,18 +31,25 @@ export type HomeDashboardData = {
   articles: HomeArticle[];
 };
 
+export type HomeTrackedMetricVariant = "average" | "double" | "score";
+
 export type HomeTrackedMetric = {
   id: string;
   title: string;
   icon: string;
 
+  variant: HomeTrackedMetricVariant;
+
   source: HomeMetricSource;
 
   valueLabel?: string;
   value: string | number;
+
   secondValue?: string | number;
   secondLabel?: string;
+
   suffix?: string;
+  maxValue?: number;
 
   subtitle: string;
 
