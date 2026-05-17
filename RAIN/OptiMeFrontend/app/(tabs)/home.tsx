@@ -121,10 +121,6 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <View style={styles.mobileSectionHeader}>
-          <Text style={styles.panelTitle}>Calculated Scores</Text>
-        </View>
-
         <CalculatedScoresSection scores={homeData.calculatedScores} mobile />
 
         <AchievementsPanel achievements={homeData.achievements} mobile />

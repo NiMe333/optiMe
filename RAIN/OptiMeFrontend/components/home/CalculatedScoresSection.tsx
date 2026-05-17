@@ -268,6 +268,7 @@ const componentStyles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
     marginBottom: 14,
+    marginTop: 14,
   },
 
   title: {
