@@ -24,6 +24,7 @@ type ChartDay = {
   shortLabel: string;
   fullLabel: string;
   dateLabel: string;
+  isToday: boolean;
 };
 
 export default function MetricLineChart({
@@ -60,7 +61,9 @@ export default function MetricLineChart({
       value: selectedValue,
       dayLabel: selectedDay.fullLabel,
       dateLabel: selectedDay.dateLabel,
-      headerLabel: `${selectedDay.fullLabel} · ${selectedDay.dateLabel}`,
+      headerLabel: selectedDay.isToday
+        ? "Today"
+        : `${selectedDay.fullLabel} · ${selectedDay.dateLabel}`,
     });
   }, [onSelectedPointChange, selectedDay, selectedIndex, selectedValue]);
 
@@ -137,6 +140,8 @@ function getLastDays(count: number): ChartDay[] {
     const date = new Date(today);
     date.setDate(today.getDate() - (count - 1 - index));
 
+    const isToday = date.toDateString() === today.toDateString();
+
     return {
       shortLabel: new Intl.DateTimeFormat("en-US", {
         weekday: "short",
@@ -148,6 +153,7 @@ function getLastDays(count: number): ChartDay[] {
         month: "short",
         day: "numeric",
       }).format(date),
+      isToday,
     };
   });
 }
