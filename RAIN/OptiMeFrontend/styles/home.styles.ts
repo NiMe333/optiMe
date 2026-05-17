@@ -114,32 +114,6 @@ export const styles = StyleSheet.create({
     gap: 24,
   },
 
-  searchBox: {
-    width: 530,
-    height: 54,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "rgba(255,255,255,0.72)",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 18,
-    gap: 12,
-    ...softShadow,
-  },
-
-  searchIcon: {
-    fontSize: 28,
-    color: colors.textSoft,
-  },
-
-  searchPlaceholder: {
-    flex: 1,
-    color: colors.textSoft,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-
   shortcutBox: {
     backgroundColor: "rgba(24,63,104,0.08)",
     borderRadius: 8,

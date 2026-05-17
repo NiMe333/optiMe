@@ -186,16 +186,6 @@ function DashboardHeader({
 
       {!mobile && (
         <View style={styles.headerActions}>
-          <View style={styles.searchBox}>
-            <Text style={styles.searchIcon}>⌕</Text>
-            <Text style={styles.searchPlaceholder}>
-              Search articles, metrics, or tools...
-            </Text>
-            <View style={styles.shortcutBox}>
-              <Text style={styles.shortcutText}>⌘ K</Text>
-            </View>
-          </View>
-
           <Pressable style={styles.notificationButton}>
             <Text style={styles.notificationIcon}>♟</Text>
             <View style={styles.notificationDot} />
