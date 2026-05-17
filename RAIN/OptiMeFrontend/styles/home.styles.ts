@@ -357,6 +357,19 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  screenTimeBarBody: {
+    marginTop: 4,
+    alignItems: "center",
+  },
+
+  screenTimeBarTextSide: {
+    width: 64,
+  },
+
+  screenTimeBarChartSide: {
+    flex: 1,
+    minWidth: 0,
+  },
 
   metricTextBlock: {
     flex: 1,

@@ -7,7 +7,7 @@ import type { HomeTrackedMetric } from "@/types/home";
 import MetricBarChart from "@/components/home/charts/MetricBarChart";
 import MetricLineChart from "@/components/home/charts/MetricLineChart";
 import MetricValueOnly from "@/components/home/charts/MetricValueOnly";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
 type TrackedMetricCardProps = {
   metric: HomeTrackedMetric;
@@ -58,11 +58,19 @@ function ChartMetric({
     </View>
   );
 }
-
 function BarChartMetric({ metric }: { metric: HomeTrackedMetric }) {
+  const isScreenTime = metric.id === "screen-time";
+
   return (
-    <View style={styles.metricBarBody}>
-      <View style={styles.metricBarTextSide}>
+    <View
+      style={[styles.metricBarBody, isScreenTime && styles.screenTimeBarBody]}
+    >
+      <View
+        style={[
+          styles.metricBarTextSide,
+          isScreenTime && styles.screenTimeBarTextSide,
+        ]}
+      >
         {!!metric.valueLabel && (
           <Text style={styles.metricValueLabel}>{metric.valueLabel}</Text>
         )}
@@ -78,13 +86,19 @@ function BarChartMetric({ metric }: { metric: HomeTrackedMetric }) {
         <Text style={styles.metricSubtitle}>{metric.subtitle}</Text>
       </View>
 
-      <View style={styles.metricBarChartSide}>
+      <View
+        style={[
+          styles.metricBarChartSide,
+          isScreenTime && styles.screenTimeBarChartSide,
+        ]}
+      >
         <MetricBarChart
           data={metric.chart}
           color={metric.color}
           maxValue={getMetricMaxValue(metric)}
           unit={metric.suffix || ""}
           detailLabel={getBarChartDetailLabel(metric)}
+          height={metric.id === "screen-time" ? 76 : 62}
         />
       </View>
     </View>

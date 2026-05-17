@@ -20,8 +20,9 @@ type ChartDay = {
 
 export default function MetricBarChart({
   data,
-  maxValue,
-  height = 50,
+  color: _color,
+  maxValue: _maxValue,
+  height = 62,
   unit = "",
   detailLabel = "Value",
 }: MetricBarChartProps) {
@@ -37,13 +38,36 @@ export default function MetricBarChart({
     setSelectedIndex(safeData.length - 1);
   }, [safeData.length]);
 
-  const calculatedMaxValue = maxValue || Math.max(...safeData, 1);
+  const minDataValue = Math.min(...safeData);
+  const maxDataValue = Math.max(...safeData);
+  const dataRange = maxDataValue - minDataValue;
+
+  /**
+   * Tukaj naredimo dinamično skalo:
+   * - ne rišemo iz 0 do 12
+   * - ampak iz dejanskega min/max razpona
+   * - dodamo base, da tudi najmanjši stolpec ni čisto neviden
+   */
+  const visualBase =
+    dataRange > 0 ? dataRange * 0.55 : Math.max(maxDataValue * 0.25, 1);
+
+  const visualMaxValue =
+    dataRange > 0 ? dataRange + visualBase : visualBase * 2;
+
+  const paddedVisualMaxValue = visualMaxValue * 1.28;
+  function getVisualBarValue(value: number) {
+    if (dataRange === 0) {
+      return visualBase;
+    }
+
+    return value - minDataValue + visualBase;
+  }
 
   const barCount = safeData.length;
   const sidePadding = 8;
 
   const barWidth =
-    width > 0 ? Math.max(9, Math.min(16, Math.floor(width / 18))) : 10;
+    width > 0 ? Math.max(10, Math.min(18, Math.floor(width / 16))) : 12;
 
   const spacing =
     width > 0
@@ -55,6 +79,7 @@ export default function MetricBarChart({
           ),
         )
       : 8;
+
   const selectedValue =
     safeData[selectedIndex] ?? safeData[safeData.length - 1];
   const selectedDay = days[selectedIndex] ?? days[days.length - 1];
@@ -74,7 +99,7 @@ export default function MetricBarChart({
         : normalBarColor;
 
     return {
-      value,
+      value: getVisualBarValue(value),
       label: days[index]?.shortLabel ?? "",
       frontColor: barColor,
       topLabelComponent: () =>
@@ -95,7 +120,7 @@ export default function MetricBarChart({
 
   return (
     <View
-      style={{ width: "100%", height: height + 42, overflow: "visible" }}
+      style={{ width: "100%", height: height + 56, overflow: "visible" }}
       onLayout={(event) => {
         const nextWidth = Math.floor(event.nativeEvent.layout.width);
 
@@ -117,7 +142,7 @@ export default function MetricBarChart({
           data={chartData}
           width={width}
           height={height}
-          maxValue={calculatedMaxValue}
+          maxValue={paddedVisualMaxValue}
           noOfSections={3}
           disableScroll
           adjustToWidth
