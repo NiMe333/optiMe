@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text } from "react-native";
+import { StyleSheet, View, Text } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
-import { colors, styles } from "@/styles/home.styles";
+import { colors } from "@/styles/home.styles";
 
 type MetricBarChartProps = {
   data: number[];
@@ -20,7 +20,7 @@ type ChartDay = {
 
 export default function MetricBarChart({
   data,
-  color: _color,
+  color,
   maxValue: _maxValue,
   height = 62,
   unit = "",
@@ -60,10 +60,10 @@ export default function MetricBarChart({
   const dataRange = maxDataValue - minDataValue;
 
   /**
-   * Tukaj naredimo dinamično skalo:
+   * Dinamična skala:
    * - ne rišemo iz 0 do 12
    * - ampak iz dejanskega min/max razpona
-   * - dodamo base, da tudi najmanjši stolpec ni čisto neviden
+   * - dodamo base, da najmanjši stolpec ni neviden
    */
   const visualBase =
     dataRange > 0 ? dataRange * 0.55 : Math.max(maxDataValue * 0.25, 1);
@@ -107,9 +107,9 @@ export default function MetricBarChart({
     const isSelected = index === selectedIndex;
     const isToday = index === safeData.length - 1;
 
-    const selectedBarColor = colors.purple;
-    const todayBarColor = "#B985FF";
-    const normalBarColor = hexToRgba(colors.purple, 0.35);
+    const selectedBarColor = color;
+    const todayBarColor = hexToRgba(color, 0.72);
+    const normalBarColor = hexToRgba(color, 0.32);
 
     const barColor = isSelected
       ? selectedBarColor
@@ -125,7 +125,7 @@ export default function MetricBarChart({
         isSelected || isToday ? (
           <Text
             style={[
-              styles.barChartTopValue,
+              componentStyles.barChartTopValue,
               {
                 color: isSelected ? selectedBarColor : todayBarColor,
               },
@@ -139,7 +139,12 @@ export default function MetricBarChart({
 
   return (
     <View
-      style={{ width: "100%", height: height + 56, overflow: "visible" }}
+      style={[
+        componentStyles.container,
+        {
+          height: height + 56,
+        },
+      ]}
       onLayout={(event) => {
         const nextWidth = Math.floor(event.nativeEvent.layout.width);
 
@@ -148,10 +153,12 @@ export default function MetricBarChart({
         }
       }}
     >
-      <View style={styles.barChartDetailPill}>
-        <Text style={styles.barChartDetailDay}>{selectedDay.fullLabel}</Text>
+      <View style={componentStyles.barChartDetailPill}>
+        <Text style={componentStyles.barChartDetailDay}>
+          {selectedDay.fullLabel}
+        </Text>
 
-        <Text style={styles.barChartDetailValue}>
+        <Text style={componentStyles.barChartDetailValue}>
           {detailLabel}: {formatChartValue(selectedValue, unit)}
         </Text>
       </View>
@@ -184,11 +191,7 @@ export default function MetricBarChart({
               setSelectedIndex(index);
             }
           }}
-          xAxisLabelTextStyle={{
-            color: "#6E8092",
-            fontSize: 9,
-            fontWeight: "800",
-          }}
+          xAxisLabelTextStyle={componentStyles.xAxisLabel}
         />
       )}
     </View>
@@ -232,3 +235,44 @@ function hexToRgba(hex: string, opacity: number) {
 
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
+
+const componentStyles = StyleSheet.create({
+  container: {
+    width: "100%",
+    overflow: "visible",
+  },
+
+  barChartDetailPill: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(24,63,104,0.06)",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 5,
+  },
+
+  barChartDetailDay: {
+    color: colors.navy,
+    fontSize: 9,
+    fontWeight: "900",
+  },
+
+  barChartDetailValue: {
+    color: colors.textSoft,
+    fontSize: 9,
+    fontWeight: "800",
+    marginTop: 1,
+  },
+
+  barChartTopValue: {
+    fontSize: 8,
+    fontWeight: "900",
+    marginBottom: 2,
+  },
+
+  xAxisLabel: {
+    color: colors.textSoft,
+    fontSize: 9,
+    fontWeight: "800",
+  },
+});

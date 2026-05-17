@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 
 type MetricLineChartProps = {
@@ -25,7 +25,12 @@ export default function MetricLineChart({
 
   return (
     <View
-      style={{ width: "100%", height, overflow: "hidden" }}
+      style={[
+        componentStyles.container,
+        {
+          height,
+        },
+      ]}
       onLayout={(event) => {
         const nextWidth = Math.floor(event.nativeEvent.layout.width);
 
@@ -63,3 +68,10 @@ export default function MetricLineChart({
     </View>
   );
 }
+
+const componentStyles = StyleSheet.create({
+  container: {
+    width: "100%",
+    overflow: "hidden",
+  },
+});

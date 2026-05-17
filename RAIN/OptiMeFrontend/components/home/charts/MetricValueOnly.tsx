@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, View, Text } from "react-native";
+import { Animated, Easing, StyleSheet, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import { styles } from "@/styles/home.styles";
+import { colors } from "@/styles/home.styles";
 
 type MetricValueOnlyProps = {
   value: string | number;
@@ -84,7 +84,7 @@ export default function MetricValueOnly({
         progressAnimation.removeListener(listenerId);
       }
     };
-  }, [progressAnimation, safeProgress, shouldAnimate, trackWidth, value]);
+  }, [progressAnimation, shouldAnimate, trackWidth, value]);
 
   const progressWidth = (trackWidth * safeProgress) / 100;
 
@@ -96,16 +96,16 @@ export default function MetricValueOnly({
     : progressWidth;
 
   return (
-    <View style={styles.metricValueOnlyWrapper}>
-      <View style={styles.metricValueOnlyMainRow}>
-        <View style={styles.metricValueOnlyInfo}>
-          <Text style={styles.metricValueOnlyKicker}>{statusLabel}</Text>
+    <View style={componentStyles.wrapper}>
+      <View style={componentStyles.mainRow}>
+        <View style={componentStyles.info}>
+          <Text style={componentStyles.kicker}>{statusLabel}</Text>
 
-          <View style={styles.metricValueOnlyMoodRow}>
+          <View style={componentStyles.valueRow}>
             {!!moodIconName && (
               <View
                 style={[
-                  styles.metricValueOnlyMoodIcon,
+                  componentStyles.moodIcon,
                   {
                     backgroundColor: `${color}14`,
                     borderColor: `${color}26`,
@@ -116,29 +116,29 @@ export default function MetricValueOnly({
               </View>
             )}
 
-            <Text style={[styles.metricValueOnlyValueLarge, { color }]}>
+            <Text style={[componentStyles.valueLarge, { color }]}>
               {displayValue}
             </Text>
           </View>
 
-          <Text style={styles.metricValueOnlyLabelLarge}>{label}</Text>
+          <Text style={componentStyles.labelLarge}>{label}</Text>
 
-          {!!hint && <Text style={styles.metricValueOnlyHint}>{hint}</Text>}
+          {!!hint && <Text style={componentStyles.hint}>{hint}</Text>}
         </View>
 
         {!!goalLabel && (
           <View
             style={[
-              styles.metricValueOnlyGoalPill,
+              componentStyles.goalPill,
               {
                 backgroundColor: `${color}10`,
                 borderColor: `${color}24`,
               },
             ]}
           >
-            <Text style={styles.metricValueOnlyGoalLabel}>Goal</Text>
+            <Text style={componentStyles.goalLabel}>Goal</Text>
 
-            <Text style={[styles.metricValueOnlyGoalValue, { color }]}>
+            <Text style={[componentStyles.goalValue, { color }]}>
               {goalLabel}
             </Text>
           </View>
@@ -146,9 +146,9 @@ export default function MetricValueOnly({
       </View>
 
       {showProgress && (
-        <View style={styles.metricValueOnlyProgressBlock}>
+        <View style={componentStyles.progressBlock}>
           <View
-            style={styles.metricValueOnlyProgressTrack}
+            style={componentStyles.progressTrack}
             onLayout={(event) => {
               const nextWidth = event.nativeEvent.layout.width;
 
@@ -159,7 +159,7 @@ export default function MetricValueOnly({
           >
             <Animated.View
               style={[
-                styles.metricValueOnlyProgressFill,
+                componentStyles.progressFill,
                 {
                   width: animatedProgressWidth as any,
                   backgroundColor: color,
@@ -168,7 +168,7 @@ export default function MetricValueOnly({
             />
           </View>
 
-          <Text style={styles.metricValueOnlyProgressText}>
+          <Text style={componentStyles.progressText}>
             {Math.round(safeProgress)}% {progressLabel}
           </Text>
         </View>
@@ -224,3 +224,122 @@ function formatAnimatedValue(
 
   return `${parts.prefix}${formattedNumber}${parts.suffix}`;
 }
+
+const componentStyles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    paddingTop: 8,
+    gap: 10,
+    justifyContent: "space-between",
+  },
+
+  mainRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
+  info: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  kicker: {
+    color: colors.textSoft,
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    marginBottom: 7,
+  },
+
+  valueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+
+  moodIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  valueLarge: {
+    fontSize: 31,
+    lineHeight: 34,
+    fontWeight: "900",
+    letterSpacing: -0.9,
+  },
+
+  labelLarge: {
+    color: colors.textSoft,
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "800",
+    marginTop: 0,
+  },
+
+  hint: {
+    color: colors.textSoft,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "700",
+    marginTop: 9,
+  },
+
+  goalPill: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 64,
+    alignSelf: "flex-start",
+  },
+
+  goalLabel: {
+    color: colors.textSoft,
+    fontSize: 9,
+    lineHeight: 11,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+
+  goalValue: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "900",
+    marginTop: 1,
+  },
+
+  progressBlock: {
+    gap: 6,
+  },
+
+  progressTrack: {
+    height: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(24, 63, 104, 0.08)",
+    overflow: "hidden",
+  },
+
+  progressFill: {
+    height: "100%",
+    borderRadius: 999,
+  },
+
+  progressText: {
+    color: colors.textSoft,
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: "800",
+  },
+});

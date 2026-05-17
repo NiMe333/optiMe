@@ -39,19 +39,6 @@ const softShadow =
         elevation: 4,
       };
 
-const strongShadow =
-  Platform.OS === "web"
-    ? ({
-        boxShadow: "0px 22px 50px rgba(24, 63, 104, 0.16)",
-      } as any)
-    : {
-        shadowColor: colors.shadow,
-        shadowOpacity: 0.24,
-        shadowRadius: 28,
-        shadowOffset: { width: 0, height: 12 },
-        elevation: 8,
-      };
-
 export const styles = StyleSheet.create({
   loadingRoot: {
     flex: 1,
@@ -121,18 +108,6 @@ export const styles = StyleSheet.create({
     gap: 24,
   },
 
-  shortcutBox: {
-    backgroundColor: "rgba(24,63,104,0.08)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-
-  shortcutText: {
-    color: colors.navySoft,
-    fontWeight: "800",
-  },
-
   notificationButton: {
     width: 58,
     height: 58,
@@ -165,72 +140,6 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 28,
     alignItems: "stretch",
-  },
-
-  scoreCard: {
-    width: 375,
-    minHeight: 370,
-    borderRadius: 18,
-    backgroundColor: colors.navyDark,
-    padding: 24,
-    ...strongShadow,
-  },
-
-  mobileScoreCard: {
-    borderRadius: 22,
-    backgroundColor: colors.navyDark,
-    padding: 22,
-    marginBottom: 18,
-    ...strongShadow,
-  },
-
-  scoreCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  scoreCardTitle: {
-    color: colors.white,
-    fontSize: 17,
-    fontWeight: "900",
-  },
-
-  moreDots: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: "900",
-  },
-
-  scoreDescription: {
-    textAlign: "center",
-    color: colors.white,
-    fontSize: 16,
-    lineHeight: 23,
-    marginTop: 22,
-  },
-
-  scoreChangePill: {
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.10)",
-    paddingHorizontal: 22,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 20,
-  },
-
-  scoreChangeText: {
-    color: colors.green,
-    fontSize: 16,
-    fontWeight: "900",
-  },
-
-  scoreChangeMuted: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: "700",
   },
 
   metricsPanel: {
@@ -303,376 +212,8 @@ export const styles = StyleSheet.create({
     gap: 14,
   },
 
-  metricCard: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: "31%",
-    minWidth: 245,
-    minHeight: 155,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    padding: 16,
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.14,
-    shadowRadius: 16,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    elevation: 3,
-  },
-
   mobileMetricGrid: {
     gap: 12,
-  },
-
-  mobileMetricCard: {
-    width: "100%",
-    minHeight: 165,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    padding: 16,
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    elevation: 3,
-  },
-
-  metricTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10,
-  },
-
-  metricTitleBadge: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-
-  metricIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  metricTitle: {
-    color: colors.navy,
-    fontSize: 14,
-    fontWeight: "900",
-    flexShrink: 1,
-  },
-
-  metricDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 999,
-  },
-
-  metricBody: {
-    flex: 1,
-    marginTop: 8,
-  },
-
-  metricStatsRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: 16,
-  },
-
-  metricPrimaryBlock: {
-    flex: 1,
-  },
-
-  metricSecondaryBlock: {
-    alignItems: "flex-end",
-  },
-
-  metricSecondaryLabel: {
-    color: colors.navySoft,
-    fontSize: 11,
-    fontWeight: "800",
-    marginBottom: 2,
-    textTransform: "capitalize",
-  },
-
-  metricSecondaryValue: {
-    color: colors.navy,
-    fontSize: 22,
-    fontWeight: "900",
-    letterSpacing: -0.4,
-  },
-
-  metricChartBox: {
-    marginTop: 10,
-    height: 54,
-    width: "100%",
-    overflow: "hidden",
-  },
-
-  metricTextBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  metricValueLabel: {
-    color: colors.navy,
-    fontSize: 12,
-    fontWeight: "800",
-    marginTop: 8,
-  },
-
-  metricValueRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 6,
-    marginTop: 1,
-  },
-
-  metricValue: {
-    color: colors.navy,
-    fontSize: 28,
-    fontWeight: "900",
-    letterSpacing: -0.6,
-  },
-
-  metricSecondLabel: {
-    color: colors.navy,
-    fontSize: 12,
-    fontWeight: "800",
-    marginLeft: 14,
-    marginBottom: 5,
-  },
-
-  metricSuffix: {
-    color: colors.navySoft,
-    fontSize: 13,
-    fontWeight: "800",
-    marginBottom: 6,
-  },
-
-  metricSubtitle: {
-    color: colors.textSoft,
-    fontSize: 11,
-    fontWeight: "600",
-    marginTop: 2,
-  },
-
-  metricBarBody: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginTop: 10,
-  },
-
-  metricBarTextSide: {
-    width: 82,
-    justifyContent: "center",
-  },
-
-  metricBarChartSide: {
-    flex: 1,
-    minWidth: 130,
-    justifyContent: "center",
-  },
-
-  screenTimeBarBody: {
-    marginTop: 4,
-    alignItems: "center",
-  },
-
-  screenTimeBarTextSide: {
-    width: 64,
-  },
-
-  screenTimeBarChartSide: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  metricValueOnlyWrapper: {
-    flex: 1,
-    paddingTop: 8,
-    gap: 10,
-    justifyContent: "space-between",
-  },
-
-  metricValueOnlyMainRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-
-  metricValueOnlyInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  metricValueOnlyKicker: {
-    color: colors.textSoft,
-    fontSize: 10,
-    lineHeight: 12,
-    fontWeight: "900",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    marginBottom: 7,
-  },
-
-  metricValueOnlyValueLarge: {
-    color: colors.navy,
-    fontSize: 31,
-    lineHeight: 34,
-    fontWeight: "900",
-    letterSpacing: -0.9,
-  },
-
-  metricValueOnlyLabelLarge: {
-    color: colors.textSoft,
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: "800",
-    marginTop: 0,
-  },
-
-  metricValueOnlyHint: {
-    color: colors.textSoft,
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: "700",
-    marginTop: 9,
-  },
-
-  metricValueOnlyGoalPill: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 64,
-    alignSelf: "flex-start",
-  },
-
-  metricValueOnlyGoalLabel: {
-    color: colors.textSoft,
-    fontSize: 9,
-    lineHeight: 11,
-    fontWeight: "900",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-
-  metricValueOnlyGoalValue: {
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: "900",
-    marginTop: 1,
-  },
-
-  metricValueOnlyProgressBlock: {
-    gap: 6,
-  },
-
-  metricValueOnlyProgressTrack: {
-    height: 7,
-    borderRadius: 999,
-    backgroundColor: "rgba(24, 63, 104, 0.08)",
-    overflow: "hidden",
-  },
-
-  metricValueOnlyProgressFill: {
-    height: "100%",
-    borderRadius: 999,
-  },
-
-  metricValueOnlyProgressText: {
-    color: colors.textSoft,
-    fontSize: 10,
-    lineHeight: 13,
-    fontWeight: "800",
-  },
-
-  trendPill: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    alignSelf: "flex-start",
-  },
-
-  trendGood: {
-    backgroundColor: colors.greenSoft,
-  },
-
-  trendBad: {
-    backgroundColor: colors.redSoft,
-  },
-
-  trendText: {
-    fontSize: 11,
-    fontWeight: "900",
-  },
-
-  trendTextGood: {
-    color: colors.green,
-  },
-
-  trendTextBad: {
-    color: colors.red,
-  },
-
-  sparkline: {
-    height: 44,
-    marginTop: 6,
-  },
-
-  sparklineSmall: {
-    height: 30,
-    marginTop: 5,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 5,
-  },
-
-  sparkColumn: {
-    flex: 1,
-    justifyContent: "flex-end",
-    alignItems: "center",
-  },
-
-  sparkBar: {
-    width: 4,
-    borderRadius: 4,
-    opacity: 0.9,
-  },
-
-  sparkDays: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 3,
-  },
-
-  sparkDay: {
-    color: colors.textSoft,
-    fontSize: 9,
-    fontWeight: "700",
   },
 
   webMiddleRow: {
@@ -726,11 +267,6 @@ export const styles = StyleSheet.create({
     gap: 10,
   },
 
-  calculatedIcon: {
-    fontSize: 26,
-    fontWeight: "900",
-  },
-
   calculatedTitle: {
     color: colors.navy,
     fontSize: 14,
@@ -766,6 +302,43 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     marginTop: 5,
+  },
+
+  sparkline: {
+    height: 44,
+    marginTop: 6,
+  },
+
+  sparkDays: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 3,
+  },
+
+  sparkDay: {
+    color: colors.textSoft,
+    fontSize: 9,
+    fontWeight: "700",
+  },
+
+  sparklineSmall: {
+    height: 30,
+    marginTop: 5,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 5,
+  },
+
+  sparkColumn: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "center",
+  },
+
+  sparkBar: {
+    width: 4,
+    borderRadius: 4,
+    opacity: 0.9,
   },
 
   achievementsPanel: {
@@ -1064,164 +637,5 @@ export const styles = StyleSheet.create({
     gap: 8,
     marginTop: 18,
     marginBottom: 12,
-  },
-
-  trackedMetricContent: {
-    marginTop: 8,
-  },
-
-  trackedAverageBody: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-
-  trackedMainValueBlock: {
-    minWidth: 86,
-  },
-
-  trackedDoubleBody: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-
-  trackedDoubleItem: {
-    flex: 1,
-  },
-
-  trackedDoubleDivider: {
-    width: 1,
-    height: 38,
-    backgroundColor: "rgba(24,63,104,0.12)",
-  },
-
-  trackedScoreBody: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-
-  trackedProgressTrack: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(24,63,104,0.08)",
-    overflow: "hidden",
-    marginTop: 10,
-  },
-
-  trackedProgressFill: {
-    height: "100%",
-    borderRadius: 999,
-  },
-
-  trackedScoreChartRow: {
-    marginTop: 8,
-  },
-
-  trackedMiniChart: {
-    height: 42,
-    minWidth: 92,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "flex-end",
-    gap: 4,
-  },
-
-  trackedMiniChartCompact: {
-    height: 28,
-    minWidth: "100%",
-    justifyContent: "flex-start",
-  },
-
-  trackedMiniChartColumn: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-end",
-  },
-
-  trackedMiniChartBar: {
-    width: 5,
-    borderRadius: 999,
-  },
-
-  valueOnlyBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    marginTop: 14,
-  },
-
-  valueOnlyIconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  valueOnlyIcon: {
-    fontSize: 26,
-    fontWeight: "900",
-  },
-
-  valueOnlyValue: {
-    fontSize: 30,
-    fontWeight: "900",
-    color: colors.navy,
-    letterSpacing: -1,
-  },
-
-  valueOnlyLabel: {
-    marginTop: 2,
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.textSoft,
-  },
-
-  barChartDetailPill: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(24,63,104,0.06)",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginBottom: 5,
-  },
-
-  barChartDetailDay: {
-    color: colors.navy,
-    fontSize: 9,
-    fontWeight: "900",
-  },
-
-  barChartDetailValue: {
-    color: colors.textSoft,
-    fontSize: 9,
-    fontWeight: "800",
-    marginTop: 1,
-  },
-
-  barChartTopValue: {
-    fontSize: 8,
-    fontWeight: "900",
-    marginBottom: 2,
-  },
-
-  metricValueOnlyMoodRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 9,
-  },
-
-  metricValueOnlyMoodIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

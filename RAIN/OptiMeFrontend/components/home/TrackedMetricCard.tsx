@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { View, Text } from "react-native";
+import { Platform, StyleSheet, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import { colors, styles } from "@/styles/home.styles";
+import { colors } from "@/styles/home.styles";
 import type { HomeTrackedMetric } from "@/types/home";
 
 import MetricBarChart from "@/components/home/charts/MetricBarChart";
@@ -15,6 +15,22 @@ type TrackedMetricCardProps = {
 };
 
 type MetricVisualType = "bar" | "line" | "value";
+
+const cardShadow =
+  Platform.OS === "web"
+    ? ({
+        boxShadow: "0px 12px 28px rgba(24, 63, 104, 0.10)",
+      } as any)
+    : {
+        shadowColor: colors.shadow,
+        shadowOpacity: 0.14,
+        shadowRadius: 16,
+        shadowOffset: {
+          width: 0,
+          height: 8,
+        },
+        elevation: 3,
+      };
 
 export default function TrackedMetricCard({
   metric,
@@ -45,10 +61,10 @@ function ChartMetric({
   }
 
   return (
-    <View style={styles.metricBody}>
+    <View style={componentStyles.metricBody}>
       <MetricValueHeader metric={metric} />
 
-      <View style={styles.metricChartBox}>
+      <View style={componentStyles.metricChartBox}>
         <MetricLineChart
           data={metric.chart}
           color={metric.color}
@@ -64,33 +80,38 @@ function BarChartMetric({ metric }: { metric: HomeTrackedMetric }) {
 
   return (
     <View
-      style={[styles.metricBarBody, isScreenTime && styles.screenTimeBarBody]}
+      style={[
+        componentStyles.metricBarBody,
+        isScreenTime && componentStyles.screenTimeBarBody,
+      ]}
     >
       <View
         style={[
-          styles.metricBarTextSide,
-          isScreenTime && styles.screenTimeBarTextSide,
+          componentStyles.metricBarTextSide,
+          isScreenTime && componentStyles.screenTimeBarTextSide,
         ]}
       >
         {!!metric.valueLabel && (
-          <Text style={styles.metricValueLabel}>{metric.valueLabel}</Text>
+          <Text style={componentStyles.metricValueLabel}>
+            {metric.valueLabel}
+          </Text>
         )}
 
-        <View style={styles.metricValueRow}>
-          <Text style={styles.metricValue}>{metric.value}</Text>
+        <View style={componentStyles.metricValueRow}>
+          <Text style={componentStyles.metricValue}>{metric.value}</Text>
 
           {!!metric.suffix && (
-            <Text style={styles.metricSuffix}>{metric.suffix}</Text>
+            <Text style={componentStyles.metricSuffix}>{metric.suffix}</Text>
           )}
         </View>
 
-        <Text style={styles.metricSubtitle}>{metric.subtitle}</Text>
+        <Text style={componentStyles.metricSubtitle}>{metric.subtitle}</Text>
       </View>
 
       <View
         style={[
-          styles.metricBarChartSide,
-          isScreenTime && styles.screenTimeBarChartSide,
+          componentStyles.metricBarChartSide,
+          isScreenTime && componentStyles.screenTimeBarChartSide,
         ]}
       >
         <MetricBarChart
@@ -163,30 +184,34 @@ function ValueOnlyMetric({ metric }: { metric: HomeTrackedMetric }) {
 
 function MetricValueHeader({ metric }: { metric: HomeTrackedMetric }) {
   return (
-    <View style={styles.metricStatsRow}>
-      <View style={styles.metricPrimaryBlock}>
+    <View style={componentStyles.metricStatsRow}>
+      <View style={componentStyles.metricPrimaryBlock}>
         {!!metric.valueLabel && (
-          <Text style={styles.metricValueLabel}>{metric.valueLabel}</Text>
+          <Text style={componentStyles.metricValueLabel}>
+            {metric.valueLabel}
+          </Text>
         )}
 
-        <View style={styles.metricValueRow}>
-          <Text style={styles.metricValue}>{metric.value}</Text>
+        <View style={componentStyles.metricValueRow}>
+          <Text style={componentStyles.metricValue}>{metric.value}</Text>
 
           {!!metric.suffix && (
-            <Text style={styles.metricSuffix}>{metric.suffix}</Text>
+            <Text style={componentStyles.metricSuffix}>{metric.suffix}</Text>
           )}
         </View>
 
-        <Text style={styles.metricSubtitle}>{metric.subtitle}</Text>
+        <Text style={componentStyles.metricSubtitle}>{metric.subtitle}</Text>
       </View>
 
       {!!metric.secondValue && (
-        <View style={styles.metricSecondaryBlock}>
-          <Text style={styles.metricSecondaryLabel}>
+        <View style={componentStyles.metricSecondaryBlock}>
+          <Text style={componentStyles.metricSecondaryLabel}>
             {metric.secondLabel || "Second"}
           </Text>
 
-          <Text style={styles.metricSecondaryValue}>{metric.secondValue}</Text>
+          <Text style={componentStyles.metricSecondaryValue}>
+            {metric.secondValue}
+          </Text>
         </View>
       )}
     </View>
@@ -219,11 +244,15 @@ function MetricShell({
         : "→";
 
   return (
-    <View style={mobile ? styles.mobileMetricCard : styles.metricCard}>
-      <View style={styles.metricTopRow}>
+    <View
+      style={
+        mobile ? componentStyles.mobileMetricCard : componentStyles.metricCard
+      }
+    >
+      <View style={componentStyles.metricTopRow}>
         <View
           style={[
-            styles.metricTitleBadge,
+            componentStyles.metricTitleBadge,
             {
               backgroundColor: `${metric.color}10`,
               borderColor: `${metric.color}24`,
@@ -232,7 +261,7 @@ function MetricShell({
         >
           <View
             style={[
-              styles.metricIconBox,
+              componentStyles.metricIconBox,
               { backgroundColor: `${metric.color}18` },
             ]}
           >
@@ -240,29 +269,33 @@ function MetricShell({
           </View>
 
           <Text
-            style={styles.metricTitle}
+            style={componentStyles.metricTitle}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
             {metric.title}
           </Text>
 
-          <View style={[styles.metricDot, { backgroundColor: dotColor }]} />
+          <View
+            style={[componentStyles.metricDot, { backgroundColor: dotColor }]}
+          />
         </View>
 
         {showTrend && (
           <View
             style={[
-              styles.trendPill,
-              metric.trend.isGood ? styles.trendGood : styles.trendBad,
+              componentStyles.trendPill,
+              metric.trend.isGood
+                ? componentStyles.trendGood
+                : componentStyles.trendBad,
             ]}
           >
             <Text
               style={[
-                styles.trendText,
+                componentStyles.trendText,
                 metric.trend.isGood
-                  ? styles.trendTextGood
-                  : styles.trendTextBad,
+                  ? componentStyles.trendTextGood
+                  : componentStyles.trendTextBad,
               ]}
             >
               {trendSymbol} {metric.trend.value}%
@@ -438,3 +471,206 @@ function clampProgress(value: number) {
 function formatGoalValue(value: number) {
   return value.toLocaleString("en-US");
 }
+
+const componentStyles = StyleSheet.create({
+  metricCard: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "31%",
+    minWidth: 245,
+    minHeight: 155,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    padding: 16,
+    ...cardShadow,
+  },
+
+  mobileMetricCard: {
+    width: "100%",
+    minHeight: 165,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    padding: 16,
+    ...cardShadow,
+  },
+
+  metricTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  metricTitleBadge: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+
+  metricIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  metricTitle: {
+    color: colors.navy,
+    fontSize: 14,
+    fontWeight: "900",
+    flexShrink: 1,
+  },
+
+  metricDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+  },
+
+  metricBody: {
+    flex: 1,
+    marginTop: 8,
+  },
+
+  metricStatsRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+
+  metricPrimaryBlock: {
+    flex: 1,
+  },
+
+  metricSecondaryBlock: {
+    alignItems: "flex-end",
+  },
+
+  metricSecondaryLabel: {
+    color: colors.navySoft,
+    fontSize: 11,
+    fontWeight: "800",
+    marginBottom: 2,
+    textTransform: "capitalize",
+  },
+
+  metricSecondaryValue: {
+    color: colors.navy,
+    fontSize: 22,
+    fontWeight: "900",
+    letterSpacing: -0.4,
+  },
+
+  metricChartBox: {
+    marginTop: 10,
+    height: 54,
+    width: "100%",
+    overflow: "hidden",
+  },
+
+  metricValueLabel: {
+    color: colors.navy,
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 8,
+  },
+
+  metricValueRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 6,
+    marginTop: 1,
+  },
+
+  metricValue: {
+    color: colors.navy,
+    fontSize: 28,
+    fontWeight: "900",
+    letterSpacing: -0.6,
+  },
+
+  metricSuffix: {
+    color: colors.navySoft,
+    fontSize: 13,
+    fontWeight: "800",
+    marginBottom: 6,
+  },
+
+  metricSubtitle: {
+    color: colors.textSoft,
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+
+  metricBarBody: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: 10,
+  },
+
+  metricBarTextSide: {
+    width: 82,
+    justifyContent: "center",
+  },
+
+  metricBarChartSide: {
+    flex: 1,
+    minWidth: 130,
+    justifyContent: "center",
+  },
+
+  screenTimeBarBody: {
+    marginTop: 4,
+    alignItems: "center",
+  },
+
+  screenTimeBarTextSide: {
+    width: 64,
+  },
+
+  screenTimeBarChartSide: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  trendPill: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    alignSelf: "flex-start",
+  },
+
+  trendGood: {
+    backgroundColor: colors.greenSoft,
+  },
+
+  trendBad: {
+    backgroundColor: colors.redSoft,
+  },
+
+  trendText: {
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  trendTextGood: {
+    color: colors.green,
+  },
+
+  trendTextBad: {
+    color: colors.red,
+  },
+});

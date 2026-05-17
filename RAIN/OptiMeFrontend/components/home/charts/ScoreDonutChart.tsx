@@ -12,25 +12,6 @@ type ScoreDonutChartProps = {
   mobile?: boolean;
 };
 
-function getStatusColor(status: HomeScoreStatus) {
-  switch (status) {
-    case "healthy":
-      return colors.green;
-    case "okay":
-      return colors.yellow;
-    case "warning":
-      return colors.orange;
-    case "critical":
-      return colors.red;
-    default:
-      return colors.green;
-  }
-}
-
-function easeOutCubic(progress: number) {
-  return 1 - Math.pow(1 - progress, 3);
-}
-
 export default function ScoreDonutChart({
   value,
   label,
@@ -88,7 +69,7 @@ export default function ScoreDonutChart({
   ];
 
   return (
-    <View style={styles.wrapper}>
+    <View style={componentStyles.wrapper}>
       <PieChart
         data={data}
         donut
@@ -97,12 +78,16 @@ export default function ScoreDonutChart({
         innerCircleColor={colors.navyDark}
         showGradient
         centerLabelComponent={() => (
-          <View style={styles.centerContent}>
-            <Text style={mobile ? styles.mobileValue : styles.value}>
+          <View style={componentStyles.centerContent}>
+            <Text
+              style={
+                mobile ? componentStyles.mobileValue : componentStyles.value
+              }
+            >
               {animatedValue}
             </Text>
 
-            <Text style={styles.label}>{label}</Text>
+            <Text style={componentStyles.label}>{label}</Text>
           </View>
         )}
       />
@@ -110,7 +95,26 @@ export default function ScoreDonutChart({
   );
 }
 
-const styles = StyleSheet.create({
+function getStatusColor(status: HomeScoreStatus) {
+  switch (status) {
+    case "healthy":
+      return colors.green;
+    case "okay":
+      return colors.yellow;
+    case "warning":
+      return colors.orange;
+    case "critical":
+      return colors.red;
+    default:
+      return colors.green;
+  }
+}
+
+function easeOutCubic(progress: number) {
+  return 1 - Math.pow(1 - progress, 3);
+}
+
+const componentStyles = StyleSheet.create({
   wrapper: {
     alignSelf: "center",
     alignItems: "center",
