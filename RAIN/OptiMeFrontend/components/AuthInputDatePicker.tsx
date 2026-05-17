@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { Ionicons } from "@expo/vector-icons";
 
 type AuthInputDatePickerProps = {
   label: string;
@@ -21,6 +22,7 @@ export default function AuthInputDatePicker({
   onChange,
 }: AuthInputDatePickerProps) {
   const [showPicker, setShowPicker] = useState(false);
+  const datePickerRef = useRef<HTMLInputElement | null>(null);
 
   const isValidDate = value instanceof Date && !isNaN(value.getTime());
   const safeDate = isValidDate ? value : new Date();
@@ -33,6 +35,39 @@ export default function AuthInputDatePicker({
     const year = date.getFullYear();
 
     return `${day}.${month}.${year}`;
+  }
+
+  function formatDateForInput(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function parseInputDate(value: string) {
+    if (!value) {
+      return null;
+    }
+
+    const [year, month, day] = value.split("-").map(Number);
+
+    const parsedDate = new Date(year, month - 1, day);
+
+    const isValid =
+      parsedDate.getFullYear() === year &&
+      parsedDate.getMonth() === month - 1 &&
+      parsedDate.getDate() === day;
+
+    if (!isValid) {
+      return null;
+    }
+
+    if (parsedDate > maxDate) {
+      return null;
+    }
+
+    return parsedDate;
   }
 
   function parseDisplayDate(value: string) {
@@ -67,6 +102,8 @@ export default function AuthInputDatePicker({
   }
 
   const displayDateValue = formatDateForDisplay(safeDate);
+  const inputDateValue = formatDateForInput(safeDate);
+  const maxDateValue = formatDateForInput(maxDate);
 
   const [webDateText, setWebDateText] = useState(displayDateValue);
 
@@ -74,16 +111,45 @@ export default function AuthInputDatePicker({
     setWebDateText(displayDateValue);
   }, [displayDateValue]);
 
+  function handleWebTextChange(text: string) {
+    setWebDateText(text);
+
+    const selectedDate = parseDisplayDate(text);
+
+    if (selectedDate) {
+      onChange(selectedDate);
+    }
+  }
+
   function handleWebDateBlur() {
     const selectedDate = parseDisplayDate(webDateText);
 
     if (selectedDate) {
-      onChange(selectedDate);
       setWebDateText(formatDateForDisplay(selectedDate));
+      onChange(selectedDate);
       return;
     }
 
     setWebDateText(displayDateValue);
+  }
+
+  function openWebDatePicker() {
+    const picker = datePickerRef.current;
+
+    if (!picker) {
+      return;
+    }
+
+    const pickerWithShowPicker = picker as HTMLInputElement & {
+      showPicker?: () => void;
+    };
+
+    if (pickerWithShowPicker.showPicker) {
+      pickerWithShowPicker.showPicker();
+      return;
+    }
+
+    picker.click();
   }
 
   if (Platform.OS === "web") {
@@ -93,31 +159,76 @@ export default function AuthInputDatePicker({
           <Text style={styles.label}>{label}</Text>
         </View>
 
-        <input
-          type="text"
-          value={webDateText}
-          placeholder="dd.mm.yyyy"
-          inputMode="numeric"
-          onChange={(e) => {
-            setWebDateText(e.currentTarget.value);
-          }}
-          onBlur={handleWebDateBlur}
-          style={{
-            width: "100%",
-            height: 45,
-            paddingLeft: 20,
-            paddingRight: 20,
-            borderRadius: 32,
-            border: "1.5px solid #8B8B8B",
-            fontSize: 18,
-            fontFamily:
-              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
-            color: "#555",
-            backgroundColor: "#FFFFFF",
-            outline: "none",
-            boxSizing: "border-box",
-          }}
-        />
+        <div style={{ position: "relative", width: "100%" }}>
+          <input
+            type="text"
+            value={webDateText}
+            placeholder="dd.mm.yyyy"
+            inputMode="decimal"
+            onChange={(e) => handleWebTextChange(e.currentTarget.value)}
+            onBlur={handleWebDateBlur}
+            style={{
+              width: "100%",
+              height: 45,
+              paddingLeft: 20,
+              paddingRight: 56,
+              borderRadius: 32,
+              border: "1.5px solid #8B8B8B",
+              fontSize: 18,
+              fontFamily:
+                '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+              color: "#555",
+              backgroundColor: "#FFFFFF",
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+
+          <button
+            type="button"
+            onClick={openWebDatePicker}
+            style={{
+              position: "absolute",
+              right: 10,
+              top: 0,
+              width: 42,
+              height: 45,
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+            }}
+          >
+            <Ionicons name="calendar-outline" size={23} color="#555" />{" "}
+          </button>
+
+          <input
+            ref={datePickerRef}
+            type="date"
+            value={inputDateValue}
+            max={maxDateValue}
+            onChange={(e) => {
+              const selectedDate = parseInputDate(e.currentTarget.value);
+
+              if (selectedDate) {
+                onChange(selectedDate);
+                setWebDateText(formatDateForDisplay(selectedDate));
+              }
+            }}
+            style={{
+              position: "absolute",
+              right: 10,
+              top: 0,
+              width: 42,
+              height: 45,
+              opacity: 0,
+              pointerEvents: "none",
+            }}
+          />
+        </div>
       </View>
     );
   }
