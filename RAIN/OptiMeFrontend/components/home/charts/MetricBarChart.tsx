@@ -204,7 +204,7 @@ function getLastSevenDays(): ChartDay[] {
 
     return {
       shortLabel: new Intl.DateTimeFormat("en-US", {
-        weekday: "narrow",
+        weekday: "short",
       }).format(date),
       fullLabel: new Intl.DateTimeFormat("en-US", {
         weekday: "long",

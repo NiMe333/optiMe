@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { View, Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { colors, styles } from "@/styles/home.styles";
 import type { HomeTrackedMetric } from "@/types/home";
@@ -7,7 +8,6 @@ import type { HomeTrackedMetric } from "@/types/home";
 import MetricBarChart from "@/components/home/charts/MetricBarChart";
 import MetricLineChart from "@/components/home/charts/MetricLineChart";
 import MetricValueOnly from "@/components/home/charts/MetricValueOnly";
-import { Ionicons } from "@expo/vector-icons";
 
 type TrackedMetricCardProps = {
   metric: HomeTrackedMetric;
@@ -58,6 +58,7 @@ function ChartMetric({
     </View>
   );
 }
+
 function BarChartMetric({ metric }: { metric: HomeTrackedMetric }) {
   const isScreenTime = metric.id === "screen-time";
 
@@ -106,7 +107,11 @@ function BarChartMetric({ metric }: { metric: HomeTrackedMetric }) {
 }
 
 function ValueOnlyMetric({ metric }: { metric: HomeTrackedMetric }) {
-  const isActivity = metric.id === "movement" || metric.id === "activity";
+  const isActivity =
+    metric.id === "movement" ||
+    metric.id === "activity" ||
+    metric.id === "steps";
+
   const isMood = metric.id === "mood";
 
   const value = metric.suffix
@@ -119,7 +124,45 @@ function ValueOnlyMetric({ metric }: { metric: HomeTrackedMetric }) {
       ? "today mood"
       : metric.subtitle;
 
-  return <MetricValueOnly value={value} label={label} hint={metric.subtitle} />;
+  const hint = isActivity
+    ? "Steps from pedometer"
+    : isMood
+      ? getMoodDescription(metric.value)
+      : metric.subtitle;
+
+  const statusLabel = isActivity ? "Measured" : isMood ? "Entered" : "Tracked";
+
+  if (isMood) {
+    return (
+      <MetricValueOnly
+        value={value}
+        label={label}
+        hint={hint}
+        color={metric.color}
+        statusLabel={statusLabel}
+        showProgress={false}
+      />
+    );
+  }
+
+  const progress = getValueMetricProgress(metric);
+  const goalLabel = metric.maxValue
+    ? formatGoalValue(metric.maxValue)
+    : undefined;
+
+  return (
+    <MetricValueOnly
+      value={value}
+      label={label}
+      hint={hint}
+      color={metric.color}
+      statusLabel={statusLabel}
+      goalLabel={goalLabel}
+      progress={progress}
+      progressLabel="of daily goal"
+      showProgress={!!metric.maxValue}
+    />
+  );
 }
 
 function MetricValueHeader({ metric }: { metric: HomeTrackedMetric }) {
@@ -280,6 +323,7 @@ function getMetricVisualType(metric: HomeTrackedMetric): MetricVisualType {
 
   return "line";
 }
+
 function getBarChartDetailLabel(metric: HomeTrackedMetric) {
   if (metric.id === "sleep") {
     return "Sleep hours";
@@ -306,4 +350,73 @@ function getMetricMaxValue(metric: HomeTrackedMetric) {
   }
 
   return 100;
+}
+
+function getValueMetricProgress(metric: HomeTrackedMetric) {
+  if (metric.id === "mood") {
+    const [rawValue, rawMax] = String(metric.value).split("/");
+
+    const value = parseMetricNumber(rawValue);
+    const max = parseMetricNumber(rawMax) || metric.maxValue || 5;
+
+    return clampProgress((value / max) * 100);
+  }
+
+  if (
+    metric.id === "activity" ||
+    metric.id === "movement" ||
+    metric.id === "steps"
+  ) {
+    const value = parseMetricNumber(metric.value);
+    const goal = metric.maxValue || 10000;
+
+    return clampProgress((value / goal) * 100);
+  }
+
+  return 70;
+}
+
+function parseMetricNumber(value: string | number | undefined) {
+  if (value === undefined) {
+    return 0;
+  }
+
+  const cleanValue = String(value).replace(/,/g, "");
+  const match = cleanValue.match(/\d+(\.\d+)?/);
+
+  return match ? Number(match[0]) : 0;
+}
+
+function clampProgress(value: number) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, value));
+}
+
+function formatGoalValue(value: number) {
+  return value.toLocaleString("en-US");
+}
+
+function getMoodDescription(value: string | number) {
+  const moodValue = parseMetricNumber(value);
+
+  if (moodValue >= 4.5) {
+    return "Excellent mood today";
+  }
+
+  if (moodValue >= 3.5) {
+    return "Good mood today";
+  }
+
+  if (moodValue >= 2.5) {
+    return "Okay mood today";
+  }
+
+  if (moodValue >= 1.5) {
+    return "Low mood today";
+  }
+
+  return "Very low mood today";
 }

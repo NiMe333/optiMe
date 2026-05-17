@@ -222,9 +222,6 @@ function CalculatedScoreCard({
   return (
     <View style={mobile ? styles.mobileCalculatedCard : styles.calculatedCard}>
       <View style={styles.calculatedTop}>
-        <Text style={[styles.calculatedIcon, { color: score.color }]}>
-          {score.icon}
-        </Text>
         <Text style={styles.calculatedTitle}>{score.title}</Text>
       </View>
 

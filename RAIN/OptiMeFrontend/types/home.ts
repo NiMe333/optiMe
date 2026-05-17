@@ -36,7 +36,6 @@ export type HomeTrackedMetricVariant = "average" | "double" | "score";
 export type HomeTrackedMetric = {
   id: string;
   title: string;
-  icon: string;
 
   variant: HomeTrackedMetricVariant;
 
@@ -66,7 +65,6 @@ export type HomeTrackedMetric = {
 export type HomeCalculatedScore = {
   id: string;
   title: string;
-  icon: string;
   value: string | number;
   suffix?: string;
   subtitle: string;

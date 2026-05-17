@@ -42,7 +42,6 @@ export const mockHomeData: HomeDashboardData = {
     {
       id: "sleep",
       title: "Sleep",
-      icon: "☾",
       variant: "average",
       source: "measured",
       valueLabel: "Last night",
@@ -60,12 +59,12 @@ export const mockHomeData: HomeDashboardData = {
     {
       id: "activity",
       title: "Activity",
-      icon: "🚶",
       variant: "double",
       source: "measured",
       valueLabel: "Today",
-      value: "5,232",
+      value: "6,232",
       subtitle: "Steps from pedometer",
+      maxValue: 8000,
       trend: {
         direction: "up",
         value: 18,
@@ -77,7 +76,6 @@ export const mockHomeData: HomeDashboardData = {
     {
       id: "screen-time",
       title: "Screen Time",
-      icon: "▯",
       variant: "average",
       source: "measured",
       valueLabel: "Today",
@@ -95,7 +93,6 @@ export const mockHomeData: HomeDashboardData = {
     {
       id: "socialization",
       title: "Socialization",
-      icon: "♟",
       variant: "score",
       source: "entered",
       valueLabel: "Social score",
@@ -114,7 +111,6 @@ export const mockHomeData: HomeDashboardData = {
     {
       id: "mood",
       title: "Mood",
-      icon: "☺",
       variant: "score",
       source: "entered",
       valueLabel: "Today",
@@ -133,7 +129,6 @@ export const mockHomeData: HomeDashboardData = {
     {
       id: "financial-work-school-stress",
       title: "Stress",
-      icon: "ϟ",
       variant: "score",
       source: "entered",
       valueLabel: "Financial / Work / School",
@@ -154,7 +149,6 @@ export const mockHomeData: HomeDashboardData = {
   calculatedScores: [
     {
       id: "anxiety",
-      icon: "🧠",
       title: "Anxiety Score",
       value: 42,
       suffix: "/100",
@@ -164,7 +158,6 @@ export const mockHomeData: HomeDashboardData = {
     },
     {
       id: "depression",
-      icon: "☁",
       title: "Depression Score",
       value: 38,
       suffix: "/100",
@@ -174,7 +167,6 @@ export const mockHomeData: HomeDashboardData = {
     },
     {
       id: "stress-level",
-      icon: "ϟ",
       title: "Stress Level",
       value: "Moderate",
       subtitle: "Auto-calculated",
@@ -183,7 +175,6 @@ export const mockHomeData: HomeDashboardData = {
     },
     {
       id: "mental-health-score",
-      icon: "♡",
       title: "Mental Health Score",
       value: 80,
       suffix: "/100",
