@@ -1,4 +1,4 @@
-import { View, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
 
@@ -26,6 +26,18 @@ const colors = {
 export default function MobileBottomNav() {
   const pathname = usePathname();
 
+  function blurWebFocus() {
+    if (Platform.OS !== "web") return;
+
+    const activeElement = document.activeElement as HTMLElement | null;
+    activeElement?.blur();
+  }
+
+  function navigateTo(href: string) {
+    blurWebFocus();
+    router.replace(href as any);
+  }
+
   return (
     <View style={styles.wrapper}>
       <View style={styles.container}>
@@ -34,13 +46,13 @@ export default function MobileBottomNav() {
 
           return (
             <Pressable
-              key={`${item.label}-${item.href}`}
+              key={`${item.label}-${item.activePath}`}
               style={active ? styles.activeItem : styles.item}
-              onPress={() => router.push(item.href as any)}
+              onPress={() => navigateTo(item.href)}
             >
               <Ionicons
                 name={active ? getActiveIcon(item.icon) : item.icon}
-                size={active ? 20 : 26}
+                size={active ? 22 : getMobileIconSize(item.icon)}
                 color={active ? colors.white : colors.navy}
               />
             </Pressable>
@@ -51,14 +63,12 @@ export default function MobileBottomNav() {
   );
 }
 
-function isRouteActive(pathname: string, href: string) {
-  if (href === "/home") {
-    return (
-      pathname === "/" || pathname === "/home" || pathname.startsWith("/home/")
-    );
+function isRouteActive(pathname: string, activePath: string) {
+  if (activePath === "/home") {
+    return pathname === "/" || pathname === "/home";
   }
 
-  return pathname === href || pathname.startsWith(`${href}/`);
+  return pathname === activePath || pathname.startsWith(`${activePath}/`);
 }
 
 function getActiveIcon(
@@ -82,6 +92,25 @@ function getActiveIcon(
 
     default:
       return icon;
+  }
+}
+
+function getMobileIconSize(icon: keyof typeof Ionicons.glyphMap) {
+  switch (icon) {
+    case "home-outline":
+      return 24;
+
+    case "stats-chart-outline":
+      return 26;
+
+    case "heart-outline":
+      return 27;
+
+    case "person-outline":
+      return 27;
+
+    default:
+      return 24;
   }
 }
 
@@ -135,6 +164,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 16,
+
     alignItems: "center",
     justifyContent: "center",
   },
