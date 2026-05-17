@@ -266,10 +266,18 @@ exports.saveForm = async function (req, res) {
     });
   }
 };
-
 exports.me = async function (req, res) {
   try {
-    const user = await User.findById(req.user.userId);
+    const userId = req.user.userId || req.user.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token payload",
+      });
+    }
+
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(401).json({

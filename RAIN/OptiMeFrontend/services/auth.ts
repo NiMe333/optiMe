@@ -1,7 +1,11 @@
 import api, { publicApi } from "./apiI";
 import type { StartingFormPayload } from "@/data/startingQuestions";
 
-import { saveAccessToken, deleteAccessToken } from "@/services/authStorage";
+import {
+  saveAccessToken,
+  getAccessToken,
+  deleteAccessToken,
+} from "@/services/authStorage";
 
 export type AuthUserResponse = {
   id: string;
@@ -110,11 +114,22 @@ export async function logoutUser() {
 }
 
 export async function getCurrentUser() {
+  const token = await getAccessToken();
+
+  if (!token) {
+    return null;
+  }
+
   try {
     const response = await api.get("/user/me");
 
-    return normalizeAuthResponse(response.data);
+    return normalizeUser(response.data?.user);
   } catch (error: any) {
+    if (error?.response?.status === 401) {
+      await deleteAccessToken();
+      return null;
+    }
+
     throw new Error(getErrorMessage(error, "Failed to get current user"));
   }
 }

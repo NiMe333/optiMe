@@ -7,6 +7,7 @@ import type { HomeTrackedMetric } from "@/types/home";
 import MetricBarChart from "@/components/home/charts/MetricBarChart";
 import MetricLineChart from "@/components/home/charts/MetricLineChart";
 import MetricValueOnly from "@/components/home/charts/MetricValueOnly";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 type TrackedMetricCardProps = {
   metric: HomeTrackedMetric;
@@ -39,24 +40,52 @@ function ChartMetric({
   metric: HomeTrackedMetric;
   type: "bar" | "line";
 }) {
+  if (type === "bar") {
+    return <BarChartMetric metric={metric} />;
+  }
+
   return (
     <View style={styles.metricBody}>
       <MetricValueHeader metric={metric} />
 
       <View style={styles.metricChartBox}>
-        {type === "bar" ? (
-          <MetricBarChart
-            data={metric.chart}
-            color={metric.color}
-            maxValue={getMetricMaxValue(metric)}
-          />
-        ) : (
-          <MetricLineChart
-            data={metric.chart}
-            color={metric.color}
-            maxValue={getMetricMaxValue(metric)}
-          />
+        <MetricLineChart
+          data={metric.chart}
+          color={metric.color}
+          maxValue={getMetricMaxValue(metric)}
+        />
+      </View>
+    </View>
+  );
+}
+
+function BarChartMetric({ metric }: { metric: HomeTrackedMetric }) {
+  return (
+    <View style={styles.metricBarBody}>
+      <View style={styles.metricBarTextSide}>
+        {!!metric.valueLabel && (
+          <Text style={styles.metricValueLabel}>{metric.valueLabel}</Text>
         )}
+
+        <View style={styles.metricValueRow}>
+          <Text style={styles.metricValue}>{metric.value}</Text>
+
+          {!!metric.suffix && (
+            <Text style={styles.metricSuffix}>{metric.suffix}</Text>
+          )}
+        </View>
+
+        <Text style={styles.metricSubtitle}>{metric.subtitle}</Text>
+      </View>
+
+      <View style={styles.metricBarChartSide}>
+        <MetricBarChart
+          data={metric.chart}
+          color={metric.color}
+          maxValue={getMetricMaxValue(metric)}
+          unit={metric.suffix || ""}
+          detailLabel={getBarChartDetailLabel(metric)}
+        />
       </View>
     </View>
   );
@@ -148,15 +177,25 @@ function MetricShell({
     <View style={mobile ? styles.mobileMetricCard : styles.metricCard}>
       <View style={styles.metricTopRow}>
         <View style={styles.metricTitleBlock}>
-          <Text style={[styles.metricIcon, { color: metric.color }]}>
-            {metric.icon}
-          </Text>
+          <View
+            style={[
+              styles.metricIconBox,
+              { backgroundColor: `${metric.color}16` },
+            ]}
+          >
+            <MetricHeaderIcon metricId={metric.id} color={metric.color} />
+          </View>
 
-          <View style={styles.metricTextBlock}>
-            <View style={styles.metricTitleRow}>
-              <Text style={styles.metricTitle}>{metric.title}</Text>
-              <View style={[styles.metricDot, { backgroundColor: dotColor }]} />
-            </View>
+          <View style={styles.metricTitleRow}>
+            <Text
+              style={styles.metricTitle}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {metric.title}
+            </Text>
+
+            <View style={[styles.metricDot, { backgroundColor: dotColor }]} />
           </View>
         </View>
 
@@ -182,6 +221,39 @@ function MetricShell({
   );
 }
 
+function MetricHeaderIcon({
+  metricId,
+  color,
+}: {
+  metricId: string;
+  color: string;
+}) {
+  switch (metricId) {
+    case "sleep":
+      return <Ionicons name="moon" size={17} color={color} />;
+
+    case "activity":
+    case "movement":
+    case "steps":
+      return <Ionicons name="walk" size={18} color={color} />;
+
+    case "screen-time":
+      return <Ionicons name="phone-portrait-outline" size={18} color={color} />;
+
+    case "socialization":
+      return <Ionicons name="people-outline" size={18} color={color} />;
+
+    case "mood":
+      return <Ionicons name="happy-outline" size={18} color={color} />;
+
+    case "financial-work-school-stress":
+      return <Ionicons name="briefcase-outline" size={18} color={color} />;
+
+    default:
+      return <Ionicons name="analytics-outline" size={18} color={color} />;
+  }
+}
+
 function getMetricVisualType(metric: HomeTrackedMetric): MetricVisualType {
   if (
     metric.id === "activity" ||
@@ -197,6 +269,17 @@ function getMetricVisualType(metric: HomeTrackedMetric): MetricVisualType {
   }
 
   return "line";
+}
+function getBarChartDetailLabel(metric: HomeTrackedMetric) {
+  if (metric.id === "sleep") {
+    return "Sleep hours";
+  }
+
+  if (metric.id === "screen-time") {
+    return "Screen time";
+  }
+
+  return metric.title;
 }
 
 function getMetricMaxValue(metric: HomeTrackedMetric) {

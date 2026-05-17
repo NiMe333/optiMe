@@ -344,31 +344,38 @@ export const styles = StyleSheet.create({
 
   metricTitleBlock: {
     flexDirection: "row",
-    gap: 12,
+    alignItems: "center",
+    gap: 8,
     flex: 1,
+    minWidth: 0,
   },
 
-  metricIcon: {
+  metricIconBox: {
     width: 28,
-    fontSize: 26,
-    fontWeight: "900",
-    textAlign: "center",
+    height: 28,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   metricTextBlock: {
     flex: 1,
+    minWidth: 0,
   },
 
   metricTitleRow: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 7,
   },
 
   metricTitle: {
     color: colors.navy,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "900",
+    flexShrink: 1,
   },
 
   metricDot: {
@@ -1083,5 +1090,52 @@ export const styles = StyleSheet.create({
     color: colors.navySoft,
     fontSize: 13,
     fontWeight: "800",
+  },
+  metricBarBody: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: 10,
+  },
+
+  metricBarTextSide: {
+    width: 82,
+    justifyContent: "center",
+  },
+
+  metricBarChartSide: {
+    flex: 1,
+    minWidth: 130,
+    justifyContent: "center",
+  },
+
+  barChartDetailPill: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(24,63,104,0.06)",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 5,
+  },
+
+  barChartDetailDay: {
+    color: colors.navy,
+    fontSize: 9,
+    fontWeight: "900",
+  },
+
+  barChartDetailValue: {
+    color: colors.textSoft,
+    fontSize: 9,
+    fontWeight: "800",
+    marginTop: 1,
+  },
+
+  barChartTopValue: {
+    fontSize: 8,
+    fontWeight: "900",
+    marginBottom: 2,
   },
 });

@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { getCurrentUser, logoutUser } from "@/services/auth";
-import { getAccessToken } from "@/services/authStorage";
 
 export type AuthUser = {
   id: string;
@@ -43,20 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function restoreUser() {
       try {
-        const token = await getAccessToken();
+        const currentUser = await getCurrentUser();
 
-        if (!token) {
-          setUserState(null);
-          return;
-        }
-
-        const data = await getCurrentUser();
-
-        if (data.user) {
-          setUserState(normalizeAuthUser(data.user));
-        } else {
-          setUserState(null);
-        }
+        setUserState(normalizeAuthUser(currentUser));
       } catch (error) {
         setUserState(null);
       } finally {

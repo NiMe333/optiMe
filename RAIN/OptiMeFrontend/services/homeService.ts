@@ -1,10 +1,16 @@
-import api from "@/services/apiI";
 import { mockHomeData } from "@/data/mockHomeData";
 import type { HomeDashboardData } from "@/types/home";
 
+const USE_MOCK_HOME_DATA = true;
+
 export async function getHomeDashboardData(): Promise<HomeDashboardData> {
+  if (USE_MOCK_HOME_DATA) {
+    return mockHomeData;
+  }
+
   try {
-    const response = await api.get("/home");
+    const api = await import("@/services/apiI");
+    const response = await api.default.get("/home");
 
     if (response.data?.homeData) {
       return response.data.homeData;
@@ -15,7 +21,7 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
     }
 
     return mockHomeData;
-  } catch (error) {
+  } catch {
     return mockHomeData;
   }
 }

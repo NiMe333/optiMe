@@ -56,6 +56,7 @@ export default function WebSidebar() {
         <Image
           source={require("@/assets/images/just_circle.png")}
           style={styles.logo}
+          resizeMode="contain"
         />
       </View>
 
@@ -126,7 +127,6 @@ const styles = StyleSheet.create({
   logo: {
     width: 50,
     height: 50,
-    resizeMode: "contain",
   },
 
   center: {
