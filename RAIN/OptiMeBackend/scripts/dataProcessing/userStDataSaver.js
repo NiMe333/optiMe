@@ -8,9 +8,9 @@ async function newUserStDataModel()
     try
     {
         const userStData  = new UserStData({
-            userId: "69fd9faac176d3f352b24d4e",
-            storagePath: `userData/69fd9faac176d3f352b24d4e/2026-05-09.csv`,
-            importedForDate: "2026-05-09"
+            userId: "69fd9f14c176d3f352b24d49",
+            storagePath: `userData/69fd9f14c176d3f352b24d49/2026-05-09.csv`,
+            importedForDate: new Date("2026-05-09")
         });
 
         await userStData.save();
