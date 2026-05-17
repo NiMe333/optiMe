@@ -1,8 +1,20 @@
-import { Platform, StyleSheet, Text, View } from "react-native";
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 
 import { colors } from "@/styles/home.styles";
 import type { HomeDashboardData, HomeScoreStatus } from "@/types/home";
+
+import MetricBarChart, {
+  type SelectedBarPoint,
+} from "@/components/home/charts/MetricBarChart";
 
 type CalculatedScore = HomeDashboardData["calculatedScores"][number];
 
@@ -28,12 +40,16 @@ export default function CalculatedScoresSection({
   scores,
   mobile = false,
 }: CalculatedScoresSectionProps) {
+  const { width } = useWindowDimensions();
+
+  const mobileCardWidth = Math.min(width - 66, 330);
+
   return (
     <View
       style={mobile ? componentStyles.mobileSection : componentStyles.section}
     >
       <View style={componentStyles.header}>
-        <View>
+        <View style={componentStyles.headerTextBlock}>
           <Text style={componentStyles.title}>Calculated Scores</Text>
           <Text style={componentStyles.subtitle}>
             Estimated from your recent patterns
@@ -46,11 +62,31 @@ export default function CalculatedScoresSection({
         </View>
       </View>
 
-      <View style={mobile ? componentStyles.mobileGrid : componentStyles.grid}>
-        {scores.map((score) => (
-          <CalculatedScoreCard key={score.id} score={score} mobile={mobile} />
-        ))}
-      </View>
+      {mobile ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={mobileCardWidth + 14}
+          snapToAlignment="start"
+          contentContainerStyle={componentStyles.mobileScrollContent}
+        >
+          {scores.map((score) => (
+            <CalculatedScoreCard
+              key={score.id}
+              score={score}
+              mobile
+              width={mobileCardWidth}
+            />
+          ))}
+        </ScrollView>
+      ) : (
+        <View style={componentStyles.grid}>
+          {scores.map((score) => (
+            <CalculatedScoreCard key={score.id} score={score} />
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -58,19 +94,35 @@ export default function CalculatedScoresSection({
 function CalculatedScoreCard({
   score,
   mobile = false,
+  width,
 }: {
   score: CalculatedScore;
   mobile?: boolean;
+  width?: number;
 }) {
+  const [selectedBar, setSelectedBar] = useState<SelectedBarPoint | null>(null);
+
   const status = score.status ?? getFallbackStatus(score);
   const statusColor = getStatusColor(status);
   const iconName = getScoreIcon(score.id);
 
-  const valueText = String(score.value);
   const levelText = score.level ?? getFallbackLevel(score);
 
+  const headerLabel = selectedBar?.headerLabel ?? "Today";
+
+  const displayValue = selectedBar
+    ? formatScoreValue(selectedBar.value)
+    : String(score.value);
+
+  const displaySuffix = getScoreSuffix(score);
+
   return (
-    <View style={mobile ? componentStyles.mobileCard : componentStyles.card}>
+    <View
+      style={[
+        mobile ? componentStyles.mobileCard : componentStyles.card,
+        mobile && width ? { width } : null,
+      ]}
+    >
       <View style={componentStyles.cardTopRow}>
         <View
           style={[
@@ -100,57 +152,40 @@ function CalculatedScoreCard({
 
       <Text style={componentStyles.cardTitle}>{score.title}</Text>
 
-      <View style={componentStyles.valueRow}>
-        <Text style={[componentStyles.value, { color: score.color }]}>
-          {valueText}
+      <View style={componentStyles.valueLine}>
+        <Text
+          style={componentStyles.valueDate}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {headerLabel}
         </Text>
 
-        {!!score.suffix && (
-          <Text style={componentStyles.suffix}>{score.suffix}</Text>
-        )}
+        <Text style={componentStyles.valueSeparator}>·</Text>
+
+        <View style={componentStyles.valueRow}>
+          <Text style={[componentStyles.value, { color: score.color }]}>
+            {displayValue}
+          </Text>
+
+          {!!displaySuffix && (
+            <Text style={componentStyles.suffix}>{displaySuffix}</Text>
+          )}
+        </View>
       </View>
 
       <Text style={componentStyles.cardSubtitle}>{score.subtitle}</Text>
 
-      <MiniScoreSparkline data={score.chart} color={score.color} />
-    </View>
-  );
-}
-
-function MiniScoreSparkline({
-  data,
-  color,
-}: {
-  data: number[];
-  color: string;
-}) {
-  const safeData = data.length > 0 ? data.slice(-7) : [0];
-
-  const max = Math.max(...safeData);
-  const min = Math.min(...safeData);
-
-  return (
-    <View style={componentStyles.sparkline}>
-      {safeData.map((value, index) => {
-        const normalized =
-          max === min ? 22 : ((value - min) / (max - min)) * 28 + 10;
-
-        const isLast = index === safeData.length - 1;
-
-        return (
-          <View key={`${value}-${index}`} style={componentStyles.sparkColumn}>
-            <View
-              style={[
-                componentStyles.sparkBar,
-                {
-                  height: normalized,
-                  backgroundColor: isLast ? color : hexToRgba(color, 0.32),
-                },
-              ]}
-            />
-          </View>
-        );
-      })}
+      <View style={componentStyles.chartBox}>
+        <MetricBarChart
+          data={score.chart}
+          color={score.color}
+          maxValue={100}
+          unit={displaySuffix}
+          height={48}
+          onSelectedBarChange={setSelectedBar}
+        />
+      </View>
     </View>
   );
 }
@@ -234,18 +269,20 @@ function getFallbackLevel(score: CalculatedScore) {
   return "Needs care";
 }
 
-function hexToRgba(hex: string, opacity: number) {
-  const normalizedHex = hex.replace("#", "");
-
-  if (normalizedHex.length !== 6) {
-    return hex;
+function getScoreSuffix(score: CalculatedScore) {
+  if (score.suffix) {
+    return score.suffix;
   }
 
-  const r = parseInt(normalizedHex.slice(0, 2), 16);
-  const g = parseInt(normalizedHex.slice(2, 4), 16);
-  const b = parseInt(normalizedHex.slice(4, 6), 16);
+  if (score.id === "stress-level") {
+    return "/100";
+  }
 
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  return "";
+}
+
+function formatScoreValue(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 const componentStyles = StyleSheet.create({
@@ -269,6 +306,11 @@ const componentStyles = StyleSheet.create({
     gap: 12,
     marginBottom: 14,
     marginTop: 14,
+  },
+
+  headerTextBlock: {
+    flex: 1,
+    minWidth: 0,
   },
 
   title: {
@@ -305,28 +347,32 @@ const componentStyles = StyleSheet.create({
     gap: 12,
   },
 
-  mobileGrid: {
-    gap: 12,
+  mobileScrollContent: {
+    gap: 14,
+    paddingRight: 18,
+    paddingBottom: 8,
   },
 
   card: {
     flex: 1,
-    minHeight: 150,
+    minHeight: 190,
     backgroundColor: colors.white,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 15,
+    overflow: "hidden",
     ...softShadow,
   },
 
   mobileCard: {
-    minHeight: 150,
+    minHeight: 240,
     backgroundColor: colors.white,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 15,
+    padding: 18,
+    overflow: "hidden",
     ...softShadow,
   },
 
@@ -362,28 +408,54 @@ const componentStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "900",
     marginTop: 12,
+    textAlign: "center",
+  },
+
+  valueLine: {
+    marginTop: 5,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 5,
+  },
+
+  valueDate: {
+    color: colors.navy,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "900",
+    maxWidth: 92,
+    flexShrink: 1,
+  },
+
+  valueSeparator: {
+    color: colors.textSoft,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "900",
+    marginBottom: 1,
   },
 
   valueRow: {
     flexDirection: "row",
     alignItems: "flex-end",
-    gap: 4,
-    marginTop: 5,
+    gap: 3,
+    flexShrink: 0,
   },
 
   value: {
-    fontSize: 28,
-    lineHeight: 31,
+    fontSize: 22,
+    lineHeight: 25,
     fontWeight: "900",
-    letterSpacing: -0.8,
+    letterSpacing: -0.6,
   },
 
   suffix: {
     color: colors.navySoft,
-    fontSize: 13,
-    lineHeight: 17,
-    fontWeight: "800",
-    marginBottom: 4,
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "900",
+    marginBottom: 3,
   },
 
   cardSubtitle: {
@@ -391,25 +463,16 @@ const componentStyles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
     fontWeight: "700",
-    marginTop: 5,
+    marginTop: 4,
+    textAlign: "center",
   },
 
-  sparkline: {
-    height: 38,
-    marginTop: 12,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 5,
-  },
-
-  sparkColumn: {
-    flex: 1,
-    justifyContent: "flex-end",
-    alignItems: "center",
-  },
-
-  sparkBar: {
-    width: 5,
-    borderRadius: 999,
+  chartBox: {
+    width: "82%",
+    maxWidth: 220,
+    minWidth: 155,
+    alignSelf: "center",
+    marginTop: 14,
+    overflow: "visible",
   },
 });

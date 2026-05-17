@@ -41,6 +41,8 @@ export default function HomeScreen() {
   const isWebLayout = width >= 1000;
   const todayLabel = getTodayLabel();
 
+  const mobileTrackedCardWidth = Math.min(width - 66, 330);
+
   if (!homeData) {
     return (
       <View style={styles.loadingRoot}>
@@ -115,11 +117,25 @@ export default function HomeScreen() {
           <Text style={styles.panelTitle}>Tracked Metrics</Text>
         </View>
 
-        <View style={styles.mobileMetricGrid}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={mobileTrackedCardWidth + 14}
+          snapToAlignment="start"
+          contentContainerStyle={styles.mobileMetricScrollContent}
+        >
           {homeData.trackedMetrics.map((metric) => (
-            <TrackedMetricCard key={metric.id} metric={metric} mobile />
+            <View
+              key={metric.id}
+              style={{
+                width: mobileTrackedCardWidth,
+              }}
+            >
+              <TrackedMetricCard metric={metric} mobile />
+            </View>
           ))}
-        </View>
+        </ScrollView>
 
         <CalculatedScoresSection scores={homeData.calculatedScores} mobile />
 

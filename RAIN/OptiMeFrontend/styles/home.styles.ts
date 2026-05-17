@@ -218,6 +218,12 @@ export const styles = StyleSheet.create({
     ...softShadow,
   },
 
+  mobileMetricScrollContent: {
+    gap: 14,
+    paddingRight: 18,
+    paddingBottom: 8,
+  },
+
   achievementBullet: {
     width: 34,
     height: 34,

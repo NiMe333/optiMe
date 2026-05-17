@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, View, Text } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
 import { colors } from "@/styles/home.styles";
@@ -33,7 +33,7 @@ export default function MetricBarChart({
   color,
   maxValue: _maxValue,
   height = 56,
-  unit = "",
+  unit: _unit = "",
   onSelectedBarChange,
 }: MetricBarChartProps) {
   const [width, setWidth] = useState(0);
@@ -145,12 +145,6 @@ export default function MetricBarChart({
       value: getVisualBarValue(value),
       label: days[index]?.shortLabel ?? "",
       frontColor: barColor,
-      topLabelComponent: () =>
-        isSelected ? (
-          <Text style={[componentStyles.barChartTopValue, { color }]}>
-            {formatChartValue(value, unit)}
-          </Text>
-        ) : null,
       onPress: () => {
         setSelectedIndex(index);
       },
@@ -162,7 +156,7 @@ export default function MetricBarChart({
       style={[
         componentStyles.container,
         {
-          height: height + 34,
+          height: height + 28,
         },
       ]}
       onLayout={(event) => {
@@ -233,12 +227,6 @@ function getLastDays(count: number): ChartDay[] {
   });
 }
 
-function formatChartValue(value: number, unit: string) {
-  const formattedValue = Number.isInteger(value) ? value : value.toFixed(1);
-
-  return `${formattedValue}${unit}`;
-}
-
 function hexToRgba(hex: string, opacity: number) {
   const normalizedHex = hex.replace("#", "");
 
@@ -257,8 +245,8 @@ const componentStyles = StyleSheet.create({
   container: {
     width: "100%",
     overflow: "visible",
-    paddingTop: 6,
-    paddingBottom: 14,
+    paddingTop: 4,
+    paddingBottom: 12,
     alignItems: "center",
   },
 
@@ -267,13 +255,6 @@ const componentStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "visible",
-  },
-
-  barChartTopValue: {
-    fontSize: 8,
-    lineHeight: 10,
-    fontWeight: "900",
-    marginBottom: 2,
   },
 
   xAxisLabel: {
