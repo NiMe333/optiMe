@@ -179,7 +179,7 @@ function DashboardHeader({
     <View style={mobile ? styles.mobileHeader : styles.webHeader}>
       <View>
         <Text style={mobile ? styles.mobileGreeting : styles.webGreeting}>
-          Hi, {username}! 👋
+          Hi, {username}!
         </Text>
         <Text style={styles.headerSubtitle}>Your mind deserves care too.</Text>
       </View>

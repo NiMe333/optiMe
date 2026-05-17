@@ -39,7 +39,7 @@ export default function MentalHealthScoreCard({
       />
 
       <Text style={styles.scoreDescription}>
-        Composite score from{"\n"}all tracked metrics
+        Your overall mental{"\n"}wellbeing score
       </Text>
 
       <View style={styles.scoreChangePill}>
@@ -52,7 +52,7 @@ export default function MentalHealthScoreCard({
           {changeSymbol} {absoluteChange} pts
         </Text>
 
-        <Text style={styles.scoreChangeMuted}> vs last week</Text>
+        <Text style={styles.scoreChangeMuted}> from last week</Text>
       </View>
     </View>
   );

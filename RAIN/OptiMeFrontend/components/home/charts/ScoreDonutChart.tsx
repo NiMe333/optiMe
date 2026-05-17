@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
 
@@ -26,6 +27,10 @@ function getStatusColor(status: HomeScoreStatus) {
   }
 }
 
+function easeOutCubic(progress: number) {
+  return 1 - Math.pow(1 - progress, 3);
+}
+
 export default function ScoreDonutChart({
   value,
   label,
@@ -33,16 +38,47 @@ export default function ScoreDonutChart({
   mobile = false,
 }: ScoreDonutChartProps) {
   const safeValue = Math.max(0, Math.min(100, value));
-  const remainingValue = 100 - safeValue;
+  const [animatedValue, setAnimatedValue] = useState(0);
 
-  const radius = mobile ? 84 : 96;
-  const innerRadius = mobile ? 58 : 66;
+  const radius = mobile ? 92 : 110;
+  const innerRadius = mobile ? 64 : 78;
 
   const scoreColor = getStatusColor(status);
 
+  useEffect(() => {
+    let animationFrame: number;
+
+    const duration = 1000;
+    const startTime = Date.now();
+
+    setAnimatedValue(0);
+
+    function animate() {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easeOutCubic(progress);
+
+      const nextValue = Math.round(safeValue * easedProgress);
+
+      setAnimatedValue(nextValue);
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    }
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+    };
+  }, [safeValue]);
+
+  const remainingValue = 100 - animatedValue;
+
   const data = [
     {
-      value: safeValue,
+      value: animatedValue,
       color: scoreColor,
     },
     {
@@ -60,13 +96,12 @@ export default function ScoreDonutChart({
         innerRadius={innerRadius}
         innerCircleColor={colors.navyDark}
         showGradient
-        isAnimated
-        animationDuration={900}
         centerLabelComponent={() => (
           <View style={styles.centerContent}>
             <Text style={mobile ? styles.mobileValue : styles.value}>
-              {safeValue}
+              {animatedValue}
             </Text>
+
             <Text style={styles.label}>{label}</Text>
           </View>
         )}
@@ -80,7 +115,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 22,
+    marginTop: 18,
   },
 
   centerContent: {
