@@ -64,7 +64,7 @@ export const mockHomeData: HomeDashboardData = {
       variant: "double",
       source: "measured",
       valueLabel: "Today",
-      value: "6,232",
+      value: "5,232",
       subtitle: "Steps from pedometer",
       trend: {
         direction: "up",

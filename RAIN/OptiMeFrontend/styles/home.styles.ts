@@ -335,28 +335,6 @@ export const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  metricTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-
-  metricTitleBlock: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flex: 1,
-    minWidth: 0,
-  },
-
-  metricIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   screenTimeBarBody: {
     marginTop: 4,
     alignItems: "center",
@@ -374,27 +352,6 @@ export const styles = StyleSheet.create({
   metricTextBlock: {
     flex: 1,
     minWidth: 0,
-  },
-
-  metricTitleRow: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-  },
-
-  metricTitle: {
-    color: colors.navy,
-    fontSize: 14,
-    fontWeight: "900",
-    flexShrink: 1,
-  },
-
-  metricDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
 
   metricValueLabel: {
@@ -1073,16 +1030,52 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  metricValueOnlyIconLarge: {
-    fontSize: 24,
-    fontWeight: "900",
-  },
-
   metricValueOnlyValueLarge: {
     color: colors.navy,
     fontSize: 30,
     fontWeight: "900",
     letterSpacing: -0.8,
+  },
+
+  metricTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  metricTitleBadge: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+
+  metricIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  metricTitle: {
+    color: colors.navy,
+    fontSize: 14,
+    fontWeight: "900",
+    flexShrink: 1,
+  },
+
+  metricDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
   },
 
   metricValueOnlyLabelLarge: {

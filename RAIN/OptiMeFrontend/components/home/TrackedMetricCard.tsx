@@ -119,17 +119,7 @@ function ValueOnlyMetric({ metric }: { metric: HomeTrackedMetric }) {
       ? "today mood"
       : metric.subtitle;
 
-  const icon = isActivity ? "👟" : isMood ? "🙂" : metric.icon;
-
-  return (
-    <MetricValueOnly
-      icon={icon}
-      value={value}
-      label={label}
-      color={metric.color}
-      hint={metric.subtitle}
-    />
-  );
+  return <MetricValueOnly value={value} label={label} hint={metric.subtitle} />;
 }
 
 function MetricValueHeader({ metric }: { metric: HomeTrackedMetric }) {
@@ -190,27 +180,33 @@ function MetricShell({
   return (
     <View style={mobile ? styles.mobileMetricCard : styles.metricCard}>
       <View style={styles.metricTopRow}>
-        <View style={styles.metricTitleBlock}>
+        <View
+          style={[
+            styles.metricTitleBadge,
+            {
+              backgroundColor: `${metric.color}10`,
+              borderColor: `${metric.color}24`,
+            },
+          ]}
+        >
           <View
             style={[
               styles.metricIconBox,
-              { backgroundColor: `${metric.color}16` },
+              { backgroundColor: `${metric.color}18` },
             ]}
           >
             <MetricHeaderIcon metricId={metric.id} color={metric.color} />
           </View>
 
-          <View style={styles.metricTitleRow}>
-            <Text
-              style={styles.metricTitle}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {metric.title}
-            </Text>
+          <Text
+            style={styles.metricTitle}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {metric.title}
+          </Text>
 
-            <View style={[styles.metricDot, { backgroundColor: dotColor }]} />
-          </View>
+          <View style={[styles.metricDot, { backgroundColor: dotColor }]} />
         </View>
 
         <View
