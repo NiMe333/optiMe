@@ -1,20 +1,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { getCurrentUser, logoutUser } from "@/services/auth";
-import { getAccessToken } from "@/services/authStorage";
+import type { ReactNode } from "react";
 
-type AuthUser = {
+import { getCurrentUser, logoutUser } from "@/services/auth";
+
+export type AuthUser = {
   id: string;
-  email: string;
+  email?: string;
   username?: string;
-  education?: string;
-  employment?: string;
-  mood?: number;
-  sleepHours?: string;
-  activity?: string;
-  socialConnection?: number;
-  phoneScreenTime?: string;
-  stress?: string;
-  formFinished?: boolean;
+  formFinished: boolean;
 };
 
 type AuthContextType = {
@@ -27,32 +20,33 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+function normalizeAuthUser(user: AuthUser | null): AuthUser | null {
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    formFinished: user.formFinished === true,
+  };
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUserState] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  function setUser(nextUser: AuthUser | null) {
+    setUserState(normalizeAuthUser(nextUser));
+  }
 
   useEffect(() => {
     async function restoreUser() {
       try {
-        const token = await getAccessToken();
+        const currentUser = await getCurrentUser();
 
-        if (!token) {
-          setUser(null);
-          return;
-        }
-
-        const data = await getCurrentUser();
-
-        console.log("RESTORED USER DATA:", data);
-
-        if (data.user) {
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
+        setUserState(normalizeAuthUser(currentUser));
       } catch (error) {
-        console.log("RESTORE USER FAILED:", error);
-        setUser(null);
+        setUserState(null);
       } finally {
         setAuthLoading(false);
       }
@@ -65,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await logoutUser();
     } finally {
-      setUser(null);
+      setUserState(null);
     }
   }
 

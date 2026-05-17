@@ -3,8 +3,6 @@ const Auth = require("../services/auth");
 
 // Register
 exports.register = async function (req, res) {
-  console.log(req.body);
-
   try {
     const { email, password, gender, dateOfBirth } = req.body;
 
@@ -71,8 +69,6 @@ exports.register = async function (req, res) {
       },
     });
   } catch (err) {
-    console.log(err);
-
     return res.status(500).json({
       success: false,
       message: "Registration failed",
@@ -155,8 +151,6 @@ exports.login = async function (req, res) {
       },
     });
   } catch (err) {
-    console.log(err);
-
     return res.status(500).json({
       success: false,
       message: "Login failed",
@@ -167,13 +161,10 @@ exports.login = async function (req, res) {
 
 exports.logout = async function (req, res) {
   try {
-
     const refreshToken = req.cookies.refreshToken;
 
     if (refreshToken) {
-
       await Auth.revokeRefreshToken(refreshToken); //from DB
-      
     }
 
     res.clearCookie("refreshToken"); //from local
@@ -182,20 +173,17 @@ exports.logout = async function (req, res) {
       success: true,
       message: "User logout successfull",
     });
-
   } catch (err) {
-
     return res.status(500).json({
       success: false,
       message: "logout Failed",
     });
-
   }
 };
 
 exports.saveForm = async function (req, res) {
   try {
-    const user = await User.findOne({ _id: req.user.userId }); //jwt based
+    const user = await User.findOne({ _id: req.user.userId });
 
     if (!user) {
       return res.status(401).json({
@@ -204,15 +192,50 @@ exports.saveForm = async function (req, res) {
       });
     }
 
-    user.username = req.body.username;
-    user.education = req.body.education;
-    user.employment = req.body.employment;
-    user.mood = req.body.mood;
-    user.sleepHours = req.body.sleepHours;
-    user.activity = req.body.activity;
-    user.socialConnection = req.body.socialConnection;
-    user.phoneScreenTime = req.body.phoneScreenTime;
-    user.stress = req.body.stress;
+    const { username, education, employment, baseline } = req.body;
+
+    const missingFields = [];
+
+    if (!username || String(username).trim() === "") {
+      missingFields.push("username");
+    }
+
+    if (!education) {
+      missingFields.push("education");
+    }
+
+    if (!employment) {
+      missingFields.push("employment");
+    }
+
+    if (!baseline || typeof baseline !== "object") {
+      missingFields.push("baseline");
+    }
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required form data",
+        missingFields,
+        receivedBody: req.body,
+      });
+    }
+
+    user.username = username;
+    user.education = education;
+    user.employment = employment;
+
+    user.baseline = {
+      moodScore: Number(baseline.moodScore ?? 0),
+      sleepHours: Number(baseline.sleepHours ?? 0),
+      movementHours: Number(baseline.movementHours ?? 0),
+      socialConnectionScore: Number(baseline.socialConnectionScore ?? 0),
+      screenTimeHours: Number(baseline.screenTimeHours ?? 0),
+      financialWorkSchoolStressScore: Number(
+        baseline.financialWorkSchoolStressScore ?? 0,
+      ),
+    };
+
     user.formFinished = true;
 
     await user.save();
@@ -223,15 +246,16 @@ exports.saveForm = async function (req, res) {
       user: {
         id: user._id,
         email: user.email,
+
+        gender: user.gender,
+        dateOfBirth: user.dateOfBirth,
+
         username: user.username,
         education: user.education,
         employment: user.employment,
-        mood: user.mood,
-        sleepHours: user.sleepHours,
-        activity: user.activity,
-        socialConnection: user.socialConnection,
-        phoneScreenTime: user.phoneScreenTime,
-        stress: user.stress,
+
+        baseline: user.baseline,
+
         formFinished: user.formFinished,
       },
     });
@@ -242,10 +266,18 @@ exports.saveForm = async function (req, res) {
     });
   }
 };
-
 exports.me = async function (req, res) {
   try {
-    const user = await User.findById(req.user.userId);
+    const userId = req.user.userId || req.user.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token payload",
+      });
+    }
+
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(401).json({
