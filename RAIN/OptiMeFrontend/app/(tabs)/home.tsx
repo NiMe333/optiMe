@@ -5,7 +5,6 @@ import { ScrollView, View, Text, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, styles } from "@/styles/home.styles";
 
-import MobileBottomNav from "@/components/navigation/MobileBottomNav";
 import WebSidebar from "@/components/navigation/WebSidebar";
 import { useAuth } from "@/context/AuthContext";
 import { getHomeDashboardData } from "@/services/homeService";
@@ -177,8 +176,6 @@ export default function HomeScreen() {
         <AchievementsPanel achievements={homeData.achievements} mobile />
         <ArticlesSection articles={homeData.articles} mobile />
       </ScrollView>
-
-      <MobileBottomNav />
     </SafeAreaView>
   );
 }

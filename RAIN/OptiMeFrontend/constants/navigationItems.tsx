@@ -11,19 +11,19 @@ export type NavigationItem = {
 export const mainNavigationItems: NavigationItem[] = [
   {
     label: "Home",
-    href: "/home",
+    href: "/(tabs)/home",
     activePath: "/home",
     icon: "home-outline",
   },
   {
     label: "Stats",
-    href: "/stats",
+    href: "/(tabs)/stats",
     activePath: "/stats",
     icon: "stats-chart-outline",
   },
   {
     label: "Care",
-    href: "/care",
+    href: "/(tabs)/care",
     activePath: "/care",
     icon: "heart-outline",
   },

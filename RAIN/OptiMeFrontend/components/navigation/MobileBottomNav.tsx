@@ -1,8 +1,19 @@
-import { View, Pressable, StyleSheet, Platform } from "react-native";
+import { useEffect, useRef } from "react";
+import {
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
 
-import { mainNavigationItems } from "@/constants/navigationItems";
+import {
+  mainNavigationItems,
+  type NavigationItem,
+} from "@/constants/navigationItems";
 
 const colors = {
   background: "#F4F8FC",
@@ -39,27 +50,118 @@ export default function MobileBottomNav() {
   }
 
   return (
-    <View style={styles.wrapper}>
+    <View style={styles.wrapper} pointerEvents="box-none">
       <View style={styles.container}>
         {mainNavigationItems.map((item) => {
           const active = isRouteActive(pathname, item.activePath);
 
           return (
-            <Pressable
+            <MobileNavItem
               key={`${item.label}-${item.activePath}`}
-              style={active ? styles.activeItem : styles.item}
+              item={item}
+              active={active}
               onPress={() => navigateTo(item.href)}
-            >
-              <Ionicons
-                name={active ? getActiveIcon(item.icon) : item.icon}
-                size={active ? 22 : getMobileIconSize(item.icon)}
-                color={active ? colors.white : colors.navy}
-              />
-            </Pressable>
+            />
           );
         })}
       </View>
     </View>
+  );
+}
+
+function MobileNavItem({
+  item,
+  active,
+  onPress,
+}: {
+  item: NavigationItem;
+  active: boolean;
+  onPress: () => void;
+}) {
+  const activeProgress = useRef(new Animated.Value(active ? 1 : 0)).current;
+  const pressScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(activeProgress, {
+      toValue: active ? 1 : 0,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [active, activeProgress]);
+
+  function handlePressIn() {
+    Animated.spring(pressScale, {
+      toValue: 0.92,
+      speed: 28,
+      bounciness: 6,
+      useNativeDriver: false,
+    }).start();
+  }
+
+  function handlePressOut() {
+    Animated.spring(pressScale, {
+      toValue: 1,
+      speed: 24,
+      bounciness: 8,
+      useNativeDriver: false,
+    }).start();
+  }
+
+  const backgroundColor = activeProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["rgba(24,63,104,0)", colors.navy],
+  });
+
+  const translateY = activeProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -4],
+  });
+
+  const activeScale = activeProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.06],
+  });
+
+  const iconScale = activeProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.9],
+  });
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      hitSlop={10}
+      style={styles.pressable}
+    >
+      <Animated.View
+        style={[
+          styles.navItem,
+          {
+            backgroundColor,
+            transform: [
+              { translateY },
+              { scale: activeScale },
+              { scale: pressScale },
+            ],
+          },
+        ]}
+      >
+        <Animated.View
+          style={{
+            transform: [{ scale: iconScale }],
+          }}
+        >
+          <Ionicons
+            name={active ? getActiveIcon(item.icon) : item.icon}
+            size={getMobileIconSize(item.icon)}
+            color={active ? colors.white : colors.navy}
+          />
+        </Animated.View>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -125,7 +227,7 @@ const styles = StyleSheet.create({
   container: {
     height: 76,
 
-    backgroundColor: "rgba(255,255,255,0.82)",
+    backgroundColor: "rgba(255,255,255,0.86)",
 
     borderRadius: 30,
 
@@ -144,12 +246,19 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 
-  activeItem: {
+  pressable: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  navItem: {
     width: 46,
     height: 46,
     borderRadius: 16,
-
-    backgroundColor: colors.navy,
 
     alignItems: "center",
     justifyContent: "center",
@@ -158,14 +267,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
-  },
-
-  item: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

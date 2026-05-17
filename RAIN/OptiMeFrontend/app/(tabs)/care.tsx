@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import WebSidebar from "@/components/navigation/WebSidebar";
 import { colors, styles } from "@/styles/home.styles";
 
-export default function ProfileScreen() {
+export default function CareScreen() {
   const { width } = useWindowDimensions();
   const isWebLayout = width >= 1000;
 
@@ -20,7 +20,7 @@ export default function ProfileScreen() {
           contentContainerStyle={styles.webContentInner}
           showsVerticalScrollIndicator={false}
         >
-          <ProfileContent />
+          <CareContent />
         </ScrollView>
       </View>
     );
@@ -32,13 +32,13 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.mobileContent}
       >
-        <ProfileContent mobile />
+        <CareContent mobile />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function ProfileContent({ mobile = false }: { mobile?: boolean }) {
+function CareContent({ mobile = false }: { mobile?: boolean }) {
   return (
     <View
       style={{
@@ -57,7 +57,7 @@ function ProfileContent({ mobile = false }: { mobile?: boolean }) {
           fontWeight: "900",
         }}
       >
-        Profile
+        Care
       </Text>
 
       <Text

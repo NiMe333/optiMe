@@ -2,7 +2,6 @@ import { ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import WebSidebar from "@/components/navigation/WebSidebar";
-import MobileBottomNav from "@/components/navigation/MobileBottomNav";
 import { colors, styles } from "@/styles/home.styles";
 
 export default function SettingsScreen() {
@@ -35,8 +34,6 @@ export default function SettingsScreen() {
       >
         <SettingsContent mobile />
       </ScrollView>
-
-      <MobileBottomNav />
     </SafeAreaView>
   );
 }
@@ -72,8 +69,7 @@ function SettingsContent({ mobile = false }: { mobile?: boolean }) {
           lineHeight: 21,
         }}
       >
-        Here we will later add account settings, notifications, privacy,
-        reminders and logout options.
+        To do!
       </Text>
     </View>
   );
