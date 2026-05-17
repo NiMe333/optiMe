@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Pedometer } from 'expo-sensors';
 import client from '@/services/mqttClient';
 
-const USER_ID = '69fd9f14c176d3f352b24d49';
+const USER_ID = '6a05fd3e2a7cf4be350a8ea1';
 
 export default function usePedometer() {
   const [steps, setSteps] = useState(0);
@@ -30,7 +30,7 @@ export default function usePedometer() {
           JSON.stringify({
             userId: USER_ID,
             steps: result.steps,
-            date: '2026-05-09'
+            date: '2026-05-14'
           })
         );
       });
