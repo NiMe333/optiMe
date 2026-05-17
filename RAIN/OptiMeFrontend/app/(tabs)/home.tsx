@@ -19,6 +19,15 @@ export default function HomeScreen() {
   const { user } = useAuth();
 
   const [homeData, setHomeData] = useState<HomeDashboardData | null>(null);
+  const [todayKey, setTodayKey] = useState(getLocalDateKey());
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setTodayKey(getLocalDateKey());
+    }, getMsUntilNextLocalMidnight());
+
+    return () => clearTimeout(timeout);
+  }, [todayKey]);
 
   useEffect(() => {
     let mounted = true;
@@ -36,7 +45,24 @@ export default function HomeScreen() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [todayKey]);
+
+  function getLocalDateKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function getMsUntilNextLocalMidnight() {
+    const now = new Date();
+    const nextMidnight = new Date(now);
+
+    nextMidnight.setHours(24, 0, 1, 0);
+
+    return nextMidnight.getTime() - now.getTime();
+  }
 
   const isWebLayout = width >= 1000;
   const todayLabel = getTodayLabel();

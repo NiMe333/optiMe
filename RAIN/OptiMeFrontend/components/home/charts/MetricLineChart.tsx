@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 
@@ -40,7 +40,7 @@ export default function MetricLineChart({
   const safeData = data.length > 0 ? data.slice(-7) : [0];
   const dataKey = safeData.join("|");
 
-  const days = useMemo(() => getLastDays(safeData.length), [safeData.length]);
+  const days = getLastDays(safeData.length);
 
   const [selectedIndex, setSelectedIndex] = useState(safeData.length - 1);
 
@@ -83,6 +83,8 @@ export default function MetricLineChart({
     });
   }, [onSelectedPointChange, selectedDay, selectedIndex, selectedValue]);
 
+  const visualMaxValue = getVisualMaxValue(maxValue, safeData);
+
   const chartData = safeData.map((value, index) => {
     const isSelected = index === selectedIndex;
 
@@ -119,7 +121,7 @@ export default function MetricLineChart({
           data={chartData}
           width={width}
           height={height}
-          maxValue={maxValue}
+          maxValue={visualMaxValue}
           noOfSections={3}
           curved
           areaChart
@@ -150,6 +152,17 @@ export default function MetricLineChart({
       )}
     </View>
   );
+}
+
+function getVisualMaxValue(maxValue: number, data: number[]) {
+  const highestDataValue = Math.max(...data);
+  const realMaxValue = Math.max(maxValue, highestDataValue);
+
+  if (realMaxValue <= 5) {
+    return realMaxValue + 0.6;
+  }
+
+  return realMaxValue * 1.1;
 }
 
 function getLastDays(count: number): ChartDay[] {

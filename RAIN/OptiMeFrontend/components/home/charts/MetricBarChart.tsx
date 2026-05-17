@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
@@ -42,7 +42,7 @@ export default function MetricBarChart({
   const safeData = data.length > 0 ? data.slice(-7) : [0];
   const dataKey = safeData.join("|");
 
-  const days = useMemo(() => getLastDays(safeData.length), [safeData.length]);
+  const days = getLastDays(safeData.length);
 
   const [selectedIndex, setSelectedIndex] = useState(safeData.length - 1);
 

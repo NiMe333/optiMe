@@ -98,7 +98,7 @@ export const mockHomeData: HomeDashboardData = {
         value: 10,
         isGood: true,
       },
-      chart: [3, 4, 4, 3, 4, 4, 4],
+      chart: [1, 4, 4, 3, 4, 5, 4],
       color: homeColors.purple,
     },
     {
