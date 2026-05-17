@@ -171,7 +171,6 @@ exports.logout = function (req, res) {
 };
 
 exports.saveForm = async function (req, res) {
-  console.log(req.session.userId);
   try {
     const user = await User.findOne({ _id: req.session.userId }); //cookie sends session id that has userid stored so the backend can find the wanted session
 
