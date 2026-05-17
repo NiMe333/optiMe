@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { ScrollView, View, Text, useWindowDimensions } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,6 +21,13 @@ export default function HomeScreen() {
 
   const [homeData, setHomeData] = useState<HomeDashboardData | null>(null);
   const [todayKey, setTodayKey] = useState(getLocalDateKey());
+  const [scoreCardKey, setScoreCardKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setScoreCardKey((prev) => prev + 1);
+    }, []),
+  );
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -94,8 +102,10 @@ export default function HomeScreen() {
           <DashboardHeader username={username} todayLabel={todayLabel} />
 
           <View style={styles.webTopRow}>
-            <MentalHealthScoreCard score={homeData.mentalHealthScore} />
-
+            <MentalHealthScoreCard
+              key={`score-web-${scoreCardKey}`}
+              score={homeData.mentalHealthScore}
+            />
             <View style={styles.metricsPanel}>
               <View style={styles.panelHeader}>
                 <View style={styles.panelTitleRow}>
@@ -136,13 +146,14 @@ export default function HomeScreen() {
         contentContainerStyle={styles.mobileContent}
       >
         <DashboardHeader username={username} todayLabel={todayLabel} mobile />
-
-        <MentalHealthScoreCard score={homeData.mentalHealthScore} mobile />
-
+        <MentalHealthScoreCard
+          key={`score-mobile-${scoreCardKey}`}
+          score={homeData.mentalHealthScore}
+          mobile
+        />
         <View style={styles.mobileSectionHeader}>
           <Text style={styles.panelTitle}>Tracked Metrics</Text>
         </View>
-
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -162,11 +173,8 @@ export default function HomeScreen() {
             </View>
           ))}
         </ScrollView>
-
         <CalculatedScoresSection scores={homeData.calculatedScores} mobile />
-
         <AchievementsPanel achievements={homeData.achievements} mobile />
-
         <ArticlesSection articles={homeData.articles} mobile />
       </ScrollView>
 

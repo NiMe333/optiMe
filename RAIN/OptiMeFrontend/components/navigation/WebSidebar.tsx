@@ -1,4 +1,4 @@
-import { Image, View, Pressable, StyleSheet } from "react-native";
+import { Image, View, Pressable, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
 import { useState } from "react";
@@ -32,9 +32,22 @@ export default function WebSidebar() {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  function blurWebFocus() {
+    if (Platform.OS !== "web") return;
+
+    const activeElement = document.activeElement as HTMLElement | null;
+    activeElement?.blur();
+  }
+
+  function navigateTo(href: string) {
+    blurWebFocus();
+    router.replace(href as any);
+  }
+
   async function logoutConfirmed() {
     if (isLoggingOut) return;
 
+    blurWebFocus();
     setIsLoggingOut(true);
 
     try {
@@ -47,6 +60,8 @@ export default function WebSidebar() {
   }
 
   function handleLogout() {
+    blurWebFocus();
+
     showConfirmToast({
       message: "Do you want to log out?",
       type: "info",
@@ -59,23 +74,22 @@ export default function WebSidebar() {
   return (
     <View style={styles.sidebar}>
       <View style={styles.top}>
-        <Pressable onPress={() => router.push("/home")}>
-          <Image
-            source={require("@/assets/images/just_circle.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </Pressable>
+        <Image
+          source={require("@/assets/images/just_circle.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
       </View>
 
       <View style={styles.center}>
         {mainNavigationItems.map((item) => {
           const active = isRouteActive(pathname, item.activePath);
+
           return (
             <Pressable
               key={`${item.label}-${item.activePath}`}
               style={active ? styles.activeItem : styles.item}
-              onPress={() => router.push(item.href as any)}
+              onPress={() => navigateTo(item.href)}
             >
               <Ionicons
                 name={active ? getActiveIcon(item.icon) : item.icon}
@@ -90,11 +104,12 @@ export default function WebSidebar() {
       <View style={styles.bottom}>
         {sidebarBottomNavigationItems.map((item) => {
           const active = isRouteActive(pathname, item.activePath);
+
           return (
             <Pressable
-              key={`${item.label}-${item.href}`}
+              key={`${item.label}-${item.activePath}`}
               style={active ? styles.activeItem : styles.item}
-              onPress={() => router.push(item.href as any)}
+              onPress={() => navigateTo(item.href)}
             >
               <Ionicons
                 name={active ? getActiveIcon(item.icon) : item.icon}
@@ -121,14 +136,12 @@ export default function WebSidebar() {
   );
 }
 
-function isRouteActive(pathname: string, href: string) {
-  if (href === "/home") {
-    return (
-      pathname === "/" || pathname === "/home" || pathname.startsWith("/home/")
-    );
+function isRouteActive(pathname: string, activePath: string) {
+  if (activePath === "/home") {
+    return pathname === "/" || pathname === "/home";
   }
 
-  return pathname === href || pathname.startsWith(`${href}/`);
+  return pathname === activePath || pathname.startsWith(`${activePath}/`);
 }
 
 function getActiveIcon(

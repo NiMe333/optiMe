@@ -17,20 +17,20 @@ export const mainNavigationItems: NavigationItem[] = [
   },
   {
     label: "Stats",
-    href: "/home",
-    activePath: "/home",
+    href: "/stats",
+    activePath: "/stats",
     icon: "stats-chart-outline",
   },
   {
     label: "Care",
-    href: "/home",
-    activePath: "/home",
+    href: "/care",
+    activePath: "/care",
     icon: "heart-outline",
   },
   {
     label: "Profile",
-    href: "/user/profile",
-    activePath: "/user/profile",
+    href: "/(tabs)/profile",
+    activePath: "/profile",
     icon: "person-outline",
   },
 ];
