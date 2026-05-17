@@ -17,11 +17,11 @@ export const homeColors = {
 
 export const mockHomeData: HomeDashboardData = {
   user: {
-    username: "Nik",
-    gender: "Male",
-    dateOfBirth: "2002-05-10",
-    education: "College / University",
-    employment: "Self-employed",
+    username: "",
+    gender: "",
+    dateOfBirth: "",
+    education: "",
+    employment: "",
   },
 
   mentalHealthScore: {

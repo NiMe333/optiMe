@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  ScrollView,
-  View,
-  Text,
-  Pressable,
-  useWindowDimensions,
-} from "react-native";
+import { ScrollView, View, Text, useWindowDimensions } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, styles } from "@/styles/home.styles";
@@ -18,8 +12,7 @@ import type { HomeDashboardData } from "@/types/home";
 
 import MentalHealthScoreCard from "@/components/home/MentalHealthScoreCard";
 import TrackedMetricCard from "@/components/home/TrackedMetricCard";
-
-const days = ["M", "T", "W", "T", "F", "S", "S"];
+import CalculatedScoresSection from "@/components/home/CalculatedScoresSection";
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
@@ -97,18 +90,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.webMiddleRow}>
-            <View style={styles.calculatedPanel}>
-              <View style={styles.panelTitleRow}>
-                <Text style={styles.panelTitle}>Calculated Scores</Text>
-                <Text style={styles.infoIcon}>ⓘ</Text>
-              </View>
-
-              <View style={styles.calculatedGrid}>
-                {homeData.calculatedScores.map((score) => (
-                  <CalculatedScoreCard key={score.id} score={score} />
-                ))}
-              </View>
-            </View>
+            <CalculatedScoresSection scores={homeData.calculatedScores} />
 
             <AchievementsPanel achievements={homeData.achievements} />
           </View>
@@ -141,14 +123,9 @@ export default function HomeScreen() {
 
         <View style={styles.mobileSectionHeader}>
           <Text style={styles.panelTitle}>Calculated Scores</Text>
-          <Text style={styles.infoIcon}>ⓘ</Text>
         </View>
 
-        <View style={styles.mobileCalculatedGrid}>
-          {homeData.calculatedScores.map((score) => (
-            <CalculatedScoreCard key={score.id} score={score} mobile />
-          ))}
-        </View>
+        <CalculatedScoresSection scores={homeData.calculatedScores} mobile />
 
         <AchievementsPanel achievements={homeData.achievements} mobile />
 
@@ -193,40 +170,6 @@ function DashboardHeader({
   );
 }
 
-function CalculatedScoreCard({
-  score,
-  mobile = false,
-}: {
-  score: HomeDashboardData["calculatedScores"][number];
-  mobile?: boolean;
-}) {
-  return (
-    <View style={mobile ? styles.mobileCalculatedCard : styles.calculatedCard}>
-      <View style={styles.calculatedTop}>
-        <Text style={styles.calculatedTitle}>{score.title}</Text>
-      </View>
-
-      <View style={styles.calculatedValueRow}>
-        <Text
-          style={[
-            styles.calculatedValue,
-            score.value === "Moderate" && styles.calculatedTextValue,
-          ]}
-        >
-          {score.value}
-        </Text>
-
-        {!!score.suffix && (
-          <Text style={styles.calculatedSuffix}>{score.suffix}</Text>
-        )}
-      </View>
-
-      <MiniSparkline data={score.chart} color={score.color} small />
-
-      <Text style={styles.autoCalculated}>{score.subtitle}</Text>
-    </View>
-  );
-}
 function AchievementsPanel({
   achievements,
   mobile = false,
@@ -313,52 +256,6 @@ function ArticleCard({
           <Text style={styles.bookmark}>Save</Text>
         </View>
       </View>
-    </View>
-  );
-}
-
-function MiniSparkline({
-  data,
-  color,
-  small = false,
-}: {
-  data: number[];
-  color: string;
-  small?: boolean;
-}) {
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-
-  return (
-    <View style={small ? styles.sparklineSmall : styles.sparkline}>
-      {data.map((value, index) => {
-        const normalized =
-          max === min ? 40 : ((value - min) / (max - min)) * 42 + 8;
-
-        return (
-          <View key={index} style={styles.sparkColumn}>
-            <View
-              style={[
-                styles.sparkBar,
-                {
-                  height: normalized,
-                  backgroundColor: color,
-                },
-              ]}
-            />
-          </View>
-        );
-      })}
-
-      {!small && (
-        <View style={styles.sparkDays}>
-          {days.map((day, index) => (
-            <Text key={`${day}-${index}`} style={styles.sparkDay}>
-              {day}
-            </Text>
-          ))}
-        </View>
-      )}
     </View>
   );
 }
