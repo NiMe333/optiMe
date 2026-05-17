@@ -1,5 +1,8 @@
 import { View, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router, usePathname } from "expo-router";
+
+import { mainNavigationItems } from "@/constants/navigationItems";
 
 const colors = {
   background: "#F4F8FC",
@@ -21,27 +24,65 @@ const colors = {
 };
 
 export default function MobileBottomNav() {
+  const pathname = usePathname();
+
   return (
     <View style={styles.wrapper}>
       <View style={styles.container}>
-        <Pressable style={styles.activeItem}>
-          <Ionicons name="home" size={20} color="#FFFFFF" />
-        </Pressable>
+        {mainNavigationItems.map((item) => {
+          const active = isRouteActive(pathname, item.activePath);
 
-        <Pressable style={styles.item}>
-          <Ionicons name="stats-chart-outline" size={26} color={colors.navy} />
-        </Pressable>
-
-        <Pressable style={styles.item}>
-          <Ionicons name="heart-outline" size={26} color={colors.navy} />
-        </Pressable>
-
-        <Pressable style={styles.item}>
-          <Ionicons name="person-outline" size={26} color={colors.navy} />
-        </Pressable>
+          return (
+            <Pressable
+              key={`${item.label}-${item.href}`}
+              style={active ? styles.activeItem : styles.item}
+              onPress={() => router.push(item.href as any)}
+            >
+              <Ionicons
+                name={active ? getActiveIcon(item.icon) : item.icon}
+                size={active ? 20 : 26}
+                color={active ? colors.white : colors.navy}
+              />
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
+}
+
+function isRouteActive(pathname: string, href: string) {
+  if (href === "/home") {
+    return (
+      pathname === "/" || pathname === "/home" || pathname.startsWith("/home/")
+    );
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getActiveIcon(
+  icon: keyof typeof Ionicons.glyphMap,
+): keyof typeof Ionicons.glyphMap {
+  switch (icon) {
+    case "home-outline":
+      return "home";
+
+    case "stats-chart-outline":
+      return "stats-chart";
+
+    case "heart-outline":
+      return "heart";
+
+    case "person-outline":
+      return "person";
+
+    case "settings-outline":
+      return "settings";
+
+    default:
+      return icon;
+  }
 }
 
 const styles = StyleSheet.create({

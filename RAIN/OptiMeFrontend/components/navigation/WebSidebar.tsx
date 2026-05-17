@@ -1,10 +1,14 @@
 import { Image, View, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 import { useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import {
+  mainNavigationItems,
+  sidebarBottomNavigationItems,
+} from "@/constants/navigationItems";
 
 const colors = {
   background: "#F4F8FC",
@@ -21,6 +25,8 @@ const colors = {
 };
 
 export default function WebSidebar() {
+  const pathname = usePathname();
+
   const { logout } = useAuth();
   const { showToast, showConfirmToast } = useToast();
 
@@ -53,35 +59,51 @@ export default function WebSidebar() {
   return (
     <View style={styles.sidebar}>
       <View style={styles.top}>
-        <Image
-          source={require("@/assets/images/just_circle.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Pressable onPress={() => router.push("/home")}>
+          <Image
+            source={require("@/assets/images/just_circle.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </Pressable>
       </View>
 
       <View style={styles.center}>
-        <Pressable style={styles.activeItem}>
-          <Ionicons name="home" size={24} color="#FFFFFF" />
-        </Pressable>
-
-        <Pressable style={styles.item}>
-          <Ionicons name="stats-chart-outline" size={27} color={colors.navy} />
-        </Pressable>
-
-        <Pressable style={styles.item}>
-          <Ionicons name="heart-outline" size={28} color={colors.navy} />
-        </Pressable>
-
-        <Pressable style={styles.item}>
-          <Ionicons name="person-outline" size={28} color={colors.navy} />
-        </Pressable>
+        {mainNavigationItems.map((item) => {
+          const active = isRouteActive(pathname, item.activePath);
+          return (
+            <Pressable
+              key={`${item.label}-${item.activePath}`}
+              style={active ? styles.activeItem : styles.item}
+              onPress={() => router.push(item.href as any)}
+            >
+              <Ionicons
+                name={active ? getActiveIcon(item.icon) : item.icon}
+                size={active ? 24 : getSidebarIconSize(item.icon)}
+                color={active ? colors.white : colors.navy}
+              />
+            </Pressable>
+          );
+        })}
       </View>
 
       <View style={styles.bottom}>
-        <Pressable style={styles.item}>
-          <Ionicons name="settings-outline" size={24} color={colors.navy} />
-        </Pressable>
+        {sidebarBottomNavigationItems.map((item) => {
+          const active = isRouteActive(pathname, item.activePath);
+          return (
+            <Pressable
+              key={`${item.label}-${item.href}`}
+              style={active ? styles.activeItem : styles.item}
+              onPress={() => router.push(item.href as any)}
+            >
+              <Ionicons
+                name={active ? getActiveIcon(item.icon) : item.icon}
+                size={24}
+                color={active ? colors.white : colors.navy}
+              />
+            </Pressable>
+          );
+        })}
 
         <Pressable
           onPress={handleLogout}
@@ -97,6 +119,59 @@ export default function WebSidebar() {
       </View>
     </View>
   );
+}
+
+function isRouteActive(pathname: string, href: string) {
+  if (href === "/home") {
+    return (
+      pathname === "/" || pathname === "/home" || pathname.startsWith("/home/")
+    );
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getActiveIcon(
+  icon: keyof typeof Ionicons.glyphMap,
+): keyof typeof Ionicons.glyphMap {
+  switch (icon) {
+    case "home-outline":
+      return "home";
+
+    case "stats-chart-outline":
+      return "stats-chart";
+
+    case "heart-outline":
+      return "heart";
+
+    case "person-outline":
+      return "person";
+
+    case "settings-outline":
+      return "settings";
+
+    default:
+      return icon;
+  }
+}
+
+function getSidebarIconSize(icon: keyof typeof Ionicons.glyphMap) {
+  switch (icon) {
+    case "home-outline":
+      return 24;
+
+    case "stats-chart-outline":
+      return 27;
+
+    case "heart-outline":
+      return 28;
+
+    case "person-outline":
+      return 28;
+
+    default:
+      return 24;
+  }
 }
 
 const styles = StyleSheet.create({
