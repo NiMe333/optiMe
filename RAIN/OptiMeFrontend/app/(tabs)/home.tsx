@@ -46,6 +46,7 @@ export default function HomeScreen() {
   }, []);
 
   const isWebLayout = width >= 1000;
+  const todayLabel = getTodayLabel();
 
   if (!homeData) {
     return (
@@ -69,7 +70,7 @@ export default function HomeScreen() {
           contentContainerStyle={styles.webContentInner}
           showsVerticalScrollIndicator={false}
         >
-          <DashboardHeader username={username} />
+          <DashboardHeader username={username} todayLabel={todayLabel} />
 
           <View style={styles.webTopRow}>
             <MentalHealthScoreCard score={homeData.mentalHealthScore} />
@@ -131,7 +132,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.mobileContent}
       >
-        <DashboardHeader username={username} mobile />
+        <DashboardHeader username={username} todayLabel={todayLabel} mobile />
 
         <MentalHealthScoreCard score={homeData.mentalHealthScore} mobile />
 
@@ -169,11 +170,22 @@ export default function HomeScreen() {
   );
 }
 
+function getTodayLabel() {
+  return new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
+}
+
 function DashboardHeader({
   username,
+  todayLabel,
   mobile = false,
 }: {
   username: string;
+  todayLabel: string;
   mobile?: boolean;
 }) {
   return (
@@ -182,7 +194,10 @@ function DashboardHeader({
         <Text style={mobile ? styles.mobileGreeting : styles.webGreeting}>
           Hi, {username}!
         </Text>
+
         <Text style={styles.headerSubtitle}>Your mind deserves care too.</Text>
+
+        <Text style={styles.headerDate}>{todayLabel}</Text>
       </View>
 
       {!mobile && (

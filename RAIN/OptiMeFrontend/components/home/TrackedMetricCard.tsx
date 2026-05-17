@@ -63,16 +63,20 @@ function ChartMetric({
 }
 
 function ValueOnlyMetric({ metric }: { metric: HomeTrackedMetric }) {
-  const isMovement = metric.id === "movement" || metric.id === "activity";
+  const isActivity = metric.id === "movement" || metric.id === "activity";
   const isMood = metric.id === "mood";
 
-  const value = metric.secondValue || metric.value;
+  const value = metric.suffix
+    ? `${metric.value}${metric.suffix}`
+    : metric.value;
 
-  const label =
-    metric.secondLabel ||
-    (isMovement ? "steps today" : isMood ? "today mood" : metric.subtitle);
+  const label = isActivity
+    ? "steps today"
+    : isMood
+      ? "today mood"
+      : metric.subtitle;
 
-  const icon = isMovement ? "👟" : isMood ? "🙂" : metric.icon;
+  const icon = isActivity ? "👟" : isMood ? "🙂" : metric.icon;
 
   return (
     <MetricValueOnly
@@ -180,8 +184,8 @@ function MetricShell({
 
 function getMetricVisualType(metric: HomeTrackedMetric): MetricVisualType {
   if (
-    metric.id === "movement" ||
     metric.id === "activity" ||
+    metric.id === "movement" ||
     metric.id === "steps" ||
     metric.id === "mood"
   ) {
@@ -196,6 +200,10 @@ function getMetricVisualType(metric: HomeTrackedMetric): MetricVisualType {
 }
 
 function getMetricMaxValue(metric: HomeTrackedMetric) {
+  if (metric.maxValue) {
+    return metric.maxValue;
+  }
+
   if (metric.id === "sleep") {
     return 10;
   }

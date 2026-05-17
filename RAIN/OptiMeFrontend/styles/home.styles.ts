@@ -299,7 +299,7 @@ export const styles = StyleSheet.create({
   metricCard: {
     flexGrow: 1,
     flexShrink: 1,
-    flexBasis: "23%",
+    flexBasis: "31%",
     minWidth: 245,
     minHeight: 155,
     borderRadius: 20,
@@ -1077,5 +1077,11 @@ export const styles = StyleSheet.create({
     color: colors.textSoft,
     fontSize: 11,
     fontWeight: "700",
+  },
+  headerDate: {
+    marginTop: 5,
+    color: colors.navySoft,
+    fontSize: 13,
+    fontWeight: "800",
   },
 });
