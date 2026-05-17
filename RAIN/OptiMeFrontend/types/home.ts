@@ -67,6 +67,10 @@ export type HomeCalculatedScore = {
   title: string;
   value: string | number;
   suffix?: string;
+
+  level?: string;
+  status?: HomeScoreStatus;
+
   subtitle: string;
   chart: number[];
   color: string;
@@ -81,7 +85,6 @@ export type HomeTrendSeries = {
 
 export type HomeAchievement = {
   id: string;
-  emoji: string;
   title: string;
   streak: string;
   completed: boolean;
@@ -92,6 +95,5 @@ export type HomeArticle = {
   category: string;
   title: string;
   readTime: string;
-  emoji: string;
   color: string;
 };

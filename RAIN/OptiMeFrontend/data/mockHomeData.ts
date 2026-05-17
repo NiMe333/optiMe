@@ -27,14 +27,7 @@ export const mockHomeData: HomeDashboardData = {
   mentalHealthScore: {
     value: 88,
     label: "Healthy",
-
-    // Status controls the score color:
-    // "healthy"  -> green
-    // "okay"     -> yellow
-    // "warning"  -> orange
-    // "critical" -> red
     status: "healthy",
-
     changeFromLastWeek: 12,
   },
 
@@ -114,7 +107,7 @@ export const mockHomeData: HomeDashboardData = {
       variant: "score",
       source: "entered",
       valueLabel: "Today",
-      value: 3,
+      value: 4,
       suffix: "/5",
       maxValue: 5,
       subtitle: "Mood check-in",
@@ -148,39 +141,36 @@ export const mockHomeData: HomeDashboardData = {
 
   calculatedScores: [
     {
-      id: "anxiety",
-      title: "Anxiety Score",
+      id: "anxiety-signals",
+      title: "Anxiety Signals",
       value: 42,
       suffix: "/100",
-      subtitle: "Auto-calculated",
+      subtitle: "Based on recent patterns",
+      level: "Moderate",
+      status: "warning",
       color: homeColors.purple,
-      chart: [44, 40, 55, 45, 48, 54, 56, 62, 58, 52],
-    },
-    {
-      id: "depression",
-      title: "Depression Score",
-      value: 38,
-      suffix: "/100",
-      subtitle: "Auto-calculated",
-      color: homeColors.purple,
-      chart: [42, 39, 52, 48, 44, 43, 55, 51, 53, 54],
+      chart: [36, 39, 44, 41, 38, 45, 42],
     },
     {
       id: "stress-level",
       title: "Stress Level",
       value: "Moderate",
-      subtitle: "Auto-calculated",
-      color: homeColors.purple,
-      chart: [54, 50, 43, 48, 51, 44, 42, 50, 55, 54],
+      subtitle: "Work, school and daily pressure",
+      level: "Moderate",
+      status: "warning",
+      color: homeColors.orange,
+      chart: [48, 52, 50, 55, 57, 53, 51],
     },
     {
-      id: "mental-health-score",
-      title: "Mental Health Score",
-      value: 80,
+      id: "mood-balance",
+      title: "Mood Balance",
+      value: 72,
       suffix: "/100",
-      subtitle: "Auto-calculated",
-      color: homeColors.purple,
-      chart: [42, 42, 36, 40, 42, 40, 48, 45, 55, 44],
+      subtitle: "Mood, sleep and social signals",
+      level: "Stable",
+      status: "healthy",
+      color: homeColors.green,
+      chart: [64, 68, 70, 66, 71, 74, 72],
     },
   ],
 
@@ -220,28 +210,24 @@ export const mockHomeData: HomeDashboardData = {
   achievements: [
     {
       id: "sleep-balance",
-      emoji: "🌙",
       title: "Sleep Balance",
       streak: "7-day streak",
       completed: true,
     },
     {
       id: "active-mind",
-      emoji: "🧠",
       title: "Active Mind",
       streak: "5-day streak",
       completed: true,
     },
     {
       id: "digital-detox",
-      emoji: "📵",
       title: "Digital Detox",
       streak: "3-day streak",
       completed: true,
     },
     {
       id: "inner-balance",
-      emoji: "☯️",
       title: "Inner Balance",
       streak: "10-day streak",
       completed: true,
@@ -254,7 +240,6 @@ export const mockHomeData: HomeDashboardData = {
       category: "MENTAL HEALTH",
       title: "The Hidden Impact of Screen Time on Your Mind",
       readTime: "5 min read",
-      emoji: "🌄",
       color: homeColors.purpleSoft,
     },
     {
@@ -262,7 +247,6 @@ export const mockHomeData: HomeDashboardData = {
       category: "SLEEP",
       title: "Better Sleep, Better Mind: Simple Changes",
       readTime: "4 min read",
-      emoji: "🌙",
       color: homeColors.blueSoft,
     },
     {
@@ -270,7 +254,6 @@ export const mockHomeData: HomeDashboardData = {
       category: "MINDFULNESS",
       title: "How Breathing Changes Your Mood",
       readTime: "3 min read",
-      emoji: "🧘",
       color: homeColors.purpleSoft,
     },
     {
@@ -278,7 +261,6 @@ export const mockHomeData: HomeDashboardData = {
       category: "PRODUCTIVITY",
       title: "Small Habits for a Calmer Workday",
       readTime: "3 min read",
-      emoji: "✏️",
       color: homeColors.orangeSoft,
     },
     {
@@ -286,7 +268,6 @@ export const mockHomeData: HomeDashboardData = {
       category: "RELATIONSHIPS",
       title: "Building Stronger Social Connections",
       readTime: "4 min read",
-      emoji: "👥",
       color: homeColors.pinkSoft,
     },
     {
@@ -294,7 +275,6 @@ export const mockHomeData: HomeDashboardData = {
       category: "SELF-CARE",
       title: "Weekend Reset: Recharge Your Mind and Body",
       readTime: "5 min read",
-      emoji: "🏔️",
       color: homeColors.greenSoft,
     },
   ],

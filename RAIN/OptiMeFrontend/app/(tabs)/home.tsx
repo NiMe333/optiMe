@@ -79,7 +79,6 @@ export default function HomeScreen() {
               <View style={styles.panelHeader}>
                 <View style={styles.panelTitleRow}>
                   <Text style={styles.panelTitle}>Tracked Metrics</Text>
-                  <Text style={styles.infoIcon}>ⓘ</Text>
                 </View>
 
                 <View style={styles.legendRow}>
@@ -87,10 +86,6 @@ export default function HomeScreen() {
                   <LegendDot color={colors.green} label="Entered (Manual)" />
                   <LegendDot color={colors.purple} label="Calculated (Auto)" />
                 </View>
-
-                <Pressable>
-                  <Text style={styles.editMetrics}>Edit Metrics ✎</Text>
-                </Pressable>
               </View>
 
               <View style={styles.metricsGrid}>
@@ -118,8 +113,6 @@ export default function HomeScreen() {
             <AchievementsPanel achievements={homeData.achievements} />
           </View>
 
-          <TrendOverview trends={homeData.trends} />
-
           <ArticlesSection articles={homeData.articles} />
         </ScrollView>
       </View>
@@ -138,7 +131,6 @@ export default function HomeScreen() {
 
         <View style={styles.mobileSectionHeader}>
           <Text style={styles.panelTitle}>Tracked Metrics</Text>
-          <Text style={styles.infoIcon}>ⓘ</Text>
         </View>
 
         <View style={styles.mobileMetricGrid}>
@@ -159,8 +151,6 @@ export default function HomeScreen() {
         </View>
 
         <AchievementsPanel achievements={homeData.achievements} mobile />
-
-        <TrendOverview trends={homeData.trends} mobile />
 
         <ArticlesSection articles={homeData.articles} mobile />
       </ScrollView>
@@ -199,15 +189,6 @@ function DashboardHeader({
 
         <Text style={styles.headerDate}>{todayLabel}</Text>
       </View>
-
-      {!mobile && (
-        <View style={styles.headerActions}>
-          <Pressable style={styles.notificationButton}>
-            <Text style={styles.notificationIcon}>♟</Text>
-            <View style={styles.notificationDot} />
-          </Pressable>
-        </View>
-      )}
     </View>
   );
 }
@@ -246,7 +227,6 @@ function CalculatedScoreCard({
     </View>
   );
 }
-
 function AchievementsPanel({
   achievements,
   mobile = false,
@@ -265,7 +245,11 @@ function AchievementsPanel({
 
       {achievements.map((achievement) => (
         <View key={achievement.id} style={styles.achievementRow}>
-          <Text style={styles.achievementEmoji}>{achievement.emoji}</Text>
+          <View style={styles.achievementBullet}>
+            <Text style={styles.achievementBulletText}>
+              {achievement.completed ? "✓" : "•"}
+            </Text>
+          </View>
 
           <Text style={styles.achievementTitle}>{achievement.title}</Text>
 
@@ -276,87 +260,6 @@ function AchievementsPanel({
           </Text>
         </View>
       ))}
-    </View>
-  );
-}
-
-function TrendOverview({
-  trends,
-  mobile = false,
-}: {
-  trends: HomeDashboardData["trends"];
-  mobile?: boolean;
-}) {
-  return (
-    <View style={mobile ? styles.mobileTrendPanel : styles.trendPanel}>
-      <View style={styles.trendHeader}>
-        <View style={styles.panelTitleRow}>
-          <Text style={styles.panelTitle}>Trends Overview</Text>
-          <Text style={styles.infoIcon}>ⓘ</Text>
-        </View>
-
-        {!mobile && (
-          <View style={styles.trendLegend}>
-            {trends.map((item) => (
-              <LegendDot key={item.id} color={item.color} label={item.label} />
-            ))}
-          </View>
-        )}
-
-        <View style={styles.daysPill}>
-          <Text style={styles.daysPillText}>7 Days⌄</Text>
-        </View>
-      </View>
-
-      <View style={styles.fakeChart}>
-        <View style={styles.chartScaleLeft}>
-          <Text style={styles.chartScaleText}>100</Text>
-          <Text style={styles.chartScaleText}>75</Text>
-          <Text style={styles.chartScaleText}>50</Text>
-          <Text style={styles.chartScaleText}>25</Text>
-          <Text style={styles.chartScaleText}>0</Text>
-        </View>
-
-        <View style={styles.chartArea}>
-          <View style={styles.gridLine} />
-          <View style={styles.gridLine} />
-          <View style={styles.gridLine} />
-          <View style={styles.gridLine} />
-
-          <View style={styles.chartBars}>
-            {days.map((day, index) => (
-              <View key={`${day}-${index}`} style={styles.chartDayColumn}>
-                {trends.map((item) => (
-                  <View
-                    key={item.id}
-                    style={[
-                      styles.chartPoint,
-                      {
-                        backgroundColor: item.color,
-                        bottom: `${item.data[index] ?? 0}%`,
-                      } as any,
-                    ]}
-                  />
-                ))}
-
-                <Text style={styles.chartDay}>
-                  {index === 0 ? "May 8" : day}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {!mobile && (
-          <View style={styles.chartScaleRight}>
-            <Text style={styles.chartScaleText}>100</Text>
-            <Text style={styles.chartScaleText}>75</Text>
-            <Text style={styles.chartScaleText}>50</Text>
-            <Text style={styles.chartScaleText}>25</Text>
-            <Text style={styles.chartScaleText}>0</Text>
-          </View>
-        )}
-      </View>
     </View>
   );
 }
@@ -398,7 +301,7 @@ function ArticleCard({
   return (
     <View style={mobile ? styles.mobileArticleCard : styles.articleCard}>
       <View style={[styles.articleImage, { backgroundColor: article.color }]}>
-        <Text style={styles.articleEmoji}>{article.emoji}</Text>
+        <View style={styles.articleImagePattern} />
       </View>
 
       <View style={styles.articleBody}>
@@ -406,8 +309,8 @@ function ArticleCard({
         <Text style={styles.articleTitle}>{article.title}</Text>
 
         <View style={styles.articleBottom}>
-          <Text style={styles.articleReadTime}>◷ {article.readTime}</Text>
-          <Text style={styles.bookmark}>♧</Text>
+          <Text style={styles.articleReadTime}>{article.readTime}</Text>
+          <Text style={styles.bookmark}>Save</Text>
         </View>
       </View>
     </View>

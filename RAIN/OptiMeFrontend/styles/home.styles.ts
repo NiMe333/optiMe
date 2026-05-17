@@ -102,40 +102,6 @@ export const styles = StyleSheet.create({
     fontWeight: "800",
   },
 
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
-  },
-
-  notificationButton: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: "rgba(255,255,255,0.72)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-    position: "relative",
-    ...softShadow,
-  },
-
-  notificationIcon: {
-    fontSize: 22,
-    color: colors.navy,
-  },
-
-  notificationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "red",
-    position: "absolute",
-    right: 14,
-    top: 13,
-  },
-
   webTopRow: {
     flexDirection: "row",
     gap: 28,
@@ -250,6 +216,28 @@ export const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 15,
     ...softShadow,
+  },
+
+  achievementBullet: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: "rgba(24,63,104,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  achievementBulletText: {
+    color: colors.green,
+    fontSize: 17,
+    fontWeight: "900",
+  },
+
+  articleImagePattern: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.45)",
   },
 
   mobileCalculatedCard: {
@@ -374,12 +362,6 @@ export const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     gap: 13,
-  },
-
-  achievementEmoji: {
-    width: 34,
-    fontSize: 28,
-    textAlign: "center",
   },
 
   achievementTitle: {
@@ -567,10 +549,6 @@ export const styles = StyleSheet.create({
     height: 64,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  articleEmoji: {
-    fontSize: 34,
   },
 
   articleBody: {
