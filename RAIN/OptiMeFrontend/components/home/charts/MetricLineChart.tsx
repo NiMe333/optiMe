@@ -27,6 +27,8 @@ type ChartDay = {
   isToday: boolean;
 };
 
+const DAYS_TO_SHOW = 6;
+
 export default function MetricLineChart({
   data,
   color,
@@ -37,16 +39,18 @@ export default function MetricLineChart({
   const [width, setWidth] = useState(0);
   const [chartReady, setChartReady] = useState(false);
 
-  const safeData = data.length > 0 ? data.slice(-7) : [0];
+  const safeData = data.length > 0 ? data.slice(-DAYS_TO_SHOW) : [0];
   const dataKey = safeData.join("|");
 
   const days = getLastDays(safeData.length);
 
-  const [selectedIndex, setSelectedIndex] = useState(safeData.length - 1);
+  const todayIndex = Math.max(safeData.length - 1, 0);
+
+  const [selectedIndex, setSelectedIndex] = useState(todayIndex);
 
   useEffect(() => {
-    setSelectedIndex(safeData.length - 1);
-  }, [safeData.length]);
+    setSelectedIndex(todayIndex);
+  }, [todayIndex, dataKey]);
 
   useEffect(() => {
     if (width <= 0) {
@@ -67,6 +71,10 @@ export default function MetricLineChart({
 
   const selectedDay = days[selectedIndex] ?? days[days.length - 1];
 
+  const selectedHeaderLabel = selectedDay?.isToday
+    ? "Today"
+    : `${selectedDay?.shortLabel ?? ""} · ${selectedDay?.dateLabel ?? ""}`;
+
   useEffect(() => {
     if (!selectedDay) {
       return;
@@ -77,12 +85,19 @@ export default function MetricLineChart({
       value: selectedValue,
       dayLabel: selectedDay.fullLabel,
       dateLabel: selectedDay.dateLabel,
-      headerLabel: selectedDay.isToday
-        ? "Today"
-        : `${selectedDay.shortLabel} · ${selectedDay.dateLabel}`,
+      headerLabel: selectedHeaderLabel,
     });
-  }, [onSelectedPointChange, selectedDay, selectedIndex, selectedValue]);
+  }, [
+    onSelectedPointChange,
+    selectedIndex,
+    selectedValue,
+    selectedDay?.fullLabel,
+    selectedDay?.dateLabel,
+    selectedHeaderLabel,
+  ]);
 
+  const chartWidth = width > 0 ? Math.max(130, width - 34) : 0;
+  const sidePadding = 18;
   const visualMaxValue = getVisualMaxValue(maxValue, safeData);
 
   const chartData = safeData.map((value, index) => {
@@ -104,7 +119,7 @@ export default function MetricLineChart({
       style={[
         componentStyles.container,
         {
-          height,
+          height: height + 30,
         },
       ]}
       onLayout={(event) => {
@@ -115,40 +130,40 @@ export default function MetricLineChart({
         }
       }}
     >
-      {width > 0 && chartReady && (
-        <LineChart
-          key={`metric-line-chart-${width}-${dataKey}`}
-          data={chartData}
-          width={width}
-          height={height}
-          maxValue={visualMaxValue}
-          noOfSections={3}
-          curved
-          areaChart
-          disableScroll
-          hideRules
-          hideYAxisText
-          yAxisThickness={0}
-          xAxisThickness={0}
-          color={color}
-          thickness={2.4}
-          dataPointsColor={color}
-          dataPointsRadius={4}
-          startFillColor={color}
-          endFillColor={color}
-          startOpacity={0.18}
-          endOpacity={0.02}
-          initialSpacing={8}
-          endSpacing={8}
-          isAnimated
-          animationDuration={850}
-          onPress={(_item: unknown, index?: number) => {
-            if (typeof index === "number") {
-              setSelectedIndex(index);
-            }
-          }}
-          xAxisLabelTextStyle={componentStyles.xAxisLabel}
-        />
+      {chartWidth > 0 && chartReady && (
+        <View style={componentStyles.chartCenter}>
+          <LineChart
+            key={`metric-line-chart-${chartWidth}-${dataKey}`}
+            data={chartData}
+            width={chartWidth}
+            height={height}
+            maxValue={visualMaxValue}
+            noOfSections={3}
+            curved
+            areaChart
+            disableScroll
+            hideRules
+            hideYAxisText
+            yAxisThickness={0}
+            xAxisThickness={0}
+            color={color}
+            thickness={2.4}
+            startFillColor={color}
+            endFillColor={color}
+            startOpacity={0.18}
+            endOpacity={0.02}
+            initialSpacing={sidePadding}
+            endSpacing={sidePadding + 8}
+            isAnimated
+            animationDuration={850}
+            onPress={(_item: unknown, index?: number) => {
+              if (typeof index === "number") {
+                setSelectedIndex(index);
+              }
+            }}
+            xAxisLabelTextStyle={componentStyles.xAxisLabel}
+          />
+        </View>
       )}
     </View>
   );
@@ -207,12 +222,23 @@ function hexToRgba(hex: string, opacity: number) {
 const componentStyles = StyleSheet.create({
   container: {
     width: "100%",
-    overflow: "hidden",
+    overflow: "visible",
+    paddingTop: 4,
+    paddingBottom: 12,
+    alignItems: "center",
+  },
+
+  chartCenter: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "visible",
   },
 
   xAxisLabel: {
     color: colors.textSoft,
     fontSize: 9,
+    lineHeight: 12,
     fontWeight: "800",
   },
 });
