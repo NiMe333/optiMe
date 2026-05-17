@@ -5,7 +5,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/styles/home.styles";
 import type { HomeTrackedMetric } from "@/types/home";
 
-import MetricBarChart from "@/components/home/charts/MetricBarChart";
+import MetricBarChart, {
+  type SelectedBarPoint,
+} from "@/components/home/charts/MetricBarChart";
 import MetricLineChart, {
   type SelectedLinePoint,
 } from "@/components/home/charts/MetricLineChart";
@@ -44,45 +46,43 @@ export default function TrackedMetricCard({
     <MetricShell metric={metric} mobile={mobile}>
       {visualType === "value" && <ValueOnlyMetric metric={metric} />}
 
-      {visualType === "bar" && <ChartMetric metric={metric} type="bar" />}
+      {visualType === "bar" && <BarChartMetric metric={metric} />}
 
-      {visualType === "line" && <ChartMetric metric={metric} type="line" />}
+      {visualType === "line" && <LineChartMetric metric={metric} />}
     </MetricShell>
   );
 }
 
-function ChartMetric({
-  metric,
-  type,
-}: {
-  metric: HomeTrackedMetric;
-  type: "bar" | "line";
-}) {
-  if (type === "bar") {
-    return <BarChartMetric metric={metric} />;
-  }
+function BarChartMetric({ metric }: { metric: HomeTrackedMetric }) {
+  const [selectedBar, setSelectedBar] = useState<SelectedBarPoint | null>(null);
 
-  return <LineChartMetric metric={metric} />;
-}
+  const valueLabel = selectedBar?.headerLabel ?? metric.valueLabel ?? "Today";
 
-function getLineChartDetailLabel(metric: HomeTrackedMetric) {
-  if (metric.id === "socialization") {
-    return "Social score";
-  }
+  const value = selectedBar
+    ? formatBarMetricValue(selectedBar.value)
+    : metric.value;
 
-  if (metric.id === "financial-work-school-stress") {
-    return "Stress";
-  }
+  return (
+    <View style={componentStyles.metricBarBody}>
+      <CompactMetricHeader
+        label={valueLabel}
+        value={value}
+        suffix={metric.suffix}
+        subtitle={metric.subtitle}
+      />
 
-  if (metric.id === "self-esteem") {
-    return "Self-esteem";
-  }
-
-  if (metric.id === "life-satisfaction") {
-    return "Life satisfaction";
-  }
-
-  return metric.title;
+      <View style={componentStyles.metricBarChartBottom}>
+        <MetricBarChart
+          data={metric.chart}
+          color={metric.color}
+          maxValue={getMetricMaxValue(metric)}
+          unit={metric.suffix || ""}
+          height={metric.id === "screen-time" ? 62 : 56}
+          onSelectedBarChange={setSelectedBar}
+        />
+      </View>
+    </View>
+  );
 }
 
 function LineChartMetric({ metric }: { metric: HomeTrackedMetric }) {
@@ -90,14 +90,19 @@ function LineChartMetric({ metric }: { metric: HomeTrackedMetric }) {
     null,
   );
 
+  const valueLabel = selectedPoint?.headerLabel ?? metric.valueLabel ?? "Today";
+
+  const value = selectedPoint
+    ? formatLineMetricValue(selectedPoint.value)
+    : metric.value;
+
   return (
-    <View style={componentStyles.metricBody}>
-      <MetricValueHeader
-        metric={metric}
-        valueLabelOverride={selectedPoint?.headerLabel}
-        valueOverride={
-          selectedPoint ? formatLineMetricValue(selectedPoint.value) : undefined
-        }
+    <View style={componentStyles.metricLineBody}>
+      <CompactMetricHeader
+        label={valueLabel}
+        value={value}
+        suffix={metric.suffix}
+        subtitle={metric.subtitle}
       />
 
       <View style={componentStyles.metricChartBox}>
@@ -112,54 +117,42 @@ function LineChartMetric({ metric }: { metric: HomeTrackedMetric }) {
   );
 }
 
-function BarChartMetric({ metric }: { metric: HomeTrackedMetric }) {
-  const isScreenTime = metric.id === "screen-time";
-
+function CompactMetricHeader({
+  label,
+  value,
+  suffix,
+  subtitle,
+}: {
+  label?: string;
+  value: string | number;
+  suffix?: string;
+  subtitle: string;
+}) {
   return (
-    <View
-      style={[
-        componentStyles.metricBarBody,
-        isScreenTime && componentStyles.screenTimeBarBody,
-      ]}
-    >
-      <View
-        style={[
-          componentStyles.metricBarTextSide,
-          isScreenTime && componentStyles.screenTimeBarTextSide,
-        ]}
-      >
-        {!!metric.valueLabel && (
-          <Text style={componentStyles.metricValueLabel}>
-            {metric.valueLabel}
+    <View style={componentStyles.compactMetricHeader}>
+      <View style={componentStyles.compactMetricMainLine}>
+        {!!label && (
+          <Text
+            style={componentStyles.compactMetricLabel}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {label}
           </Text>
         )}
 
-        <View style={componentStyles.metricValueRow}>
-          <Text style={componentStyles.metricValue}>{metric.value}</Text>
+        <Text style={componentStyles.compactMetricSeparator}>·</Text>
 
-          {!!metric.suffix && (
-            <Text style={componentStyles.metricSuffix}>{metric.suffix}</Text>
+        <View style={componentStyles.compactMetricValueRow}>
+          <Text style={componentStyles.compactMetricValue}>{value}</Text>
+
+          {!!suffix && (
+            <Text style={componentStyles.compactMetricSuffix}>{suffix}</Text>
           )}
         </View>
-
-        <Text style={componentStyles.metricSubtitle}>{metric.subtitle}</Text>
       </View>
 
-      <View
-        style={[
-          componentStyles.metricBarChartSide,
-          isScreenTime && componentStyles.screenTimeBarChartSide,
-        ]}
-      >
-        <MetricBarChart
-          data={metric.chart}
-          color={metric.color}
-          maxValue={getMetricMaxValue(metric)}
-          unit={metric.suffix || ""}
-          detailLabel={getBarChartDetailLabel(metric)}
-          height={metric.id === "screen-time" ? 76 : 62}
-        />
-      </View>
+      <Text style={componentStyles.compactMetricSubtitle}>{subtitle}</Text>
     </View>
   );
 }
@@ -217,55 +210,6 @@ function ValueOnlyMetric({ metric }: { metric: HomeTrackedMetric }) {
       showProgress={!!metric.maxValue}
     />
   );
-}
-
-function MetricValueHeader({
-  metric,
-  valueLabelOverride,
-  valueOverride,
-}: {
-  metric: HomeTrackedMetric;
-  valueLabelOverride?: string;
-  valueOverride?: string | number;
-}) {
-  const valueLabel = valueLabelOverride ?? metric.valueLabel;
-  const value = valueOverride ?? metric.value;
-
-  return (
-    <View style={componentStyles.metricStatsRow}>
-      <View style={componentStyles.metricPrimaryBlock}>
-        {!!valueLabel && (
-          <Text style={componentStyles.metricValueLabel}>{valueLabel}</Text>
-        )}
-
-        <View style={componentStyles.metricValueRow}>
-          <Text style={componentStyles.metricValue}>{value}</Text>
-
-          {!!metric.suffix && (
-            <Text style={componentStyles.metricSuffix}>{metric.suffix}</Text>
-          )}
-        </View>
-
-        <Text style={componentStyles.metricSubtitle}>{metric.subtitle}</Text>
-      </View>
-
-      {!!metric.secondValue && (
-        <View style={componentStyles.metricSecondaryBlock}>
-          <Text style={componentStyles.metricSecondaryLabel}>
-            {metric.secondLabel || "Second"}
-          </Text>
-
-          <Text style={componentStyles.metricSecondaryValue}>
-            {metric.secondValue}
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-function formatLineMetricValue(value: number) {
-  return Number.isInteger(value) ? value : value.toFixed(1);
 }
 
 function MetricShell({
@@ -409,18 +353,6 @@ function getMetricVisualType(metric: HomeTrackedMetric): MetricVisualType {
   return "line";
 }
 
-function getBarChartDetailLabel(metric: HomeTrackedMetric) {
-  if (metric.id === "sleep") {
-    return "Sleep hours";
-  }
-
-  if (metric.id === "screen-time") {
-    return "Screen time";
-  }
-
-  return metric.title;
-}
-
 function getMetricMaxValue(metric: HomeTrackedMetric) {
   if (metric.maxValue) {
     return metric.maxValue;
@@ -434,7 +366,7 @@ function getMetricMaxValue(metric: HomeTrackedMetric) {
     return 12;
   }
 
-  if (metric.id === "socialization") {
+  if (metric.id === "socialization" || metric.id === "mood") {
     return 5;
   }
 
@@ -526,25 +458,35 @@ function formatGoalValue(value: number) {
   return value.toLocaleString("en-US");
 }
 
+function formatBarMetricValue(value: number) {
+  return Number.isInteger(value) ? value : value.toFixed(1);
+}
+
+function formatLineMetricValue(value: number) {
+  return Number.isInteger(value) ? value : value.toFixed(1);
+}
+
 const componentStyles = StyleSheet.create({
   metricCard: {
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: "31%",
     minWidth: 245,
-    minHeight: 155,
+    minHeight: 178,
     borderRadius: 20,
     backgroundColor: colors.white,
-    padding: 16,
+    padding: 14,
+    overflow: "hidden",
     ...cardShadow,
   },
 
   mobileMetricCard: {
     width: "100%",
-    minHeight: 165,
+    minHeight: 180,
     borderRadius: 20,
     backgroundColor: colors.white,
-    padding: 16,
+    padding: 14,
+    overflow: "hidden",
     ...cardShadow,
   },
 
@@ -589,115 +531,99 @@ const componentStyles = StyleSheet.create({
     borderRadius: 999,
   },
 
-  metricBody: {
+  metricLineBody: {
     flex: 1,
     marginTop: 8,
-  },
-
-  metricStatsRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "space-between",
-    gap: 16,
-  },
-
-  metricPrimaryBlock: {
-    flex: 1,
-  },
-
-  metricSecondaryBlock: {
-    alignItems: "flex-end",
-  },
-
-  metricSecondaryLabel: {
-    color: colors.navySoft,
-    fontSize: 11,
-    fontWeight: "800",
-    marginBottom: 2,
-    textTransform: "capitalize",
-  },
-
-  metricSecondaryValue: {
-    color: colors.navy,
-    fontSize: 22,
-    fontWeight: "900",
-    letterSpacing: -0.4,
+    gap: 4,
   },
 
   metricChartBox: {
-    marginTop: 8,
-    height: 92,
+    marginTop: 4,
+    height: 82,
     width: "100%",
     overflow: "hidden",
   },
 
-  metricValueLabel: {
-    color: colors.navy,
-    fontSize: 12,
-    fontWeight: "800",
-    marginTop: 8,
+  compactMetricHeader: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+    marginBottom: 2,
   },
 
-  metricValueRow: {
+  compactMetricMainLine: {
+    maxWidth: "100%",
     flexDirection: "row",
     alignItems: "flex-end",
-    gap: 6,
-    marginTop: 1,
+    justifyContent: "center",
+    gap: 5,
   },
 
-  metricValue: {
+  compactMetricLabel: {
     color: colors.navy,
-    fontSize: 28,
+    fontSize: 12,
+    lineHeight: 17,
     fontWeight: "900",
-    letterSpacing: -0.6,
+    maxWidth: 120,
   },
 
-  metricSuffix: {
+  compactMetricSeparator: {
+    color: colors.textSoft,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "900",
+    marginBottom: 1,
+  },
+
+  compactMetricValueRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 3,
+  },
+
+  compactMetricValue: {
+    color: colors.navy,
+    fontSize: 21,
+    lineHeight: 24,
+    fontWeight: "900",
+    letterSpacing: -0.5,
+  },
+
+  compactMetricSuffix: {
     color: colors.navySoft,
-    fontSize: 13,
-    fontWeight: "800",
-    marginBottom: 6,
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "900",
+    marginBottom: 3,
   },
 
-  metricSubtitle: {
+  compactMetricSubtitle: {
     color: colors.textSoft,
     fontSize: 11,
-    fontWeight: "600",
-    marginTop: 2,
+    lineHeight: 14,
+    fontWeight: "800",
+    marginTop: 0,
+    textAlign: "center",
   },
 
   metricBarBody: {
     flex: 1,
-    flexDirection: "row",
+    marginTop: 8,
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
-    marginTop: 10,
+    gap: 4,
   },
 
-  metricBarTextSide: {
-    width: 82,
-    justifyContent: "center",
-  },
-
-  metricBarChartSide: {
-    flex: 1,
-    minWidth: 130,
-    justifyContent: "center",
-  },
-
-  screenTimeBarBody: {
-    marginTop: 4,
-    alignItems: "center",
-  },
-
-  screenTimeBarTextSide: {
-    width: 64,
-  },
-
-  screenTimeBarChartSide: {
-    flex: 1,
-    minWidth: 0,
+  metricBarChartBottom: {
+    width: "80%",
+    maxWidth: 230,
+    minWidth: 165,
+    alignSelf: "center",
+    overflow: "visible",
   },
 
   trendPill: {

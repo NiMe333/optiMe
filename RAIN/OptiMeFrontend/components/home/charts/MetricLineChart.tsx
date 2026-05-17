@@ -35,8 +35,10 @@ export default function MetricLineChart({
   onSelectedPointChange,
 }: MetricLineChartProps) {
   const [width, setWidth] = useState(0);
+  const [chartReady, setChartReady] = useState(false);
 
   const safeData = data.length > 0 ? data.slice(-7) : [0];
+  const dataKey = safeData.join("|");
 
   const days = useMemo(() => getLastDays(safeData.length), [safeData.length]);
 
@@ -45,6 +47,20 @@ export default function MetricLineChart({
   useEffect(() => {
     setSelectedIndex(safeData.length - 1);
   }, [safeData.length]);
+
+  useEffect(() => {
+    if (width <= 0) {
+      return;
+    }
+
+    setChartReady(false);
+
+    const timer = setTimeout(() => {
+      setChartReady(true);
+    }, 60);
+
+    return () => clearTimeout(timer);
+  }, [width, dataKey]);
 
   const selectedValue =
     safeData[selectedIndex] ?? safeData[safeData.length - 1];
@@ -63,7 +79,7 @@ export default function MetricLineChart({
       dateLabel: selectedDay.dateLabel,
       headerLabel: selectedDay.isToday
         ? "Today"
-        : `${selectedDay.fullLabel} · ${selectedDay.dateLabel}`,
+        : `${selectedDay.shortLabel} · ${selectedDay.dateLabel}`,
     });
   }, [onSelectedPointChange, selectedDay, selectedIndex, selectedValue]);
 
@@ -74,7 +90,7 @@ export default function MetricLineChart({
       value,
       label: days[index]?.shortLabel ?? "",
       dataPointColor: isSelected ? color : hexToRgba(color, 0.75),
-      dataPointRadius: isSelected ? 4 : 3,
+      dataPointRadius: isSelected ? 6 : 4,
       onPress: () => {
         setSelectedIndex(index);
       },
@@ -97,8 +113,9 @@ export default function MetricLineChart({
         }
       }}
     >
-      {width > 0 && (
+      {width > 0 && chartReady && (
         <LineChart
+          key={`metric-line-chart-${width}-${dataKey}`}
           data={chartData}
           width={width}
           height={height}
@@ -112,15 +129,17 @@ export default function MetricLineChart({
           yAxisThickness={0}
           xAxisThickness={0}
           color={color}
-          thickness={2}
+          thickness={2.4}
           dataPointsColor={color}
-          dataPointsRadius={3}
+          dataPointsRadius={4}
           startFillColor={color}
           endFillColor={color}
           startOpacity={0.18}
           endOpacity={0.02}
           initialSpacing={8}
           endSpacing={8}
+          isAnimated
+          animationDuration={850}
           onPress={(_item: unknown, index?: number) => {
             if (typeof index === "number") {
               setSelectedIndex(index);

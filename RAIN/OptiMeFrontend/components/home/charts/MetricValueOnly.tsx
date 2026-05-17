@@ -31,6 +31,7 @@ export default function MetricValueOnly({
 }: MetricValueOnlyProps) {
   const safeProgress = Math.max(0, Math.min(100, progress));
 
+  const isMoodMetric = !!moodIconName;
   const shouldAnimate = showProgress && !moodIconName;
 
   const progressAnimation = useRef(new Animated.Value(0)).current;
@@ -96,12 +97,39 @@ export default function MetricValueOnly({
     : progressWidth;
 
   return (
-    <View style={componentStyles.wrapper}>
-      <View style={componentStyles.mainRow}>
-        <View style={componentStyles.info}>
-          <Text style={componentStyles.kicker}>{statusLabel}</Text>
+    <View
+      style={[
+        componentStyles.wrapper,
+        isMoodMetric && componentStyles.moodWrapper,
+      ]}
+    >
+      <View
+        style={[
+          componentStyles.mainRow,
+          isMoodMetric && componentStyles.moodMainRow,
+        ]}
+      >
+        <View
+          style={[
+            componentStyles.info,
+            isMoodMetric && componentStyles.moodInfo,
+          ]}
+        >
+          <Text
+            style={[
+              componentStyles.kicker,
+              isMoodMetric && componentStyles.moodKicker,
+            ]}
+          >
+            {statusLabel}
+          </Text>
 
-          <View style={componentStyles.valueRow}>
+          <View
+            style={[
+              componentStyles.valueRow,
+              isMoodMetric && componentStyles.moodValueRow,
+            ]}
+          >
             {!!moodIconName && (
               <View
                 style={[
@@ -112,18 +140,40 @@ export default function MetricValueOnly({
                   },
                 ]}
               >
-                <Ionicons name={moodIconName} size={18} color={color} />
+                <Ionicons name={moodIconName} size={19} color={color} />
               </View>
             )}
 
-            <Text style={[componentStyles.valueLarge, { color }]}>
+            <Text
+              style={[
+                componentStyles.valueLarge,
+                isMoodMetric && componentStyles.moodValueLarge,
+                { color },
+              ]}
+            >
               {displayValue}
             </Text>
           </View>
 
-          <Text style={componentStyles.labelLarge}>{label}</Text>
+          <Text
+            style={[
+              componentStyles.labelLarge,
+              isMoodMetric && componentStyles.moodLabelLarge,
+            ]}
+          >
+            {label}
+          </Text>
 
-          {!!hint && <Text style={componentStyles.hint}>{hint}</Text>}
+          {!!hint && (
+            <Text
+              style={[
+                componentStyles.hint,
+                isMoodMetric && componentStyles.moodHint,
+              ]}
+            >
+              {hint}
+            </Text>
+          )}
         </View>
 
         {!!goalLabel && (
@@ -233,6 +283,11 @@ const componentStyles = StyleSheet.create({
     justifyContent: "space-between",
   },
 
+  moodWrapper: {
+    paddingTop: 10,
+    justifyContent: "center",
+  },
+
   mainRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -240,9 +295,17 @@ const componentStyles = StyleSheet.create({
     gap: 12,
   },
 
+  moodMainRow: {
+    justifyContent: "center",
+  },
+
   info: {
     flex: 1,
     minWidth: 0,
+  },
+
+  moodInfo: {
+    alignItems: "center",
   },
 
   kicker: {
@@ -255,16 +318,26 @@ const componentStyles = StyleSheet.create({
     marginBottom: 7,
   },
 
+  moodKicker: {
+    alignSelf: "center",
+    marginBottom: 12,
+  },
+
   valueRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 9,
   },
 
+  moodValueRow: {
+    justifyContent: "center",
+    gap: 12,
+  },
+
   moodIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 13,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -277,6 +350,13 @@ const componentStyles = StyleSheet.create({
     letterSpacing: -0.9,
   },
 
+  moodValueLarge: {
+    fontSize: 33,
+    lineHeight: 36,
+    letterSpacing: -0.7,
+    textAlign: "center",
+  },
+
   labelLarge: {
     color: colors.textSoft,
     fontSize: 12,
@@ -285,12 +365,22 @@ const componentStyles = StyleSheet.create({
     marginTop: 0,
   },
 
+  moodLabelLarge: {
+    textAlign: "center",
+    marginTop: 4,
+  },
+
   hint: {
     color: colors.textSoft,
     fontSize: 11,
     lineHeight: 15,
     fontWeight: "700",
     marginTop: 9,
+  },
+
+  moodHint: {
+    textAlign: "center",
+    marginTop: 10,
   },
 
   goalPill: {

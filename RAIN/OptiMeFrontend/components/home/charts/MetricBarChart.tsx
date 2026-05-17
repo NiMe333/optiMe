@@ -10,30 +10,39 @@ type MetricBarChartProps = {
   maxValue?: number;
   height?: number;
   unit?: string;
-  detailLabel?: string;
+  onSelectedBarChange?: (bar: SelectedBarPoint) => void;
+};
+
+export type SelectedBarPoint = {
+  index: number;
+  value: number;
+  dayLabel: string;
+  dateLabel: string;
+  headerLabel: string;
 };
 
 type ChartDay = {
   shortLabel: string;
   fullLabel: string;
+  dateLabel: string;
+  isToday: boolean;
 };
 
 export default function MetricBarChart({
   data,
   color,
   maxValue: _maxValue,
-  height = 62,
+  height = 56,
   unit = "",
-  detailLabel = "Value",
+  onSelectedBarChange,
 }: MetricBarChartProps) {
   const [width, setWidth] = useState(0);
   const [chartReady, setChartReady] = useState(false);
 
   const safeData = data.length > 0 ? data.slice(-7) : [0];
-
   const dataKey = safeData.join("|");
 
-  const days = useMemo(() => getLastSevenDays(), []);
+  const days = useMemo(() => getLastDays(safeData.length), [safeData.length]);
 
   const [selectedIndex, setSelectedIndex] = useState(safeData.length - 1);
 
@@ -55,16 +64,31 @@ export default function MetricBarChart({
     return () => clearTimeout(timer);
   }, [width, dataKey]);
 
+  const selectedValue =
+    safeData[selectedIndex] ?? safeData[safeData.length - 1];
+
+  const selectedDay = days[selectedIndex] ?? days[days.length - 1];
+
+  useEffect(() => {
+    if (!selectedDay) {
+      return;
+    }
+
+    onSelectedBarChange?.({
+      index: selectedIndex,
+      value: selectedValue,
+      dayLabel: selectedDay.fullLabel,
+      dateLabel: selectedDay.dateLabel,
+      headerLabel: selectedDay.isToday
+        ? "Today"
+        : `${selectedDay.shortLabel} · ${selectedDay.dateLabel}`,
+    });
+  }, [onSelectedBarChange, selectedDay, selectedIndex, selectedValue]);
+
   const minDataValue = Math.min(...safeData);
   const maxDataValue = Math.max(...safeData);
   const dataRange = maxDataValue - minDataValue;
 
-  /**
-   * Dinamična skala:
-   * - ne rišemo iz 0 do 12
-   * - ampak iz dejanskega min/max razpona
-   * - dodamo base, da najmanjši stolpec ni neviden
-   */
   const visualBase =
     dataRange > 0 ? dataRange * 0.55 : Math.max(maxDataValue * 0.25, 1);
 
@@ -82,26 +106,26 @@ export default function MetricBarChart({
   }
 
   const barCount = safeData.length;
-  const sidePadding = 8;
+
+  const chartWidth = width > 0 ? Math.max(120, width - 18) : 0;
+
+  const sidePadding = 14;
 
   const barWidth =
-    width > 0 ? Math.max(10, Math.min(18, Math.floor(width / 16))) : 12;
+    chartWidth > 0
+      ? Math.max(9, Math.min(15, Math.floor(chartWidth / 19)))
+      : 11;
 
   const spacing =
-    width > 0
+    chartWidth > 0
       ? Math.max(
-          6,
+          4,
           Math.floor(
-            (width - sidePadding * 2 - barWidth * barCount) /
+            (chartWidth - sidePadding * 2 - barWidth * barCount) /
               Math.max(barCount - 1, 1),
           ),
         )
-      : 8;
-
-  const selectedValue =
-    safeData[selectedIndex] ?? safeData[safeData.length - 1];
-
-  const selectedDay = days[selectedIndex] ?? days[days.length - 1];
+      : 6;
 
   const chartData = safeData.map((value, index) => {
     const isSelected = index === selectedIndex;
@@ -122,18 +146,14 @@ export default function MetricBarChart({
       label: days[index]?.shortLabel ?? "",
       frontColor: barColor,
       topLabelComponent: () =>
-        isSelected || isToday ? (
-          <Text
-            style={[
-              componentStyles.barChartTopValue,
-              {
-                color: isSelected ? selectedBarColor : todayBarColor,
-              },
-            ]}
-          >
+        isSelected ? (
+          <Text style={[componentStyles.barChartTopValue, { color }]}>
             {formatChartValue(value, unit)}
           </Text>
         ) : null,
+      onPress: () => {
+        setSelectedIndex(index);
+      },
     };
   });
 
@@ -142,7 +162,7 @@ export default function MetricBarChart({
       style={[
         componentStyles.container,
         {
-          height: height + 56,
+          height: height + 34,
         },
       ]}
       onLayout={(event) => {
@@ -153,57 +173,49 @@ export default function MetricBarChart({
         }
       }}
     >
-      <View style={componentStyles.barChartDetailPill}>
-        <Text style={componentStyles.barChartDetailDay}>
-          {selectedDay.fullLabel}
-        </Text>
-
-        <Text style={componentStyles.barChartDetailValue}>
-          {detailLabel}: {formatChartValue(selectedValue, unit)}
-        </Text>
-      </View>
-
-      {width > 0 && chartReady && (
-        <BarChart
-          key={`metric-bar-chart-${width}-${dataKey}`}
-          data={chartData}
-          width={width}
-          height={height}
-          maxValue={paddedVisualMaxValue}
-          noOfSections={3}
-          disableScroll
-          adjustToWidth
-          parentWidth={width}
-          hideRules
-          hideYAxisText
-          yAxisThickness={0}
-          xAxisThickness={0}
-          barWidth={barWidth}
-          spacing={spacing}
-          roundedTop
-          roundedBottom
-          initialSpacing={sidePadding}
-          endSpacing={sidePadding}
-          isAnimated
-          animationDuration={850}
-          onPress={(_item: unknown, index?: number) => {
-            if (typeof index === "number") {
-              setSelectedIndex(index);
-            }
-          }}
-          xAxisLabelTextStyle={componentStyles.xAxisLabel}
-        />
+      {chartWidth > 0 && chartReady && (
+        <View style={componentStyles.chartCenter}>
+          <BarChart
+            key={`metric-bar-chart-${chartWidth}-${dataKey}`}
+            data={chartData}
+            width={chartWidth}
+            height={height}
+            maxValue={paddedVisualMaxValue}
+            noOfSections={3}
+            disableScroll
+            hideRules
+            hideYAxisText
+            yAxisThickness={0}
+            xAxisThickness={0}
+            barWidth={barWidth}
+            spacing={spacing}
+            roundedTop
+            roundedBottom
+            initialSpacing={sidePadding}
+            endSpacing={sidePadding}
+            isAnimated
+            animationDuration={850}
+            onPress={(_item: unknown, index?: number) => {
+              if (typeof index === "number") {
+                setSelectedIndex(index);
+              }
+            }}
+            xAxisLabelTextStyle={componentStyles.xAxisLabel}
+          />
+        </View>
       )}
     </View>
   );
 }
 
-function getLastSevenDays(): ChartDay[] {
+function getLastDays(count: number): ChartDay[] {
   const today = new Date();
 
-  return Array.from({ length: 7 }).map((_, index) => {
+  return Array.from({ length: count }).map((_, index) => {
     const date = new Date(today);
-    date.setDate(today.getDate() - (6 - index));
+    date.setDate(today.getDate() - (count - 1 - index));
+
+    const isToday = date.toDateString() === today.toDateString();
 
     return {
       shortLabel: new Intl.DateTimeFormat("en-US", {
@@ -212,6 +224,11 @@ function getLastSevenDays(): ChartDay[] {
       fullLabel: new Intl.DateTimeFormat("en-US", {
         weekday: "long",
       }).format(date),
+      dateLabel: new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+      }).format(date),
+      isToday,
     };
   });
 }
@@ -240,32 +257,21 @@ const componentStyles = StyleSheet.create({
   container: {
     width: "100%",
     overflow: "visible",
+    paddingTop: 6,
+    paddingBottom: 14,
+    alignItems: "center",
   },
 
-  barChartDetailPill: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(24,63,104,0.06)",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginBottom: 5,
-  },
-
-  barChartDetailDay: {
-    color: colors.navy,
-    fontSize: 9,
-    fontWeight: "900",
-  },
-
-  barChartDetailValue: {
-    color: colors.textSoft,
-    fontSize: 9,
-    fontWeight: "800",
-    marginTop: 1,
+  chartCenter: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "visible",
   },
 
   barChartTopValue: {
     fontSize: 8,
+    lineHeight: 10,
     fontWeight: "900",
     marginBottom: 2,
   },
@@ -273,6 +279,7 @@ const componentStyles = StyleSheet.create({
   xAxisLabel: {
     color: colors.textSoft,
     fontSize: 9,
+    lineHeight: 12,
     fontWeight: "800",
   },
 });
