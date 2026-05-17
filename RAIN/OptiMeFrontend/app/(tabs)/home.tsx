@@ -5,7 +5,6 @@ import { ScrollView, View, Text, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, styles } from "@/styles/home.styles";
 
-import WebSidebar from "@/components/navigation/WebSidebar";
 import { useAuth } from "@/context/AuthContext";
 import { getHomeDashboardData } from "@/services/homeService";
 import type { HomeDashboardData } from "@/types/home";
@@ -88,53 +87,48 @@ export default function HomeScreen() {
 
   if (isWebLayout) {
     return (
-      <View style={styles.webRoot}>
-        <View style={styles.webSidebarShell}>
-          <WebSidebar />
-        </View>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.webContentInner}
+        showsVerticalScrollIndicator={false}
+      >
+        <DashboardHeader username={username} todayLabel={todayLabel} />
 
-        <ScrollView
-          style={styles.webContent}
-          contentContainerStyle={styles.webContentInner}
-          showsVerticalScrollIndicator={false}
-        >
-          <DashboardHeader username={username} todayLabel={todayLabel} />
+        <View style={styles.webTopRow}>
+          <MentalHealthScoreCard
+            key={`score-web-${scoreCardKey}`}
+            score={homeData.mentalHealthScore}
+          />
 
-          <View style={styles.webTopRow}>
-            <MentalHealthScoreCard
-              key={`score-web-${scoreCardKey}`}
-              score={homeData.mentalHealthScore}
-            />
-            <View style={styles.metricsPanel}>
-              <View style={styles.panelHeader}>
-                <View style={styles.panelTitleRow}>
-                  <Text style={styles.panelTitle}>Tracked Metrics</Text>
-                </View>
-
-                <View style={styles.legendRow}>
-                  <LegendDot color={colors.blue} label="Measured (Auto)" />
-                  <LegendDot color={colors.green} label="Entered (Manual)" />
-                  <LegendDot color={colors.purple} label="Calculated (Auto)" />
-                </View>
+          <View style={styles.metricsPanel}>
+            <View style={styles.panelHeader}>
+              <View style={styles.panelTitleRow}>
+                <Text style={styles.panelTitle}>Tracked Metrics</Text>
               </View>
 
-              <View style={styles.metricsGrid}>
-                {homeData.trackedMetrics.map((metric) => (
-                  <TrackedMetricCard key={metric.id} metric={metric} />
-                ))}
+              <View style={styles.legendRow}>
+                <LegendDot color={colors.blue} label="Measured (Auto)" />
+                <LegendDot color={colors.green} label="Entered (Manual)" />
+                <LegendDot color={colors.purple} label="Calculated (Auto)" />
               </View>
             </View>
+
+            <View style={styles.metricsGrid}>
+              {homeData.trackedMetrics.map((metric) => (
+                <TrackedMetricCard key={metric.id} metric={metric} />
+              ))}
+            </View>
           </View>
+        </View>
 
-          <View style={styles.webMiddleRow}>
-            <CalculatedScoresSection scores={homeData.calculatedScores} />
+        <View style={styles.webMiddleRow}>
+          <CalculatedScoresSection scores={homeData.calculatedScores} />
 
-            <AchievementsPanel achievements={homeData.achievements} />
-          </View>
+          <AchievementsPanel achievements={homeData.achievements} />
+        </View>
 
-          <ArticlesSection articles={homeData.articles} />
-        </ScrollView>
-      </View>
+        <ArticlesSection articles={homeData.articles} />
+      </ScrollView>
     );
   }
 

@@ -10,19 +10,13 @@ export default function ProfileScreen() {
 
   if (isWebLayout) {
     return (
-      <View style={styles.webRoot}>
-        <View style={styles.webSidebarShell}>
-          <WebSidebar />
-        </View>
-
-        <ScrollView
-          style={styles.webContent}
-          contentContainerStyle={styles.webContentInner}
-          showsVerticalScrollIndicator={false}
-        >
-          <ProfileContent />
-        </ScrollView>
-      </View>
+      <ScrollView
+        style={styles.webContent}
+        contentContainerStyle={styles.webContentInner}
+        showsVerticalScrollIndicator={false}
+      >
+        <ProfileContent />
+      </ScrollView>
     );
   }
 
