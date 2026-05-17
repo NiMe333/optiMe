@@ -1209,4 +1209,19 @@ export const styles = StyleSheet.create({
     fontWeight: "900",
     marginBottom: 2,
   },
+
+  metricValueOnlyMoodRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+
+  metricValueOnlyMoodIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

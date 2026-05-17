@@ -114,7 +114,7 @@ export const mockHomeData: HomeDashboardData = {
       variant: "score",
       source: "entered",
       valueLabel: "Today",
-      value: 4,
+      value: 3,
       suffix: "/5",
       maxValue: 5,
       subtitle: "Mood check-in",

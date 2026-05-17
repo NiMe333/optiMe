@@ -114,38 +114,34 @@ function ValueOnlyMetric({ metric }: { metric: HomeTrackedMetric }) {
 
   const isMood = metric.id === "mood";
 
-  const value = metric.suffix
-    ? `${metric.value}${metric.suffix}`
-    : metric.value;
-
-  const label = isActivity
-    ? "steps today"
-    : isMood
-      ? "today mood"
-      : metric.subtitle;
-
-  const hint = isActivity
-    ? "Steps from pedometer"
-    : isMood
-      ? getMoodDescription(metric.value)
-      : metric.subtitle;
-
-  const statusLabel = isActivity ? "Measured" : isMood ? "Entered" : "Tracked";
-
   if (isMood) {
+    const moodState = getMoodState(metric.value);
+
     return (
       <MetricValueOnly
-        value={value}
-        label={label}
-        hint={hint}
-        color={metric.color}
-        statusLabel={statusLabel}
+        value={moodState.label}
+        label="today mood"
+        hint={moodState.description}
+        color={moodState.color}
+        statusLabel="Entered"
+        moodIconName={moodState.iconName}
         showProgress={false}
       />
     );
   }
 
+  const value = metric.suffix
+    ? `${metric.value}${metric.suffix}`
+    : metric.value;
+
+  const label = isActivity ? "steps today" : metric.subtitle;
+
+  const hint = isActivity ? "Steps from pedometer" : metric.subtitle;
+
+  const statusLabel = isActivity ? "Measured" : "Tracked";
+
   const progress = getValueMetricProgress(metric);
+
   const goalLabel = metric.maxValue
     ? formatGoalValue(metric.maxValue)
     : undefined;
@@ -206,6 +202,8 @@ function MetricShell({
   mobile: boolean;
   children: ReactNode;
 }) {
+  const showTrend = metric.id !== "mood";
+
   const dotColor =
     metric.source === "measured"
       ? colors.blue
@@ -252,21 +250,25 @@ function MetricShell({
           <View style={[styles.metricDot, { backgroundColor: dotColor }]} />
         </View>
 
-        <View
-          style={[
-            styles.trendPill,
-            metric.trend.isGood ? styles.trendGood : styles.trendBad,
-          ]}
-        >
-          <Text
+        {showTrend && (
+          <View
             style={[
-              styles.trendText,
-              metric.trend.isGood ? styles.trendTextGood : styles.trendTextBad,
+              styles.trendPill,
+              metric.trend.isGood ? styles.trendGood : styles.trendBad,
             ]}
           >
-            {trendSymbol} {metric.trend.value}%
-          </Text>
-        </View>
+            <Text
+              style={[
+                styles.trendText,
+                metric.trend.isGood
+                  ? styles.trendTextGood
+                  : styles.trendTextBad,
+              ]}
+            >
+              {trendSymbol} {metric.trend.value}%
+            </Text>
+          </View>
+        )}
       </View>
 
       {children}
@@ -353,15 +355,6 @@ function getMetricMaxValue(metric: HomeTrackedMetric) {
 }
 
 function getValueMetricProgress(metric: HomeTrackedMetric) {
-  if (metric.id === "mood") {
-    const [rawValue, rawMax] = String(metric.value).split("/");
-
-    const value = parseMetricNumber(rawValue);
-    const max = parseMetricNumber(rawMax) || metric.maxValue || 5;
-
-    return clampProgress((value / max) * 100);
-  }
-
   if (
     metric.id === "activity" ||
     metric.id === "movement" ||
@@ -374,6 +367,53 @@ function getValueMetricProgress(metric: HomeTrackedMetric) {
   }
 
   return 70;
+}
+
+function getMoodState(value: string | number) {
+  const moodValue = parseMetricNumber(value);
+
+  if (moodValue >= 4.5) {
+    return {
+      label: "Great",
+      description: "You are feeling really good today",
+      color: colors.green,
+      iconName: "sunny-outline" as keyof typeof Ionicons.glyphMap,
+    };
+  }
+
+  if (moodValue >= 3.5) {
+    return {
+      label: "Good",
+      description: "Good mood today",
+      color: colors.green,
+      iconName: "happy-outline" as keyof typeof Ionicons.glyphMap,
+    };
+  }
+
+  if (moodValue >= 2.5) {
+    return {
+      label: "Okay",
+      description: "A balanced mood today",
+      color: colors.yellow,
+      iconName: "remove-circle-outline" as keyof typeof Ionicons.glyphMap,
+    };
+  }
+
+  if (moodValue >= 1.5) {
+    return {
+      label: "Low",
+      description: "Lower mood today",
+      color: colors.orange,
+      iconName: "cloud-outline" as keyof typeof Ionicons.glyphMap,
+    };
+  }
+
+  return {
+    label: "Very low",
+    description: "A difficult mood day",
+    color: colors.red,
+    iconName: "rainy-outline" as keyof typeof Ionicons.glyphMap,
+  };
 }
 
 function parseMetricNumber(value: string | number | undefined) {
@@ -397,26 +437,4 @@ function clampProgress(value: number) {
 
 function formatGoalValue(value: number) {
   return value.toLocaleString("en-US");
-}
-
-function getMoodDescription(value: string | number) {
-  const moodValue = parseMetricNumber(value);
-
-  if (moodValue >= 4.5) {
-    return "Excellent mood today";
-  }
-
-  if (moodValue >= 3.5) {
-    return "Good mood today";
-  }
-
-  if (moodValue >= 2.5) {
-    return "Okay mood today";
-  }
-
-  if (moodValue >= 1.5) {
-    return "Low mood today";
-  }
-
-  return "Very low mood today";
 }
