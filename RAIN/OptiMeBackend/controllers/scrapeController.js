@@ -1,25 +1,75 @@
-const fs = require("fs");
+const User = require("../models/userModel");
 
 const {
-  scrapeMentalHealthData,
+  scrapeActors,
 } = require("../scripts/dataProcessing/scraperService");
 
 const scrapeData = async (req, res) => {
   try {
-    console.log("Starting scrape...");
+    console.log("Starting actor scrape...");
 
-    const results = await scrapeMentalHealthData();
+    // 1. SCRAPE
+    const results = await scrapeActors();
 
-    res.status(200).json({
+    console.log("Scrape successful!");
+
+    // 2. REMOVE DUPLICATES FROM DATABASE
+    const existingUsers = await User.find({
+      email: {
+        $in: results.map((user) => user.email),
+      },
+    });
+
+    const existingEmails = existingUsers.map(
+      (user) => user.email
+    );
+
+    const newUsers = results.filter(
+      (user) => !existingEmails.includes(user.email)
+    );
+
+    console.log(
+      `New users to insert: ${newUsers.length}`
+    );
+
+    // 3. SAVE TO MONGODB
+    const savedUsers = [];
+
+    for (const userData of newUsers) {
+      let counter = 0;
+
+      for (const userData of newUsers) {
+        try {
+          counter++;
+
+          console.log(
+            `Saving user ${counter}/${newUsers.length}`
+          );
+
+          const user = new User(userData);
+
+          await user.save();
+
+          savedUsers.push(user);
+
+        } catch (err) {
+          console.log(err.message);
+        }
+      }
+    }
+
+    console.log("Users saved to MongoDB!");
+
+    return res.status(200).json({
       success: true,
-      message: "Data scraped successfully",
-      totalRecords: results.length,
-      preview: results.slice(0, 5),
+      totalScraped: results.length,
+      insertedUsers: savedUsers.length,
+      preview: savedUsers.slice(0, 10),
     });
   } catch (error) {
     console.error(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Scraping failed",
       error: error.message,
@@ -27,29 +77,6 @@ const scrapeData = async (req, res) => {
   }
 };
 
-const getSavedData = async (req, res) => {
-  try {
-    const rawData = fs.readFileSync(
-      "./scripts/dataProcessing/data/output.json",
-      "utf-8"
-    );
-
-    const data = JSON.parse(rawData);
-
-    res.status(200).json({
-      success: true,
-      total: data.length,
-      data,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "No saved data found",
-    });
-  }
-};
-
 module.exports = {
   scrapeData,
-  getSavedData,
 };

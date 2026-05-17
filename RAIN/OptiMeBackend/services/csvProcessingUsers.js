@@ -97,6 +97,7 @@ async function run() {
   await mongoose.disconnect();
 
   console.log("All stDataDocs processed");
+
 }
 
 run();
