@@ -31,8 +31,6 @@ export default function WebSidebar() {
 
     setIsLoggingOut(true);
 
-    showToast("Logging you out...", "info");
-
     try {
       await logout();
       router.replace("/auth/login");

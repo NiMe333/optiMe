@@ -1,11 +1,47 @@
 import api, { publicApi } from "./apiI";
 import type { StartingFormPayload } from "@/data/startingQuestions";
 
-import {
-  saveAccessToken,
-  getAccessToken,
-  deleteAccessToken,
-} from "@/services/authStorage";
+import { saveAccessToken, deleteAccessToken } from "@/services/authStorage";
+
+export type AuthUserResponse = {
+  id: string;
+  email?: string;
+  username?: string;
+  formFinished: boolean;
+};
+
+type AuthResponse = {
+  accessToken?: string;
+  user?: AuthUserResponse;
+  message?: string;
+};
+
+function normalizeUser(user: any): AuthUserResponse | null {
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    formFinished: user.formFinished === true,
+  };
+}
+
+function normalizeAuthResponse(data: any): AuthResponse {
+  return {
+    ...data,
+    user: normalizeUser(data?.user),
+  };
+}
+
+function getErrorMessage(error: any, fallback: string) {
+  return (
+    error?.response?.data?.error ||
+    error?.response?.data?.message ||
+    error?.message ||
+    fallback
+  );
+}
 
 export async function loginUser(email: string, password: string) {
   try {
@@ -22,17 +58,9 @@ export async function loginUser(email: string, password: string) {
 
     await saveAccessToken(accessToken);
 
-    console.log("saved token", accessToken);
-    console.log("token from storage", await getAccessToken());
-
-    return response.data;
+    return normalizeAuthResponse(response.data);
   } catch (error: any) {
-    throw new Error(
-      error?.response?.data?.error ||
-        error?.response?.data?.message ||
-        error?.message ||
-        "Login failed",
-    );
+    throw new Error(getErrorMessage(error, "Login failed"));
   }
 }
 
@@ -49,28 +77,12 @@ export async function registerUser(
     dateOfBirth,
   };
 
-  console.log("REGISTER REQUEST BODY:", body);
-
   try {
     const response = await publicApi.post("/user/register", body);
 
-    console.log("REGISTER RESPONSE DATA:", response.data);
-
-    if (response.data?.accessToken) {
-      await saveAccessToken(response.data.accessToken);
-    }
-
-    return response.data;
+    return normalizeAuthResponse(response.data);
   } catch (error: any) {
-    console.log("REGISTER ERROR:", error);
-    console.log("REGISTER ERROR RESPONSE:", error.response);
-
-    throw new Error(
-      error?.response?.data?.error ||
-        error?.response?.data?.message ||
-        error?.message ||
-        "Register failed",
-    );
+    throw new Error(getErrorMessage(error, "Register failed"));
   }
 }
 
@@ -78,20 +90,9 @@ export async function submitStartingForm(payload: StartingFormPayload) {
   try {
     const response = await api.post("/user/startingForm", payload);
 
-    console.log("FORM RAW RESPONSE:", response);
-    console.log("FORM RESPONSE DATA:", response.data);
-
-    return response.data;
+    return normalizeAuthResponse(response.data);
   } catch (error: any) {
-    console.log("FORM ERROR:", error);
-    console.log("FORM ERROR RESPONSE:", error.response);
-
-    throw new Error(
-      error?.response?.data?.error ||
-        error?.response?.data?.message ||
-        error?.message ||
-        "Form submission failed",
-    );
+    throw new Error(getErrorMessage(error, "Form submission failed"));
   }
 }
 
@@ -111,12 +112,9 @@ export async function logoutUser() {
 export async function getCurrentUser() {
   try {
     const response = await api.get("/user/me");
-    return response.data;
+
+    return normalizeAuthResponse(response.data);
   } catch (error: any) {
-    throw new Error(
-      error?.response?.data?.message ||
-        error?.message ||
-        "Failed to get current user",
-    );
+    throw new Error(getErrorMessage(error, "Failed to get current user"));
   }
 }

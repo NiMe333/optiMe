@@ -39,7 +39,7 @@ export default function MentalHealthScoreCard({
       />
 
       <Text style={styles.scoreDescription}>
-        Your overall mental{"\n"}wellbeing score
+        Your overall mental{"\n"}health score
       </Text>
 
       <View style={styles.scoreChangePill}>
