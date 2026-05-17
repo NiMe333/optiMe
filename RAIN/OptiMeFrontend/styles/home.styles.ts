@@ -221,64 +221,6 @@ export const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
-  scoreRing: {
-    width: 190,
-    height: 190,
-    borderRadius: 95,
-    borderWidth: 18,
-    borderColor: colors.green,
-    borderLeftColor: "rgba(255,255,255,0.94)",
-    borderBottomColor: "rgba(255,255,255,0.94)",
-    alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 22,
-    transform: [{ rotate: "35deg" }],
-  },
-
-  mobileRing: {
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    borderWidth: 16,
-    borderColor: colors.green,
-    borderLeftColor: "rgba(255,255,255,0.94)",
-    borderBottomColor: "rgba(255,255,255,0.94)",
-    alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 22,
-    transform: [{ rotate: "35deg" }],
-  },
-
-  scoreRingInner: {
-    transform: [{ rotate: "-35deg" }],
-    alignItems: "center",
-  },
-
-  mobileRingInner: {
-    transform: [{ rotate: "-35deg" }],
-    alignItems: "center",
-  },
-
-  scoreValue: {
-    color: colors.white,
-    fontSize: 56,
-    fontWeight: "900",
-  },
-
-  mobileScoreValue: {
-    color: colors.white,
-    fontSize: 46,
-    fontWeight: "900",
-  },
-
-  scoreState: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: "700",
-  },
-
   scoreDescription: {
     textAlign: "center",
     color: colors.white,

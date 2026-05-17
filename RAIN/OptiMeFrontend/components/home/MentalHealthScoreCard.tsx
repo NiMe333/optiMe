@@ -1,7 +1,8 @@
 import { Pressable, Text, View } from "react-native";
 
+import ScoreDonutChart from "@/components/home/charts/ScoreDonutChart";
 import { colors, styles } from "@/styles/home.styles";
-import type { HomeDashboardData, HomeScoreStatus } from "@/types/home";
+import type { HomeDashboardData } from "@/types/home";
 
 type MentalHealthScore = HomeDashboardData["mentalHealthScore"];
 
@@ -11,28 +12,11 @@ type MentalHealthScoreCardProps = {
   onMenuPress?: () => void;
 };
 
-function getStatusColor(status: HomeScoreStatus) {
-  switch (status) {
-    case "healthy":
-      return colors.green;
-    case "okay":
-      return colors.yellow;
-    case "warning":
-      return colors.orange;
-    case "critical":
-      return colors.red;
-    default:
-      return colors.green;
-  }
-}
-
 export default function MentalHealthScoreCard({
   score,
   mobile = false,
   onMenuPress,
 }: MentalHealthScoreCardProps) {
-  const scoreColor = getStatusColor(score.status);
-
   const changeIsPositive = score.changeFromLastWeek >= 0;
   const changeSymbol = changeIsPositive ? "↑" : "↓";
   const absoluteChange = Math.abs(score.changeFromLastWeek);
@@ -47,23 +31,12 @@ export default function MentalHealthScoreCard({
         </Pressable>
       </View>
 
-      <View
-        style={[
-          mobile ? styles.mobileRing : styles.scoreRing,
-          {
-            borderTopColor: scoreColor,
-            borderRightColor: scoreColor,
-          },
-        ]}
-      >
-        <View style={mobile ? styles.mobileRingInner : styles.scoreRingInner}>
-          <Text style={mobile ? styles.mobileScoreValue : styles.scoreValue}>
-            {score.value}
-          </Text>
-
-          <Text style={styles.scoreState}>{score.label}</Text>
-        </View>
-      </View>
+      <ScoreDonutChart
+        value={score.value}
+        label={score.label}
+        status={score.status}
+        mobile={mobile}
+      />
 
       <Text style={styles.scoreDescription}>
         Composite score from{"\n"}all tracked metrics
