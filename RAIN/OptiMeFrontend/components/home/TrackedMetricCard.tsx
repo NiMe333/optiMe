@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Platform, StyleSheet, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -6,7 +6,9 @@ import { colors } from "@/styles/home.styles";
 import type { HomeTrackedMetric } from "@/types/home";
 
 import MetricBarChart from "@/components/home/charts/MetricBarChart";
-import MetricLineChart from "@/components/home/charts/MetricLineChart";
+import MetricLineChart, {
+  type SelectedLinePoint,
+} from "@/components/home/charts/MetricLineChart";
 import MetricValueOnly from "@/components/home/charts/MetricValueOnly";
 
 type TrackedMetricCardProps = {
@@ -60,15 +62,50 @@ function ChartMetric({
     return <BarChartMetric metric={metric} />;
   }
 
+  return <LineChartMetric metric={metric} />;
+}
+
+function getLineChartDetailLabel(metric: HomeTrackedMetric) {
+  if (metric.id === "socialization") {
+    return "Social score";
+  }
+
+  if (metric.id === "financial-work-school-stress") {
+    return "Stress";
+  }
+
+  if (metric.id === "self-esteem") {
+    return "Self-esteem";
+  }
+
+  if (metric.id === "life-satisfaction") {
+    return "Life satisfaction";
+  }
+
+  return metric.title;
+}
+
+function LineChartMetric({ metric }: { metric: HomeTrackedMetric }) {
+  const [selectedPoint, setSelectedPoint] = useState<SelectedLinePoint | null>(
+    null,
+  );
+
   return (
     <View style={componentStyles.metricBody}>
-      <MetricValueHeader metric={metric} />
+      <MetricValueHeader
+        metric={metric}
+        valueLabelOverride={selectedPoint?.headerLabel}
+        valueOverride={
+          selectedPoint ? formatLineMetricValue(selectedPoint.value) : undefined
+        }
+      />
 
       <View style={componentStyles.metricChartBox}>
         <MetricLineChart
           data={metric.chart}
           color={metric.color}
           maxValue={getMetricMaxValue(metric)}
+          onSelectedPointChange={setSelectedPoint}
         />
       </View>
     </View>
@@ -182,18 +219,27 @@ function ValueOnlyMetric({ metric }: { metric: HomeTrackedMetric }) {
   );
 }
 
-function MetricValueHeader({ metric }: { metric: HomeTrackedMetric }) {
+function MetricValueHeader({
+  metric,
+  valueLabelOverride,
+  valueOverride,
+}: {
+  metric: HomeTrackedMetric;
+  valueLabelOverride?: string;
+  valueOverride?: string | number;
+}) {
+  const valueLabel = valueLabelOverride ?? metric.valueLabel;
+  const value = valueOverride ?? metric.value;
+
   return (
     <View style={componentStyles.metricStatsRow}>
       <View style={componentStyles.metricPrimaryBlock}>
-        {!!metric.valueLabel && (
-          <Text style={componentStyles.metricValueLabel}>
-            {metric.valueLabel}
-          </Text>
+        {!!valueLabel && (
+          <Text style={componentStyles.metricValueLabel}>{valueLabel}</Text>
         )}
 
         <View style={componentStyles.metricValueRow}>
-          <Text style={componentStyles.metricValue}>{metric.value}</Text>
+          <Text style={componentStyles.metricValue}>{value}</Text>
 
           {!!metric.suffix && (
             <Text style={componentStyles.metricSuffix}>{metric.suffix}</Text>
@@ -216,6 +262,10 @@ function MetricValueHeader({ metric }: { metric: HomeTrackedMetric }) {
       )}
     </View>
   );
+}
+
+function formatLineMetricValue(value: number) {
+  return Number.isInteger(value) ? value : value.toFixed(1);
 }
 
 function MetricShell({
@@ -382,6 +432,10 @@ function getMetricMaxValue(metric: HomeTrackedMetric) {
 
   if (metric.id === "screen-time") {
     return 12;
+  }
+
+  if (metric.id === "socialization") {
+    return 5;
   }
 
   return 100;
@@ -571,8 +625,8 @@ const componentStyles = StyleSheet.create({
   },
 
   metricChartBox: {
-    marginTop: 10,
-    height: 54,
+    marginTop: 8,
+    height: 92,
     width: "100%",
     overflow: "hidden",
   },
