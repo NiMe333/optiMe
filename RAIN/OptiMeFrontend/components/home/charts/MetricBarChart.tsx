@@ -27,8 +27,11 @@ export default function MetricBarChart({
   detailLabel = "Value",
 }: MetricBarChartProps) {
   const [width, setWidth] = useState(0);
+  const [chartReady, setChartReady] = useState(false);
 
   const safeData = data.length > 0 ? data.slice(-7) : [0];
+
+  const dataKey = safeData.join("|");
 
   const days = useMemo(() => getLastSevenDays(), []);
 
@@ -37,6 +40,20 @@ export default function MetricBarChart({
   useEffect(() => {
     setSelectedIndex(safeData.length - 1);
   }, [safeData.length]);
+
+  useEffect(() => {
+    if (width <= 0) {
+      return;
+    }
+
+    setChartReady(false);
+
+    const timer = setTimeout(() => {
+      setChartReady(true);
+    }, 60);
+
+    return () => clearTimeout(timer);
+  }, [width, dataKey]);
 
   const minDataValue = Math.min(...safeData);
   const maxDataValue = Math.max(...safeData);
@@ -55,6 +72,7 @@ export default function MetricBarChart({
     dataRange > 0 ? dataRange + visualBase : visualBase * 2;
 
   const paddedVisualMaxValue = visualMaxValue * 1.28;
+
   function getVisualBarValue(value: number) {
     if (dataRange === 0) {
       return visualBase;
@@ -82,6 +100,7 @@ export default function MetricBarChart({
 
   const selectedValue =
     safeData[selectedIndex] ?? safeData[safeData.length - 1];
+
   const selectedDay = days[selectedIndex] ?? days[days.length - 1];
 
   const chartData = safeData.map((value, index) => {
@@ -137,8 +156,9 @@ export default function MetricBarChart({
         </Text>
       </View>
 
-      {width > 0 && (
+      {width > 0 && chartReady && (
         <BarChart
+          key={`metric-bar-chart-${width}-${dataKey}`}
           data={chartData}
           width={width}
           height={height}
@@ -157,6 +177,8 @@ export default function MetricBarChart({
           roundedBottom
           initialSpacing={sidePadding}
           endSpacing={sidePadding}
+          isAnimated
+          animationDuration={850}
           onPress={(_item: unknown, index?: number) => {
             if (typeof index === "number") {
               setSelectedIndex(index);
