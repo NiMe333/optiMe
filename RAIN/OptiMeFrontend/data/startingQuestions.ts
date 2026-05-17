@@ -88,7 +88,6 @@ export type StartingFormPayload = {
     sleepHours: number;
     movementHours: number;
     socialConnectionScore: number;
-    lonelinessScore: number;
     screenTimeHours: number;
     financialWorkSchoolStressScore: number;
   };
@@ -182,9 +181,6 @@ export function buildStartingFormPayload(
       movementHours: mapActivityAnswerToMovementHours(answers.activity),
 
       socialConnectionScore,
-
-      lonelinessScore:
-        socialConnectionScore > 0 ? 6 - socialConnectionScore : 0,
 
       screenTimeHours: mapScreenTimeAnswerToHours(answers.phoneScreenTime),
 

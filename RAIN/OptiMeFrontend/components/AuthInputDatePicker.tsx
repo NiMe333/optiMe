@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -35,20 +35,18 @@ export default function AuthInputDatePicker({
     return `${day}.${month}.${year}`;
   }
 
-  function formatDateForInput(date: Date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+  function parseDisplayDate(value: string) {
+    const cleanedValue = value.trim();
 
-    return `${year}-${month}-${day}`;
-  }
+    const match = cleanedValue.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
 
-  function parseInputDate(value: string) {
-    if (!value) {
+    if (!match) {
       return null;
     }
 
-    const [year, month, day] = value.split("-").map(Number);
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
 
     const parsedDate = new Date(year, month - 1, day);
 
@@ -61,12 +59,32 @@ export default function AuthInputDatePicker({
       return null;
     }
 
+    if (parsedDate > maxDate) {
+      return null;
+    }
+
     return parsedDate;
   }
 
   const displayDateValue = formatDateForDisplay(safeDate);
-  const inputDateValue = formatDateForInput(safeDate);
-  const maxDateValue = formatDateForInput(maxDate);
+
+  const [webDateText, setWebDateText] = useState(displayDateValue);
+
+  useEffect(() => {
+    setWebDateText(displayDateValue);
+  }, [displayDateValue]);
+
+  function handleWebDateBlur() {
+    const selectedDate = parseDisplayDate(webDateText);
+
+    if (selectedDate) {
+      onChange(selectedDate);
+      setWebDateText(formatDateForDisplay(selectedDate));
+      return;
+    }
+
+    setWebDateText(displayDateValue);
+  }
 
   if (Platform.OS === "web") {
     return (
@@ -76,16 +94,14 @@ export default function AuthInputDatePicker({
         </View>
 
         <input
-          type="date"
-          value={inputDateValue}
-          max={maxDateValue}
+          type="text"
+          value={webDateText}
+          placeholder="dd.mm.yyyy"
+          inputMode="numeric"
           onChange={(e) => {
-            const selected = parseInputDate(e.currentTarget.value);
-
-            if (selected && !isNaN(selected.getTime())) {
-              onChange(selected);
-            }
+            setWebDateText(e.currentTarget.value);
           }}
+          onBlur={handleWebDateBlur}
           style={{
             width: "100%",
             height: 45,

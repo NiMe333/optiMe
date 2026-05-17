@@ -16,7 +16,6 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
 
     return mockHomeData;
   } catch (error) {
-    console.log("HOME DATA FALLBACK TO MOCK:", error);
     return mockHomeData;
   }
 }

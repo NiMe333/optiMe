@@ -230,7 +230,6 @@ exports.saveForm = async function (req, res) {
       sleepHours: Number(baseline.sleepHours ?? 0),
       movementHours: Number(baseline.movementHours ?? 0),
       socialConnectionScore: Number(baseline.socialConnectionScore ?? 0),
-      lonelinessScore: Number(baseline.lonelinessScore ?? 0),
       screenTimeHours: Number(baseline.screenTimeHours ?? 0),
       financialWorkSchoolStressScore: Number(
         baseline.financialWorkSchoolStressScore ?? 0,

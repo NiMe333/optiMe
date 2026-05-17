@@ -18,7 +18,6 @@ const UserSchema = new Schema({
     sleepHours: { type: Number, required: false },
     movementHours: { type: Number, required: false },
     socialConnectionScore: { type: Number, required: false },
-    lonelinessScore: { type: Number, required: false },
     screenTimeHours: { type: Number, required: false },
     financialWorkSchoolStressScore: { type: Number, required: false },
   },
