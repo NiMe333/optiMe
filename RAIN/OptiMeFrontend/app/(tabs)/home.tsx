@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { ScrollView, View, Text, useWindowDimensions } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, styles } from "@/styles/home.styles";
 
-import MobileBottomNav from "@/components/navigation/MobileBottomNav";
-import WebSidebar from "@/components/navigation/WebSidebar";
 import { useAuth } from "@/context/AuthContext";
 import { getHomeDashboardData } from "@/services/homeService";
 import type { HomeDashboardData } from "@/types/home";
@@ -20,6 +19,13 @@ export default function HomeScreen() {
 
   const [homeData, setHomeData] = useState<HomeDashboardData | null>(null);
   const [todayKey, setTodayKey] = useState(getLocalDateKey());
+  const [scoreCardKey, setScoreCardKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setScoreCardKey((prev) => prev + 1);
+    }, []),
+  );
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -81,51 +87,48 @@ export default function HomeScreen() {
 
   if (isWebLayout) {
     return (
-      <View style={styles.webRoot}>
-        <View style={styles.webSidebarShell}>
-          <WebSidebar />
-        </View>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.webContentInner}
+        showsVerticalScrollIndicator={false}
+      >
+        <DashboardHeader username={username} todayLabel={todayLabel} />
 
-        <ScrollView
-          style={styles.webContent}
-          contentContainerStyle={styles.webContentInner}
-          showsVerticalScrollIndicator={false}
-        >
-          <DashboardHeader username={username} todayLabel={todayLabel} />
+        <View style={styles.webTopRow}>
+          <MentalHealthScoreCard
+            key={`score-web-${scoreCardKey}`}
+            score={homeData.mentalHealthScore}
+          />
 
-          <View style={styles.webTopRow}>
-            <MentalHealthScoreCard score={homeData.mentalHealthScore} />
-
-            <View style={styles.metricsPanel}>
-              <View style={styles.panelHeader}>
-                <View style={styles.panelTitleRow}>
-                  <Text style={styles.panelTitle}>Tracked Metrics</Text>
-                </View>
-
-                <View style={styles.legendRow}>
-                  <LegendDot color={colors.blue} label="Measured (Auto)" />
-                  <LegendDot color={colors.green} label="Entered (Manual)" />
-                  <LegendDot color={colors.purple} label="Calculated (Auto)" />
-                </View>
+          <View style={styles.metricsPanel}>
+            <View style={styles.panelHeader}>
+              <View style={styles.panelTitleRow}>
+                <Text style={styles.panelTitle}>Tracked Metrics</Text>
               </View>
 
-              <View style={styles.metricsGrid}>
-                {homeData.trackedMetrics.map((metric) => (
-                  <TrackedMetricCard key={metric.id} metric={metric} />
-                ))}
+              <View style={styles.legendRow}>
+                <LegendDot color={colors.blue} label="Measured (Auto)" />
+                <LegendDot color={colors.green} label="Entered (Manual)" />
+                <LegendDot color={colors.purple} label="Calculated (Auto)" />
               </View>
             </View>
+
+            <View style={styles.metricsGrid}>
+              {homeData.trackedMetrics.map((metric) => (
+                <TrackedMetricCard key={metric.id} metric={metric} />
+              ))}
+            </View>
           </View>
+        </View>
 
-          <View style={styles.webMiddleRow}>
-            <CalculatedScoresSection scores={homeData.calculatedScores} />
+        <View style={styles.webMiddleRow}>
+          <CalculatedScoresSection scores={homeData.calculatedScores} />
 
-            <AchievementsPanel achievements={homeData.achievements} />
-          </View>
+          <AchievementsPanel achievements={homeData.achievements} />
+        </View>
 
-          <ArticlesSection articles={homeData.articles} />
-        </ScrollView>
-      </View>
+        <ArticlesSection articles={homeData.articles} />
+      </ScrollView>
     );
   }
 
@@ -136,13 +139,14 @@ export default function HomeScreen() {
         contentContainerStyle={styles.mobileContent}
       >
         <DashboardHeader username={username} todayLabel={todayLabel} mobile />
-
-        <MentalHealthScoreCard score={homeData.mentalHealthScore} mobile />
-
+        <MentalHealthScoreCard
+          key={`score-mobile-${scoreCardKey}`}
+          score={homeData.mentalHealthScore}
+          mobile
+        />
         <View style={styles.mobileSectionHeader}>
           <Text style={styles.panelTitle}>Tracked Metrics</Text>
         </View>
-
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -162,15 +166,10 @@ export default function HomeScreen() {
             </View>
           ))}
         </ScrollView>
-
         <CalculatedScoresSection scores={homeData.calculatedScores} mobile />
-
         <AchievementsPanel achievements={homeData.achievements} mobile />
-
         <ArticlesSection articles={homeData.articles} mobile />
       </ScrollView>
-
-      <MobileBottomNav />
     </SafeAreaView>
   );
 }

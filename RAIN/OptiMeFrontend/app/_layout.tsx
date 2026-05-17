@@ -73,18 +73,10 @@ function AuthGuard() {
       />
 
       <Stack.Screen
-        name="(tabs)/home"
+        name="(tabs)"
         options={{
-          animation: "fade",
-          animationDuration: 300,
-        }}
-      />
-
-      <Stack.Screen
-        name="(tabs)/index"
-        options={{
-          animation: "fade",
-          animationDuration: 300,
+          animation: Platform.OS === "web" ? "fade" : "fade_from_bottom",
+          animationDuration: 250,
         }}
       />
     </Stack>
