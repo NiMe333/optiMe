@@ -55,11 +55,6 @@ export default function CalculatedScoresSection({
             Estimated from your recent patterns
           </Text>
         </View>
-
-        <View style={componentStyles.infoPill}>
-          <Ionicons name="sparkles-outline" size={14} color={colors.navySoft} />
-          <Text style={componentStyles.infoText}>Auto</Text>
-        </View>
       </View>
 
       {mobile ? (
@@ -324,22 +319,6 @@ const componentStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     marginTop: 3,
-  },
-
-  infoPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: "rgba(24,63,104,0.06)",
-  },
-
-  infoText: {
-    color: colors.navySoft,
-    fontSize: 11,
-    fontWeight: "900",
   },
 
   grid: {
