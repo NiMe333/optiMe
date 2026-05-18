@@ -8,6 +8,7 @@ import {
   Pressable,
   Platform,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 type AuthInputGenderProps = {
   label: string;
@@ -35,8 +36,7 @@ export default function AuthInputGender({
           <Text style={[styles.inputText, !value && styles.placeholder]}>
             {value || "Select gender"}
           </Text>
-
-          <Text style={styles.arrow}>⌄</Text>
+          <Ionicons name="chevron-down-outline" size={22} color="#555" />{" "}
         </TouchableOpacity>
       </View>
 
@@ -108,12 +108,6 @@ const styles = StyleSheet.create({
 
   placeholder: {
     color: "#999",
-  },
-
-  arrow: {
-    fontSize: 22,
-    color: "#24364A",
-    marginTop: -6,
   },
 
   overlay: {

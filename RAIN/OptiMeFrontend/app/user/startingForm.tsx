@@ -16,7 +16,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
 
 import { submitStartingForm } from "@/services/auth";
-import { startingQuestions } from "@/data/startingQuestions";
+import {
+  startingQuestions,
+  buildStartingFormPayload,
+  type FormAnswerValue,
+  type StartingFormAnswers,
+} from "@/data/startingQuestions";
 import ScaleQuestion from "@/components/questions/ScaleQuestion";
 import SingleChoiceQuestion from "@/components/questions/SingleChoiceQuestion";
 import ProgressBar from "@/components/questions/ProgressBar";
@@ -27,8 +32,6 @@ import { Redirect, router } from "expo-router";
 
 const theme = colors.light;
 
-type Answers = Record<string, string | number>;
-
 export default function StartingForm() {
   const { showToast } = useToast();
   const { user, authLoading, setUser } = useAuth();
@@ -37,7 +40,7 @@ export default function StartingForm() {
   const questionAnim = useRef(new Animated.Value(1)).current;
 
   const [currentIndex, setCurrentIndex] = useState(-1);
-  const [answers, setAnswers] = useState<Answers>({});
+  const [answers, setAnswers] = useState<StartingFormAnswers>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isIntro = currentIndex === -1;
@@ -62,7 +65,7 @@ export default function StartingForm() {
     Animated.timing(progressAnim, {
       toValue: progressValue,
       duration: 350,
-      useNativeDriver: false,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
   }, [progressValue, progressAnim]);
 
@@ -72,7 +75,7 @@ export default function StartingForm() {
     Animated.timing(questionAnim, {
       toValue: 1,
       duration: 280,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
   }, [currentIndex, questionAnim]);
 
@@ -84,7 +87,7 @@ export default function StartingForm() {
 
   const logoStyle = isMobile ? styles.mobileLogo : styles.webLogo;
 
-  const handleSelect = (value: string | number) => {
+  const handleSelect = (value: FormAnswerValue) => {
     if (!currentQuestion) return;
 
     setAnswers((prev) => ({
@@ -94,6 +97,8 @@ export default function StartingForm() {
   };
 
   const handleNext = async () => {
+    if (isSubmitting) return;
+
     if (isIntro) {
       setCurrentIndex(0);
       return;
@@ -121,23 +126,12 @@ export default function StartingForm() {
   };
 
   const submitForm = async () => {
+    if (isSubmitting) return;
+
     try {
       setIsSubmitting(true);
 
-      const payload = {
-        username: String(answers.username ?? "").trim(),
-        education: String(answers.education ?? ""),
-        employment: String(answers.employment ?? ""),
-        mood: Number(answers.mood ?? 0),
-        sleepHours: String(answers.sleepHours ?? ""),
-        activity: String(answers.activity ?? ""),
-        socialConnection: Number(answers.socialConnection ?? 0),
-        phoneScreenTime: String(answers.phoneScreenTime ?? ""),
-        stress: String(answers.stress ?? ""),
-        formFinished: true,
-      };
-
-      console.log("STARTING FORM PAYLOAD:", payload);
+      const payload = buildStartingFormPayload(answers);
 
       const data = await submitStartingForm(payload);
 
@@ -149,7 +143,6 @@ export default function StartingForm() {
 
       router.replace("/(tabs)/home");
     } catch (error: any) {
-      console.log("STARTING FORM ERROR:", error);
       showToast(error.message || "Something went wrong.", "error");
     } finally {
       setIsSubmitting(false);

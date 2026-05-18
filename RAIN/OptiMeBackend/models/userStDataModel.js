@@ -6,7 +6,8 @@ const UserStDataSchema = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     storagePath: { type: String, required: true },
     importedForDate: { type: Date, required: true, index: true },
-    isProcessed: { type: Boolean, default: false, index: true }
+    isProcessed: { type: Boolean, default: false, index: true },
+    typeOfOS: { type: String, default: false, required: true}
   },
   {
     timestamps: true,
