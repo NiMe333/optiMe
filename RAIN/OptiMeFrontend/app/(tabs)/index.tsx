@@ -1,9 +1,13 @@
 import { Redirect } from "expo-router";
+import usePedometer from "@/hooks/usePedometer";
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Index() {
   const { user, authLoading } = useAuth();
+  const isLoggedIn = false;
+  usePedometer();
+
 
   if (authLoading) {
     return (
