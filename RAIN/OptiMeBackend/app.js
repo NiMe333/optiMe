@@ -24,5 +24,6 @@ app.use("/api", require("./routes/scrapeRoutes")); //sends to userRoutes if /use
 app.use("/user", require("./routes/userRoutes"));
 app.use("/token", require("./routes/tokenRoutes"));
 app.use("/user", require("./routes/userRoutes"));
+app.use("/data", require("./routes/dataRoutes"));
 
 module.exports = app;

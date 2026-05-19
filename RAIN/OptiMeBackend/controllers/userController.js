@@ -119,6 +119,7 @@ exports.login = async function (req, res) {
     }
 
     const accessToken = Auth.createAccessToken(user);
+
     const refreshToken = Auth.createRefreshToken(user);
 
     await Auth.storeRefreshToken(user, refreshToken);
