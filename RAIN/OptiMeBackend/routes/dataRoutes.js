@@ -4,5 +4,6 @@ const controller = require('../controllers/dataController');
 const authMiddleware = require("../middleware/authMiddleware");
 
 router.get('/mentalHealthScore', authMiddleware, controller.mentalHealthData);
+router.get('/trackedMetrics', authMiddleware, controller.trackedMetricsData);
 
 module.exports = router;
