@@ -11,4 +11,6 @@ router.post("/startingForm", authMiddleware, controller.saveForm); //middleware 
 router.post("/login", controller.login);
 router.post("/logout", controller.logout);
 
+router.get('/profile', authMiddleware, controller.userProfile);
+
 module.exports = router;
