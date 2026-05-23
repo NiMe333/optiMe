@@ -5,5 +5,6 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 router.get('/mentalHealthScore', authMiddleware, controller.mentalHealthData);
 router.get('/trackedMetrics', authMiddleware, controller.trackedMetricsData);
+router.get('/calculatedScores', authMiddleware, controller.calculatedScoresData);
 
 module.exports = router;
