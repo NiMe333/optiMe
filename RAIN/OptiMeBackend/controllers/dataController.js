@@ -122,7 +122,7 @@ exports.calculatedScoresData = async function (req, res) {
     }
 }
 
-exports.calculatedScoresData = async function (req, res) {
+exports.TrendsData = async function (req, res) {
     try {
         
         const snapShot1 = await SnapshotModel.findOne({
@@ -154,20 +154,20 @@ exports.calculatedScoresData = async function (req, res) {
             date: new Date("2026-05-08")
         });
 
-        const sleepAvg = (snapShot1.sleepHours + snapShot2.sleepHours + snapShot3.sleepHours + snapShot4.sleepHours + snapShot5.sleepHours + snapShot6.sleepHours + snapShot7.sleepHours) / 7;
-        const anxietyAvg = (snapShot1.anxiety + snapShot2.anxiety + snapShot3.anxiety + snapShot4.anxiety + snapShot5.anxiety + snapShot6.anxiety + snapShot7.anxiety) / 7;
-        const activityAvg = (snapShot1.steps + snapShot2.steps + snapShot3.steps + snapShot4.steps + snapShot5.steps + snapShot6.steps + snapShot7.steps) / 7;
-        const screentimeAvg = (snapShot1.screenTimeHours + snapShot2.screenTimeHours + snapShot3.screenTimeHours + snapShot4.screenTimeHours + snapShot5.screenTimeHours + snapShot6.screenTimeHours + snapShot7.screenTimeHours) / 7;
-        const stressAvg = (snapShot1.stress + snapShot2.stress + snapShot3.stress + snapShot4.stress + snapShot5.stress + snapShot6.stress + snapShot7.stress) / 7;
+        const sleepArray = [snapShot1.sleepHours, snapShot2.sleepHours, snapShot3.sleepHours, snapShot4.sleepHours, snapShot5.sleepHours, snapShot6.sleepHours, snapShot7.sleepHours];
+        const anxietyArray = [snapShot1.anxiety, snapShot2.anxiety, snapShot3.anxiety, snapShot4.anxiety, snapShot5.anxiety, snapShot6.anxiety, snapShot7.anxiety];
+        const activityArray = [snapShot1.steps, snapShot2.steps, snapShot3.steps, snapShot4.steps, snapShot5.steps, snapShot6.steps, snapShot7.steps];
+        const screentimeArray = [snapShot1.screenTimeHours, snapShot2.screenTimeHours, snapShot3.screenTimeHours, snapShot4.screenTimeHours, snapShot5.screenTimeHours, snapShot6.screenTimeHours, snapShot7.screenTimeHours];
+        const stressArray = [snapShot1.stress, snapShot2.stress, snapShot3.stress, snapShot4.stress, snapShot5.stress, snapShot6.stress, snapShot7.stress];
 
         return res.json({
             success: true,
             message: "Calculated scores retrieval successfull",
-            sleepAvg,
-            anxietyAvg,
-            activityAvg,
-            screentimeAvg,
-            stressAvg
+            sleepArray,
+            anxietyArray,
+            activityArray,
+            screentimeArray,
+            stressArray
         });
 
     }
