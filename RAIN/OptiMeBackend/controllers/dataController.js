@@ -1,418 +1,541 @@
-var SnapshotModel = require('../models/userSnapshotModel');
+var SnapshotModel = require("../models/userSnapshotModel");
+
+const DAYS_TO_SHOW = 7;
+
+function startOfDay(date = new Date()) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date, days) {
+  const newDate = new Date(date);
+  newDate.setDate(newDate.getDate() + days);
+  return newDate;
+}
+
+function getDateKey(date) {
+  const parsedDate = new Date(date);
+
+  const year = parsedDate.getFullYear();
+  const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+  const day = String(parsedDate.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function buildDateWindow() {
+  const today = startOfDay(new Date());
+  const firstDay = addDays(today, -(DAYS_TO_SHOW - 1));
+
+  return Array.from({ length: DAYS_TO_SHOW }, (_, index) => {
+    const date = addDays(firstDay, index);
+
+    return {
+      date,
+      dateKey: getDateKey(date),
+    };
+  });
+}
+
+async function getDashboardDays(userId) {
+  const dateWindow = buildDateWindow();
+
+  const firstDate = dateWindow[0].date;
+  const lastDate = dateWindow[dateWindow.length - 1].date;
+  const endDate = addDays(lastDate, 1);
+
+  const snapshots = await SnapshotModel.find({
+    userId,
+    date: {
+      $gte: firstDate,
+      $lt: endDate,
+    },
+  }).sort({ date: 1 });
+
+  const snapshotMap = new Map();
+
+  snapshots.forEach((snapshot) => {
+    snapshotMap.set(getDateKey(snapshot.date), snapshot);
+  });
+
+  return dateWindow.map((day) => {
+    const snapshot = snapshotMap.get(day.dateKey) || null;
+
+    return {
+      date: day.date,
+      dateKey: day.dateKey,
+      snapshot,
+      hasData: !!snapshot,
+    };
+  });
+}
+
+function getDates(days) {
+  return days.map((day) => day.dateKey);
+}
+
+function getHasDataByDate(days) {
+  return days.map((day) => day.hasData);
+}
+
+function getNumber(day, field, fallback = null) {
+  const value = day?.snapshot?.[field];
+
+  if (typeof value === "number" && !Number.isNaN(value)) {
+    return value;
+  }
+
+  return fallback;
+}
+
+function getSocialConnection(day) {
+  const value =
+    getNumber(day, "socialConnection", null) ??
+    getNumber(day, "socialization", null) ??
+    getNumber(day, "socialScore", null);
+
+  if (typeof value === "number" && !Number.isNaN(value)) {
+    return value;
+  }
+
+  return 0;
+}
+
+function buildArray(days, field) {
+  return days.map((day) => {
+    if (!day.hasData) {
+      return null;
+    }
+
+    return getNumber(day, field, null);
+  });
+}
+
+function buildSocialArray(days) {
+  return days.map((day) => {
+    if (!day.hasData) {
+      return 0;
+    }
+
+    return getSocialConnection(day);
+  });
+}
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function getPositiveScore(day, field) {
+  if (!day.hasData) {
+    return 0;
+  }
+
+  const value = getNumber(day, field, null);
+
+  if (typeof value !== "number") {
+    return 0;
+  }
+
+  return clampScore(value * 20);
+}
+
+function getInvertedScore(day, field) {
+  if (!day.hasData) {
+    return 0;
+  }
+
+  const value = getNumber(day, field, null);
+
+  if (typeof value !== "number") {
+    return 0;
+  }
+
+  return clampScore((6 - value) * 20);
+}
+
+function average(arr) {
+  if (!arr.length) {
+    return 0;
+  }
+
+  return Math.round(arr.reduce((sum, value) => sum + value, 0) / arr.length);
+}
+
+function calculateTrend(current, previous, higherIsGood = true) {
+  if (!previous || previous === 0) {
+    return {
+      direction: "same",
+      value: 0,
+      isGood: true,
+    };
+  }
+
+  const diff = current - previous;
+  const percent = Math.abs(Math.round((diff / previous) * 100));
+
+  return {
+    direction: diff > 0 ? "up" : diff < 0 ? "down" : "same",
+    value: percent,
+    isGood: higherIsGood ? diff >= 0 : diff <= 0,
+  };
+}
+
+function getStatus(score, hasAnyData = true) {
+  if (!hasAnyData) {
+    return {
+      level: "No data",
+      status: "warning",
+    };
+  }
+
+  if (score >= 70) {
+    return {
+      level: "Healthy",
+      status: "healthy",
+    };
+  }
+
+  if (score >= 40) {
+    return {
+      level: "Moderate",
+      status: "warning",
+    };
+  }
+
+  return {
+    level: "High",
+    status: "danger",
+  };
+}
+
+function getMentalHealthLabel(score, hasTodayData) {
+  if (!hasTodayData) {
+    return "No data";
+  }
+
+  if (score >= 75) {
+    return "Healthy";
+  }
+
+  if (score >= 40) {
+    return "Moderate";
+  }
+
+  return "High Risk";
+}
+
+function getMentalHealthStatus(score, hasTodayData) {
+  if (!hasTodayData) {
+    return "warning";
+  }
+
+  if (score >= 75) {
+    return "healthy";
+  }
+
+  if (score >= 40) {
+    return "warning";
+  }
+
+  return "danger";
+}
+
+function calculateMentalHealthScore(day) {
+  if (!day.hasData) {
+    return 0;
+  }
+
+  const moodScore = getPositiveScore(day, "mood");
+  const stressScore = getInvertedScore(day, "stress");
+  const anxietyScore = getInvertedScore(day, "anxiety");
+
+  return Math.round((moodScore + stressScore + anxietyScore) / 3);
+}
 
 exports.mentalHealthData = async function (req, res) {
-    try {
+  try {
+    const days = await getDashboardDays(req.user.userId);
 
-        const snapShot1 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-14")
-        });
+    const today = days[days.length - 1];
+    const previousDay = days[days.length - 2] || today;
 
-        const snapShot2 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-13")
-        });
+    const currentScore = calculateMentalHealthScore(today);
+    const previousScore = calculateMentalHealthScore(previousDay);
 
-        const currentScore = (snapShot1.mood * 20 + snapShot1.stress * 20 + snapShot1.anxiety * 20) / 3;
-        const lastWeekScore = (snapShot2.mood * 20 + snapShot2.stress * 20 + snapShot2.anxiety * 20) / 3;
-        const changeFromLastWeek = (currentScore - lastWeekScore);
+    const mentalHealthScore = {
+      value: currentScore,
+      label: getMentalHealthLabel(currentScore, today.hasData),
+      status: getMentalHealthStatus(currentScore, today.hasData),
+      changeFromLastWeek: today.hasData ? currentScore - previousScore : 0,
+    };
 
-        const mentalHealthScore = {
-            value: Math.round(currentScore),
-            label: currentScore >= 75 ? "Healthy"
-                 : currentScore >= 40 ? "Moderate"
-                 : "High Risk",
+    return res.json({
+      success: true,
+      message: "Mental health score retrieval successful",
+      dates: getDates(days),
+      hasDataByDate: getHasDataByDate(days),
+      mentalHealthScore,
+    });
+  } catch (err) {
+    console.log("Mental health score error:", err);
 
-            status: currentScore >= 75 ? "healthy"
-                  : currentScore >= 40 ? "warning"
-                  : "danger",
-
-            changeFromLastWeek: Math.round(changeFromLastWeek)
-        };
-
-        return res.json({
-            success: true,
-            message: "Mental health score retrieval successful",
-            mentalHealthScore
-        });
-
-    } catch (err) {
-        console.log(err);
-
-        return res.status(500).json({
-            success: false,
-            message: "Mental health score retrieval failed",
-            error: err.message
-        });
-    }
+    return res.status(500).json({
+      success: false,
+      message: "Mental health score retrieval failed",
+      error: err.message,
+    });
+  }
 };
 
 exports.trackedMetricsData = async function (req, res) {
-    try {
+  try {
+    const days = await getDashboardDays(req.user.userId);
 
-        const snapShot1 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-14")
-        });
-        const snapShot2 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-13")
-        });
-        const snapShot3 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-12")
-        });
-        const snapShot4 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-11")
-        });
-        const snapShot5 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-10")
-        });
-        const snapShot6 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-09")
-        });
-        const snapShot7 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-08")
-        });
+    const dates = getDates(days);
+    const today = days[days.length - 1];
+    const previousDay = days[days.length - 2] || today;
 
-        // helper funkcija za trend
-        const calculateTrend = (current, previous) => {
-            if (!previous || previous === 0) {
-                return {
-                    direction: "same",
-                    value: 0,
-                    isGood: true
-                };
-            }
+    const sleepArray = buildArray(days, "sleepHours");
+    const activityArray = buildArray(days, "steps");
+    const screenTimeArray = buildArray(days, "screenTimeHours");
+    const socialArray = buildSocialArray(days);
+    const moodArray = buildArray(days, "mood");
+    const stressArray = buildArray(days, "stress");
 
-            const diff = current - previous;
-            const percent = Math.abs(Math.round((diff / previous) * 100));
+    const trackedMetrics = [
+      {
+        id: "sleep",
+        title: "Sleep",
+        value: getNumber(today, "sleepHours", null),
+        suffix: "h",
+        subtitle: "Sleep hours",
+        trend: calculateTrend(
+          getNumber(today, "sleepHours", null),
+          getNumber(previousDay, "sleepHours", null),
+          true,
+        ),
+        chart: sleepArray,
+        dates,
+      },
+      {
+        id: "activity",
+        title: "Activity",
+        value: getNumber(today, "steps", null),
+        subtitle: "Steps from pedometer",
+        trend: calculateTrend(
+          getNumber(today, "steps", null),
+          getNumber(previousDay, "steps", null),
+          true,
+        ),
+        chart: activityArray,
+        dates,
+      },
+      {
+        id: "screen-time",
+        title: "Screen Time",
+        value: getNumber(today, "screenTimeHours", null),
+        suffix: "h",
+        subtitle: "Device screen time",
+        trend: calculateTrend(
+          getNumber(today, "screenTimeHours", null),
+          getNumber(previousDay, "screenTimeHours", null),
+          false,
+        ),
+        chart: screenTimeArray,
+        dates,
+      },
+      {
+        id: "socialization",
+        title: "Socialization",
+        value: getSocialConnection(today),
+        suffix: "/5",
+        subtitle: "Social connection",
+        trend: calculateTrend(
+          getSocialConnection(today),
+          getSocialConnection(previousDay),
+          true,
+        ),
+        chart: socialArray,
+        dates,
+      },
+      {
+        id: "mood",
+        title: "Mood",
+        value: getNumber(today, "mood", null),
+        suffix: "/5",
+        subtitle: "Mood check-in",
+        trend: calculateTrend(
+          getNumber(today, "mood", null),
+          getNumber(previousDay, "mood", null),
+          true,
+        ),
+        chart: moodArray,
+        dates,
+      },
+      {
+        id: "stress",
+        title: "Stress",
+        value: getNumber(today, "stress", null),
+        suffix: "/5",
+        subtitle: "Baseline stress level",
+        trend: calculateTrend(
+          getNumber(today, "stress", null),
+          getNumber(previousDay, "stress", null),
+          false,
+        ),
+        chart: stressArray,
+        dates,
+      },
+    ];
 
-            return {
-                direction:
-                    diff > 0 ? "up" :
-                    diff < 0 ? "down" :
-                    "same",
+    return res.json({
+      success: true,
+      message: "Tracked metrics data retrieval successful",
+      dates,
+      hasDataByDate: getHasDataByDate(days),
+      trackedMetrics,
+    });
+  } catch (err) {
+    console.log("Tracked metrics error:", err);
 
-                value: percent,
-
-                isGood: diff >= 0
-            };
-        };
-
-        const trackedMetrics = [
-            {
-                id: "sleep",
-                title: "Sleep",
-                value: snapShot1.sleepHours,
-                suffix: "h",
-                subtitle: "Sleep hours",
-                trend: calculateTrend(
-                    snapShot1.sleepHours,
-                    snapShot2.sleepHours
-                ),
-                chart: [snapShot1.sleepHours, snapShot2.sleepHours, snapShot3.sleepHours, snapShot4.sleepHours, snapShot5.sleepHours, snapShot6.sleepHours, snapShot7.sleepHours]
-            },
-
-            {
-                id: "activity",
-                title: "Activity",
-                value: snapShot1.steps,
-                subtitle: "Steps from pedometer",
-                trend: calculateTrend(
-                    snapShot1.steps,
-                    snapShot2.steps
-                ),
-                chart: [snapShot1.steps, snapShot2.steps, snapShot3.steps, snapShot4.steps, snapShot5.steps, snapShot6.steps, snapShot7.steps]
-            },
-
-            {
-                id: "screen-time",
-                title: "Screen Time",
-                value: snapShot1.screenTimeHours,
-                suffix: "h",
-                subtitle: "Device screen time",
-                trend: calculateTrend(
-                    snapShot1.screenTimeHours,
-                    snapShot2.screenTimeHours
-                ),
-                chart: [snapShot1.screenTimeHours, snapShot2.screenTimeHours, snapShot3.screenTimeHours, snapShot4.screenTimeHours, snapShot5.screenTimeHours, snapShot6.screenTimeHours, snapShot7.screenTimeHours]
-            },
-
-            {
-                id: "socialization",
-                title: "Socialization",
-                value: snapShot1.anxiety,
-                suffix: "/5",
-                subtitle: "Social connection",
-                trend: calculateTrend(
-                    snapShot1.anxiety,
-                    snapShot2.anxiety
-                ),
-                chart: [snapShot1.anxiety, snapShot2.anxiety, snapShot3.anxiety, snapShot4.anxiety, snapShot5.anxiety, snapShot6.anxiety, snapShot7.anxiety]
-            },
-
-            {
-                id: "mood",
-                title: "Mood",
-                value: snapShot1.mood,
-                suffix: "/5",
-                subtitle: "Mood check-in",
-                trend: calculateTrend(
-                    snapShot1.mood,
-                    snapShot2.mood
-                ),
-                chart: [snapShot1.mood, snapShot2.mood, snapShot3.mood, snapShot4.mood, snapShot5.mood, snapShot6.mood, snapShot7.mood]
-            },
-
-            {
-                id: "stress",
-                title: "Stress",
-                value: snapShot1.stress,
-                suffix: "/5",
-                subtitle: "Baseline stress level",
-                trend: calculateTrend(
-                    snapShot1.stress,
-                    snapShot2.stress
-                ),
-                chart: [snapShot1.stress, snapShot2.stress, snapShot3.stress, snapShot4.stress, snapShot5.stress, snapShot6.stress, snapShot7.stress]
-            }
-        ];
-
-        return res.json({
-            success: true,
-            message: "Tracked metrics data retrieval successful",
-            trackedMetrics
-        });
-
-    } catch (err) {
-
-        return res.status(500).json({
-            success: false,
-            message: "Tracked metrics retrieval failed"
-        });
-    }
+    return res.status(500).json({
+      success: false,
+      message: "Tracked metrics retrieval failed",
+      error: err.message,
+    });
+  }
 };
 
 exports.calculatedScoresData = async function (req, res) {
-    try {
+  try {
+    const days = await getDashboardDays(req.user.userId);
 
-        const snapShot1 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-14")
-        });
-        const snapShot2 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-13")
-        });
-        const snapShot3 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-12")
-        });
-        const snapShot4 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-11")
-        });
-        const snapShot5 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-10")
-        });
-        const snapShot6 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-09")
-        });
-        const snapShot7 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-08")
-        });
+    const dates = getDates(days);
+    const hasAnyData = days.some((day) => day.hasData);
 
-        // helper funkcija
-        const average = (arr) =>
-            Math.round(
-                arr.reduce((sum, value) => sum + value, 0) / arr.length
-            );
+    const anxietyChart = days.map((day) => getInvertedScore(day, "anxiety"));
+    const stressChart = days.map((day) => getInvertedScore(day, "stress"));
+    const moodChart = days.map((day) => getPositiveScore(day, "mood"));
 
-        // arrays
-        const anxietyArray = [snapShot1.anxiety, snapShot2.anxiety, snapShot3.anxiety, snapShot4.anxiety, snapShot5.anxiety, snapShot6.anxiety, snapShot7.anxiety];
-        const moodArray = [snapShot1.mood, snapShot2.mood, snapShot3.mood, snapShot4.mood, snapShot5.mood, snapShot6.mood, snapShot7.mood];
-        const stressArray = [snapShot1.stress, snapShot2.stress, snapShot3.stress, snapShot4.stress, snapShot5.stress, snapShot6.stress, snapShot7.stress];
+    const anxietyValue = hasAnyData ? average(anxietyChart) : 0;
+    const stressValue = hasAnyData ? average(stressChart) : 0;
+    const moodValue = hasAnyData ? average(moodChart) : 0;
 
-        // primer "score" pretvorbe
-        const anxietyScore = average(anxietyArray) * 20;
-        const moodScore = average(moodArray) * 20;
-        const stressScore = average(stressArray) * 20;
+    const anxietyStatus = getStatus(anxietyValue, hasAnyData);
+    const stressStatus = getStatus(stressValue, hasAnyData);
+    const moodStatus = getStatus(moodValue, hasAnyData);
 
-        // helper za status
-        const getStatus = (score) => {
+    const calculatedScores = [
+      {
+        id: "anxiety-signals",
+        title: "Anxiety Signals",
+        value: anxietyValue,
+        suffix: "/100",
+        subtitle: "Based on recent patterns",
+        level: anxietyStatus.level,
+        status: anxietyStatus.status,
+        chart: anxietyChart,
+        dates,
+      },
+      {
+        id: "stress-level",
+        title: "Stress Level",
+        value: stressStatus.level,
+        subtitle: "Work, school and daily pressure",
+        level: stressStatus.level,
+        status: stressStatus.status,
+        chart: stressChart,
+        dates,
+      },
+      {
+        id: "mood-balance",
+        title: "Mood Balance",
+        value: moodValue,
+        suffix: "/100",
+        subtitle: "Mood, sleep and social signals",
+        level: moodStatus.level,
+        status: moodStatus.status,
+        chart: moodChart,
+        dates,
+      },
+    ];
 
-            if (score >= 70) {
-                return {
-                    level: "Healthy",
-                    status: "healthy"
-                };
-            }
+    return res.json({
+      success: true,
+      message: "Calculated scores retrieval successful",
+      dates,
+      hasDataByDate: getHasDataByDate(days),
+      calculatedScores,
+    });
+  } catch (err) {
+    console.log("Calculated scores error:", err);
 
-            if (score >= 40) {
-                return {
-                    level: "Moderate",
-                    status: "warning"
-                };
-            }
-
-            return {
-                level: "High",
-                status: "danger"
-            };
-        };
-
-        const anxietyStatus = getStatus(100 - anxietyScore);
-        const moodStatus = getStatus(moodScore);
-        const stressStatus = getStatus(100 - stressScore);
-
-        const calculatedScores = [
-
-            {
-                id: "anxiety-signals",
-                title: "Anxiety Signals",
-                value: 100 - anxietyScore,
-                suffix: "/100",
-                subtitle: "Based on recent patterns",
-                level: anxietyStatus.level,
-                status: anxietyStatus.status,
-                chart: anxietyArray.map(v => v * 20)
-            },
-
-            {
-                id: "stress-level",
-                title: "Stress Level",
-                value: stressStatus.level,
-                subtitle: "Work, school and daily pressure",
-                level: stressStatus.level,
-                status: stressStatus.status,
-                chart: stressArray.map(v => v * 20)
-            },
-
-            {
-                id: "mood-balance",
-                title: "Mood Balance",
-                value: moodScore,
-                suffix: "/100",
-                subtitle: "Mood, sleep and social signals",
-                level: moodStatus.level,
-                status: moodStatus.status,
-                chart: moodArray.map(v => v * 20)
-            }
-        ];
-
-        return res.json({
-            success: true,
-            message: "Calculated scores retrieval successful",
-            calculatedScores
-        });
-
-    }
-    catch(err)
-    {
-        return res.status(500).json({
-            success: false,
-            message: "Calculated scores retrieval failed",
-        });
-    }
+    return res.status(500).json({
+      success: false,
+      message: "Calculated scores retrieval failed",
+      error: err.message,
+    });
+  }
 };
 
 exports.trendsData = async function (req, res) {
-    try {
+  try {
+    const days = await getDashboardDays(req.user.userId);
 
-        const snapShot1 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-14")
-        });
-        const snapShot2 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-13")
-        });
-        const snapShot3 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-12")
-        });
-        const snapShot4 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-11")
-        });
-        const snapShot5 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-10")
-        });
-        const snapShot6 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-09")
-        });
-        const snapShot7 = await SnapshotModel.findOne({
-            userId: req.user.userId,
-            date: new Date("2026-05-08")
-        });
+    const dates = getDates(days);
 
-        const sleepArray = [snapShot1.sleepHours, snapShot2.sleepHours, snapShot3.sleepHours, snapShot4.sleepHours, snapShot5.sleepHours, snapShot6.sleepHours, snapShot7.sleepHours];
-        const anxietyArray = [snapShot1.anxiety, snapShot2.anxiety, snapShot3.anxiety, snapShot4.anxiety, snapShot5.anxiety, snapShot6.anxiety, snapShot7.anxiety];
-        const activityArray = [snapShot1.steps, snapShot2.steps, snapShot3.steps, snapShot4.steps, snapShot5.steps, snapShot6.steps, snapShot7.steps];
-        const screentimeArray = [snapShot1.screenTimeHours, snapShot2.screenTimeHours, snapShot3.screenTimeHours, snapShot4.screenTimeHours, snapShot5.screenTimeHours, snapShot6.screenTimeHours, snapShot7.screenTimeHours];
-        const stressArray = [snapShot1.stress, snapShot2.stress, snapShot3.stress, snapShot4.stress, snapShot5.stress, snapShot6.stress, snapShot7.stress];
+    const sleepArray = buildArray(days, "sleepHours");
+    const socialArray = buildSocialArray(days);
+    const activityArray = buildArray(days, "steps");
+    const screenTimeArray = buildArray(days, "screenTimeHours");
+    const stressArray = buildArray(days, "stress");
 
-        const trends = [
+    const trends = [
+      {
+        id: "sleep",
+        label: "Sleep (hrs)",
+        data: sleepArray,
+        dates,
+      },
+      {
+        id: "movement",
+        label: "Movement (steps)",
+        data: activityArray,
+        dates,
+      },
+      {
+        id: "social-score",
+        label: "Social Score",
+        data: socialArray.map((value) => value * 20),
+        dates,
+      },
+      {
+        id: "stress-level",
+        label: "Stress Level",
+        data: stressArray.map((value) => value * 20),
+        dates,
+      },
+      {
+        id: "screen-time",
+        label: "Screen Time (hrs)",
+        data: screenTimeArray.map((value) => Math.round(value * 10)),
+        dates,
+      },
+    ];
 
-            {
-                id: "sleep",
-                label: "Sleep (hrs)",
-                data: sleepArray
-            },
+    return res.json({
+      success: true,
+      message: "Trends retrieval successful",
+      dates,
+      hasDataByDate: getHasDataByDate(days),
+      trends,
+    });
+  } catch (err) {
+    console.log("Trends error:", err);
 
-            {
-                id: "movement",
-                label: "Movement (steps)",
-                // če želiš manjše številke za chart
-                //data: activityArray.map(s => Math.round(s / 100))
-                data: activityArray
-            },
-
-            {
-                id: "social-score",
-                label: "Social Score",
-                data: anxietyArray.map(s => s * 20)
-            },
-
-            {
-                id: "stress-level",
-                label: "Stress Level",
-                data: stressArray.map(s => s * 20)
-            },
-
-            {
-                id: "screen-time",
-                label: "Screen Time (hrs)",
-                data: screentimeArray.map(s => Math.round(s * 10)
-                )
-            }
-        ];
-
-        return res.json({
-            success: true,
-            message: "Trends retrieval successful",
-            trends
-        });
-
-    }
-    catch(err)
-    {
-        console.log(err);
-        return res.status(500).json({
-            success: false,
-            message: "Trends retrieval failed",
-            error: err.message
-            
-        });
-    }
+    return res.status(500).json({
+      success: false,
+      message: "Trends retrieval failed",
+      error: err.message,
+    });
+  }
 };

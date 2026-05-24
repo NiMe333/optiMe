@@ -4,6 +4,8 @@ export type HomeMetricSource = "measured" | "entered" | "calculated";
 
 export type HomeScoreStatus = "healthy" | "okay" | "warning" | "critical";
 
+export type NullableNumber = number | null;
+
 export type HomeDashboardData = {
   user: {
     username: string;
@@ -14,10 +16,11 @@ export type HomeDashboardData = {
   };
 
   mentalHealthScore: {
-    value: number;
+    value: NullableNumber;
     label: string;
     status: HomeScoreStatus;
-    changeFromLastWeek: number;
+    changeFromLastWeek: NullableNumber;
+    date?: string;
   };
 
   trackedMetrics: HomeTrackedMetric[];
@@ -42,9 +45,9 @@ export type HomeTrackedMetric = {
   source: HomeMetricSource;
 
   valueLabel?: string;
-  value: string | number;
+  value: string | number | null;
 
-  secondValue?: string | number;
+  secondValue?: string | number | null;
   secondLabel?: string;
 
   suffix?: string;
@@ -58,21 +61,25 @@ export type HomeTrackedMetric = {
     isGood: boolean;
   };
 
-  chart: number[];
+  chart: NullableNumber[];
+  dates?: string[];
+
   color: string;
 };
 
 export type HomeCalculatedScore = {
   id: string;
   title: string;
-  value: string | number;
+  value: string | number | null;
   suffix?: string;
 
   level?: string;
   status?: HomeScoreStatus;
 
   subtitle: string;
-  chart: number[];
+  chart: NullableNumber[];
+  dates?: string[];
+
   color: string;
 };
 
@@ -80,7 +87,8 @@ export type HomeTrendSeries = {
   id: string;
   label: string;
   color: string;
-  data: number[];
+  data: NullableNumber[];
+  dates?: string[];
 };
 
 export type HomeAchievement = {

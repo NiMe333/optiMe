@@ -8,9 +8,11 @@ import type { HomeTrackedMetric } from "@/types/home";
 import MetricBarChart, {
   type SelectedBarPoint,
 } from "@/components/home/charts/MetricBarChart";
+
 import MetricLineChart, {
   type SelectedLinePoint,
 } from "@/components/home/charts/MetricLineChart";
+
 import MetricValueOnly from "@/components/home/charts/MetricValueOnly";
 
 type TrackedMetricCardProps = {
@@ -58,22 +60,27 @@ function BarChartMetric({ metric }: { metric: HomeTrackedMetric }) {
 
   const valueLabel = selectedBar?.headerLabel ?? metric.valueLabel ?? "Today";
 
+  const selectedRawValue = selectedBar?.rawValue ?? selectedBar?.value ?? null;
+
   const value = selectedBar
-    ? formatBarMetricValue(selectedBar.value)
-    : metric.value;
+    ? formatBarMetricValue(selectedRawValue)
+    : formatMetricDisplayValue(metric.value);
+
+  const shouldShowSuffix = value !== "No data";
 
   return (
     <View style={componentStyles.metricBarBody}>
       <CompactMetricHeader
         label={valueLabel}
         value={value}
-        suffix={metric.suffix}
+        suffix={shouldShowSuffix ? metric.suffix : undefined}
         subtitle={metric.subtitle}
       />
 
       <View style={componentStyles.metricBarChartBottom}>
         <MetricBarChart
           data={metric.chart}
+          dates={metric.dates}
           color={metric.color}
           maxValue={getMetricMaxValue(metric)}
           unit={metric.suffix || ""}
@@ -92,22 +99,28 @@ function LineChartMetric({ metric }: { metric: HomeTrackedMetric }) {
 
   const valueLabel = selectedPoint?.headerLabel ?? metric.valueLabel ?? "Today";
 
+  const selectedRawValue =
+    selectedPoint?.rawValue ?? selectedPoint?.value ?? null;
+
   const value = selectedPoint
-    ? formatLineMetricValue(selectedPoint.value)
-    : metric.value;
+    ? formatLineMetricValue(selectedRawValue)
+    : formatMetricDisplayValue(metric.value);
+
+  const shouldShowSuffix = value !== "No data";
 
   return (
     <View style={componentStyles.metricLineBody}>
       <CompactMetricHeader
         label={valueLabel}
         value={value}
-        suffix={metric.suffix}
+        suffix={shouldShowSuffix ? metric.suffix : undefined}
         subtitle={metric.subtitle}
       />
 
       <View style={componentStyles.metricChartBox}>
         <MetricLineChart
           data={metric.chart}
+          dates={metric.dates}
           color={metric.color}
           maxValue={getMetricMaxValue(metric)}
           onSelectedPointChange={setSelectedPoint}
@@ -124,7 +137,7 @@ function CompactMetricHeader({
   subtitle,
 }: {
   label?: string;
-  value: string | number;
+  value: string | number | null;
   suffix?: string;
   subtitle: string;
 }) {
@@ -144,7 +157,9 @@ function CompactMetricHeader({
         <Text style={componentStyles.compactMetricSeparator}>·</Text>
 
         <View style={componentStyles.compactMetricValueRow}>
-          <Text style={componentStyles.compactMetricValue}>{value}</Text>
+          <Text style={componentStyles.compactMetricValue}>
+            {value ?? "No data"}
+          </Text>
 
           {!!suffix && (
             <Text style={componentStyles.compactMetricSuffix}>{suffix}</Text>
@@ -174,24 +189,33 @@ function ValueOnlyMetric({ metric }: { metric: HomeTrackedMetric }) {
         label="today mood"
         hint={moodState.description}
         color={moodState.color}
-        statusLabel="Entered"
+        statusLabel={metric.value === null ? "Missing" : "Entered"}
         moodIconName={moodState.iconName}
         showProgress={false}
       />
     );
   }
 
-  const value = metric.suffix
-    ? `${metric.value}${metric.suffix}`
-    : metric.value;
+  const value =
+    metric.value === null
+      ? "No data"
+      : metric.suffix
+        ? `${metric.value}${metric.suffix}`
+        : metric.value;
 
   const label = isActivity ? "steps today" : metric.subtitle;
 
-  const hint = isActivity ? "Steps from pedometer" : metric.subtitle;
+  const hint =
+    metric.value === null
+      ? "No data for this day"
+      : isActivity
+        ? "Steps from pedometer"
+        : metric.subtitle;
 
-  const statusLabel = isActivity ? "Measured" : "Tracked";
+  const statusLabel =
+    metric.value === null ? "Missing" : isActivity ? "Measured" : "Tracked";
 
-  const progress = getValueMetricProgress(metric);
+  const progress = metric.value === null ? 0 : getValueMetricProgress(metric);
 
   const goalLabel = metric.maxValue
     ? formatGoalValue(metric.maxValue)
@@ -328,6 +352,7 @@ function MetricHeaderIcon({
     case "mood":
       return <Ionicons name="happy-outline" size={18} color={color} />;
 
+    case "stress":
     case "financial-work-school-stress":
       return <Ionicons name="briefcase-outline" size={18} color={color} />;
 
@@ -388,7 +413,16 @@ function getValueMetricProgress(metric: HomeTrackedMetric) {
   return 70;
 }
 
-function getMoodState(value: string | number) {
+function getMoodState(value: string | number | null) {
+  if (value === null) {
+    return {
+      label: "No data",
+      description: "No mood entry for this day",
+      color: colors.textSoft,
+      iconName: "help-circle-outline" as keyof typeof Ionicons.glyphMap,
+    };
+  }
+
   const moodValue = parseMetricNumber(value);
 
   if (moodValue >= 4.5) {
@@ -435,8 +469,8 @@ function getMoodState(value: string | number) {
   };
 }
 
-function parseMetricNumber(value: string | number | undefined) {
-  if (value === undefined) {
+function parseMetricNumber(value: string | number | null | undefined) {
+  if (value === undefined || value === null) {
     return 0;
   }
 
@@ -458,12 +492,24 @@ function formatGoalValue(value: number) {
   return value.toLocaleString("en-US");
 }
 
-function formatBarMetricValue(value: number) {
+function formatMetricDisplayValue(value: string | number | null | undefined) {
+  if (value === null || value === undefined) {
+    return "No data";
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
   return Number.isInteger(value) ? value : value.toFixed(1);
 }
 
-function formatLineMetricValue(value: number) {
-  return Number.isInteger(value) ? value : value.toFixed(1);
+function formatBarMetricValue(value: string | number | null | undefined) {
+  return formatMetricDisplayValue(value);
+}
+
+function formatLineMetricValue(value: string | number | null | undefined) {
+  return formatMetricDisplayValue(value);
 }
 
 const componentStyles = StyleSheet.create({
