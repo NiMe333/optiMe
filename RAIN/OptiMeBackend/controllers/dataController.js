@@ -97,7 +97,7 @@ function getSocialConnection(day) {
     return value;
   }
 
-  return 0;
+  return null;
 }
 
 function buildArray(days, field) {
@@ -113,7 +113,7 @@ function buildArray(days, field) {
 function buildSocialArray(days) {
   return days.map((day) => {
     if (!day.hasData) {
-      return 0;
+      return null;
     }
 
     return getSocialConnection(day);
@@ -126,13 +126,13 @@ function clampScore(value) {
 
 function getPositiveScore(day, field) {
   if (!day.hasData) {
-    return 0;
+    return null;
   }
 
   const value = getNumber(day, field, null);
 
-  if (typeof value !== "number") {
-    return 0;
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return null;
   }
 
   return clampScore(value * 20);
@@ -140,28 +140,40 @@ function getPositiveScore(day, field) {
 
 function getInvertedScore(day, field) {
   if (!day.hasData) {
-    return 0;
+    return null;
   }
 
   const value = getNumber(day, field, null);
 
-  if (typeof value !== "number") {
-    return 0;
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return null;
   }
 
   return clampScore((6 - value) * 20);
 }
 
 function average(arr) {
-  if (!arr.length) {
-    return 0;
+  const numericValues = arr.filter(
+    (value) => typeof value === "number" && !Number.isNaN(value),
+  );
+
+  if (!numericValues.length) {
+    return null;
   }
 
-  return Math.round(arr.reduce((sum, value) => sum + value, 0) / arr.length);
+  return Math.round(
+    numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length,
+  );
 }
 
 function calculateTrend(current, previous, higherIsGood = true) {
-  if (!previous || previous === 0) {
+  if (
+    typeof current !== "number" ||
+    typeof previous !== "number" ||
+    Number.isNaN(current) ||
+    Number.isNaN(previous) ||
+    previous === 0
+  ) {
     return {
       direction: "same",
       value: 0,
@@ -179,8 +191,8 @@ function calculateTrend(current, previous, higherIsGood = true) {
   };
 }
 
-function getStatus(score, hasAnyData = true) {
-  if (!hasAnyData) {
+function getStatus(score) {
+  if (typeof score !== "number" || Number.isNaN(score)) {
     return {
       level: "No data",
       status: "warning",
@@ -207,8 +219,8 @@ function getStatus(score, hasAnyData = true) {
   };
 }
 
-function getMentalHealthLabel(score, hasTodayData) {
-  if (!hasTodayData) {
+function getMentalHealthLabel(score) {
+  if (typeof score !== "number" || Number.isNaN(score)) {
     return "No data";
   }
 
@@ -223,8 +235,8 @@ function getMentalHealthLabel(score, hasTodayData) {
   return "High Risk";
 }
 
-function getMentalHealthStatus(score, hasTodayData) {
-  if (!hasTodayData) {
+function getMentalHealthStatus(score) {
+  if (typeof score !== "number" || Number.isNaN(score)) {
     return "warning";
   }
 
@@ -241,14 +253,30 @@ function getMentalHealthStatus(score, hasTodayData) {
 
 function calculateMentalHealthScore(day) {
   if (!day.hasData) {
-    return 0;
+    return null;
   }
 
-  const moodScore = getPositiveScore(day, "mood");
-  const stressScore = getInvertedScore(day, "stress");
-  const anxietyScore = getInvertedScore(day, "anxiety");
+  const scores = [
+    getPositiveScore(day, "mood"),
+    getInvertedScore(day, "stress"),
+    getInvertedScore(day, "anxiety"),
+  ].filter((value) => typeof value === "number" && !Number.isNaN(value));
 
-  return Math.round((moodScore + stressScore + anxietyScore) / 3);
+  if (!scores.length) {
+    return null;
+  }
+
+  return Math.round(
+    scores.reduce((sum, value) => sum + value, 0) / scores.length,
+  );
+}
+
+function multiplyOrNull(value, multiplier) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return null;
+  }
+
+  return Math.round(value * multiplier);
 }
 
 exports.mentalHealthData = async function (req, res) {
@@ -261,11 +289,17 @@ exports.mentalHealthData = async function (req, res) {
     const currentScore = calculateMentalHealthScore(today);
     const previousScore = calculateMentalHealthScore(previousDay);
 
+    const hasCurrentScore = typeof currentScore === "number";
+    const hasPreviousScore = typeof previousScore === "number";
+
     const mentalHealthScore = {
-      value: currentScore,
-      label: getMentalHealthLabel(currentScore, today.hasData),
-      status: getMentalHealthStatus(currentScore, today.hasData),
-      changeFromLastWeek: today.hasData ? currentScore - previousScore : 0,
+      value: hasCurrentScore ? currentScore : null,
+      label: getMentalHealthLabel(currentScore),
+      status: getMentalHealthStatus(currentScore),
+      changeFromLastWeek:
+        hasCurrentScore && hasPreviousScore
+          ? currentScore - previousScore
+          : null,
     };
 
     return res.json({
@@ -410,19 +444,18 @@ exports.calculatedScoresData = async function (req, res) {
     const days = await getDashboardDays(req.user.userId);
 
     const dates = getDates(days);
-    const hasAnyData = days.some((day) => day.hasData);
 
     const anxietyChart = days.map((day) => getInvertedScore(day, "anxiety"));
     const stressChart = days.map((day) => getInvertedScore(day, "stress"));
     const moodChart = days.map((day) => getPositiveScore(day, "mood"));
 
-    const anxietyValue = hasAnyData ? average(anxietyChart) : 0;
-    const stressValue = hasAnyData ? average(stressChart) : 0;
-    const moodValue = hasAnyData ? average(moodChart) : 0;
+    const anxietyValue = average(anxietyChart);
+    const stressValue = average(stressChart);
+    const moodValue = average(moodChart);
 
-    const anxietyStatus = getStatus(anxietyValue, hasAnyData);
-    const stressStatus = getStatus(stressValue, hasAnyData);
-    const moodStatus = getStatus(moodValue, hasAnyData);
+    const anxietyStatus = getStatus(anxietyValue);
+    const stressStatus = getStatus(stressValue);
+    const moodStatus = getStatus(moodValue);
 
     const calculatedScores = [
       {
@@ -505,19 +538,19 @@ exports.trendsData = async function (req, res) {
       {
         id: "social-score",
         label: "Social Score",
-        data: socialArray.map((value) => value * 20),
+        data: socialArray.map((value) => multiplyOrNull(value, 20)),
         dates,
       },
       {
         id: "stress-level",
         label: "Stress Level",
-        data: stressArray.map((value) => value * 20),
+        data: stressArray.map((value) => multiplyOrNull(value, 20)),
         dates,
       },
       {
         id: "screen-time",
         label: "Screen Time (hrs)",
-        data: screenTimeArray.map((value) => Math.round(value * 10)),
+        data: screenTimeArray.map((value) => multiplyOrNull(value, 10)),
         dates,
       },
     ];
