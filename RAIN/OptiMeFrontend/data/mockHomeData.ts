@@ -25,7 +25,7 @@ export const mockHomeData: HomeDashboardData = {
   },
 
   mentalHealthScore: {
-    value: 88,
+    value: 60,
     label: "Healthy",
     status: "healthy",
     changeFromLastWeek: 12,
@@ -55,7 +55,7 @@ export const mockHomeData: HomeDashboardData = {
       variant: "double",
       source: "measured",
       valueLabel: "Today",
-      value: "6,232",
+      value: "6,000",
       subtitle: "Steps from pedometer",
       maxValue: 8000,
       trend: {
