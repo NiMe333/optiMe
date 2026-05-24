@@ -301,19 +301,6 @@ exports.trackedMetricsData = async function (req, res) {
     const moodArray = buildArray(days, "mood");
     const stressArray = buildArray(days, "stress");
 
-    console.table(
-      days.map((day, index) => ({
-        date: day.dateKey,
-        hasData: day.hasData,
-        sleepHours: sleepArray[index],
-        steps: activityArray[index],
-        screenTimeHours: screenTimeArray[index],
-        socialConnection: socialArray[index],
-        mood: moodArray[index],
-        stress: stressArray[index],
-      })),
-    );
-
     const trackedMetrics = [
       {
         id: "sleep",
@@ -399,19 +386,6 @@ exports.trackedMetricsData = async function (req, res) {
         dates,
       },
     ];
-
-    console.log(
-      "TRACKED METRICS RESPONSE:",
-      JSON.stringify(
-        {
-          dates,
-          hasDataByDate: getHasDataByDate(days),
-          trackedMetrics,
-        },
-        null,
-        2,
-      ),
-    );
 
     return res.json({
       success: true,
