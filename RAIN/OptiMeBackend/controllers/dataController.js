@@ -1,19 +1,84 @@
 var SnapshotModel = require("../models/userSnapshotModel");
 
-async function getLatestSnapshots(userId) {
-  const snapshots = await SnapshotModel.find({ userId })
-    .sort({ date: -1 })
-    .limit(7);
+const DAYS_TO_SHOW = 7;
 
-  return snapshots;
+function startOfDay(date = new Date()) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function getSnapshotAt(snapshots, index) {
-  return snapshots[index] || snapshots[0] || {};
+function addDays(date, days) {
+  const newDate = new Date(date);
+  newDate.setDate(newDate.getDate() + days);
+  return newDate;
 }
 
-function getNumber(snapshot, field, fallback = 0) {
-  const value = snapshot?.[field];
+function getDateKey(date) {
+  const parsedDate = new Date(date);
+
+  const year = parsedDate.getFullYear();
+  const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+  const day = String(parsedDate.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function buildDateWindow() {
+  const today = startOfDay(new Date());
+  const firstDay = addDays(today, -(DAYS_TO_SHOW - 1));
+
+  return Array.from({ length: DAYS_TO_SHOW }, (_, index) => {
+    const date = addDays(firstDay, index);
+
+    return {
+      date,
+      dateKey: getDateKey(date),
+    };
+  });
+}
+
+async function getDashboardDays(userId) {
+  const dateWindow = buildDateWindow();
+
+  const firstDate = dateWindow[0].date;
+  const lastDate = dateWindow[dateWindow.length - 1].date;
+  const endDate = addDays(lastDate, 1);
+
+  const snapshots = await SnapshotModel.find({
+    userId,
+    date: {
+      $gte: firstDate,
+      $lt: endDate,
+    },
+  }).sort({ date: 1 });
+
+  const snapshotMap = new Map();
+
+  snapshots.forEach((snapshot) => {
+    snapshotMap.set(getDateKey(snapshot.date), snapshot);
+  });
+
+  return dateWindow.map((day) => {
+    const snapshot = snapshotMap.get(day.dateKey) || null;
+
+    return {
+      date: day.date,
+      dateKey: day.dateKey,
+      snapshot,
+      hasData: !!snapshot,
+    };
+  });
+}
+
+function getDates(days) {
+  return days.map((day) => day.dateKey);
+}
+
+function getHasDataByDate(days) {
+  return days.map((day) => day.hasData);
+}
+
+function getNumber(day, field, fallback = 0) {
+  const value = day?.snapshot?.[field];
 
   if (typeof value === "number" && !Number.isNaN(value)) {
     return value;
@@ -22,27 +87,69 @@ function getNumber(snapshot, field, fallback = 0) {
   return fallback;
 }
 
-function getSocialConnection(snapshot) {
-  return (
-    getNumber(snapshot, "socialConnection", null) ??
-    getNumber(snapshot, "socialization", null) ??
-    getNumber(snapshot, "socialScore", null) ??
-    getNumber(snapshot, "anxiety", 0)
-  );
+function getSocialConnection(day) {
+  const value =
+    getNumber(day, "socialConnection", null) ??
+    getNumber(day, "socialization", null) ??
+    getNumber(day, "socialScore", null);
+
+  if (typeof value === "number" && !Number.isNaN(value)) {
+    return value;
+  }
+
+  return 0;
 }
 
-function buildArray(snapshots, field, fallback = 0) {
-  return Array.from({ length: 7 }, (_, index) => {
-    const snapshot = getSnapshotAt(snapshots, index);
-    return getNumber(snapshot, field, fallback);
+function buildArray(days, field) {
+  return days.map((day) => {
+    if (!day.hasData) {
+      return 0;
+    }
+
+    return getNumber(day, field, 0);
   });
 }
 
-function buildSocialArray(snapshots) {
-  return Array.from({ length: 7 }, (_, index) => {
-    const snapshot = getSnapshotAt(snapshots, index);
-    return getSocialConnection(snapshot);
+function buildSocialArray(days) {
+  return days.map((day) => {
+    if (!day.hasData) {
+      return 0;
+    }
+
+    return getSocialConnection(day);
   });
+}
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function getPositiveScore(day, field) {
+  if (!day.hasData) {
+    return 0;
+  }
+
+  const value = getNumber(day, field, null);
+
+  if (typeof value !== "number") {
+    return 0;
+  }
+
+  return clampScore(value * 20);
+}
+
+function getInvertedScore(day, field) {
+  if (!day.hasData) {
+    return 0;
+  }
+
+  const value = getNumber(day, field, null);
+
+  if (typeof value !== "number") {
+    return 0;
+  }
+
+  return clampScore((6 - value) * 20);
 }
 
 function average(arr) {
@@ -72,7 +179,14 @@ function calculateTrend(current, previous, higherIsGood = true) {
   };
 }
 
-function getStatus(score) {
+function getStatus(score, hasAnyData = true) {
+  if (!hasAnyData) {
+    return {
+      level: "No data",
+      status: "warning",
+    };
+  }
+
   if (score >= 70) {
     return {
       level: "Healthy",
@@ -93,7 +207,11 @@ function getStatus(score) {
   };
 }
 
-function getMentalHealthLabel(score) {
+function getMentalHealthLabel(score, hasTodayData) {
+  if (!hasTodayData) {
+    return "No data";
+  }
+
   if (score >= 75) {
     return "Healthy";
   }
@@ -105,7 +223,11 @@ function getMentalHealthLabel(score) {
   return "High Risk";
 }
 
-function getMentalHealthStatus(score) {
+function getMentalHealthStatus(score, hasTodayData) {
+  if (!hasTodayData) {
+    return "warning";
+  }
+
   if (score >= 75) {
     return "healthy";
   }
@@ -117,57 +239,40 @@ function getMentalHealthStatus(score) {
   return "danger";
 }
 
+function calculateMentalHealthScore(day) {
+  if (!day.hasData) {
+    return 0;
+  }
+
+  const moodScore = getPositiveScore(day, "mood");
+  const stressScore = getInvertedScore(day, "stress");
+  const anxietyScore = getInvertedScore(day, "anxiety");
+
+  return Math.round((moodScore + stressScore + anxietyScore) / 3);
+}
+
 exports.mentalHealthData = async function (req, res) {
   try {
-    const snapshots = await getLatestSnapshots(req.user.userId);
+    const days = await getDashboardDays(req.user.userId);
 
-    if (!snapshots.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No snapshot data found for this user",
-      });
-    }
+    const today = days[days.length - 1];
+    const previousDay = days[days.length - 2] || today;
 
-    const currentSnapshot = getSnapshotAt(snapshots, 0);
-    const previousSnapshot = getSnapshotAt(snapshots, 1);
-
-    const currentMood = getNumber(currentSnapshot, "mood");
-    const currentStress = getNumber(currentSnapshot, "stress");
-    const currentAnxiety = getNumber(currentSnapshot, "anxiety");
-
-    const previousMood = getNumber(previousSnapshot, "mood", currentMood);
-    const previousStress = getNumber(previousSnapshot, "stress", currentStress);
-    const previousAnxiety = getNumber(
-      previousSnapshot,
-      "anxiety",
-      currentAnxiety,
-    );
-
-    const currentScore =
-      (currentMood * 20 +
-        (6 - currentStress) * 20 +
-        (6 - currentAnxiety) * 20) /
-      3;
-
-    const previousScore =
-      (previousMood * 20 +
-        (6 - previousStress) * 20 +
-        (6 - previousAnxiety) * 20) /
-      3;
-
-    const changeFromLastWeek = currentScore - previousScore;
+    const currentScore = calculateMentalHealthScore(today);
+    const previousScore = calculateMentalHealthScore(previousDay);
 
     const mentalHealthScore = {
-      value: Math.round(currentScore),
-      label: getMentalHealthLabel(currentScore),
-      status: getMentalHealthStatus(currentScore),
-      changeFromLastWeek: Math.round(changeFromLastWeek),
+      value: currentScore,
+      label: getMentalHealthLabel(currentScore, today.hasData),
+      status: getMentalHealthStatus(currentScore, today.hasData),
+      changeFromLastWeek: today.hasData ? currentScore - previousScore : 0,
     };
 
     return res.json({
       success: true,
       message: "Mental health score retrieval successful",
-      latestDate: snapshots[0]?.date ?? null,
+      dates: getDates(days),
+      hasDataByDate: getHasDataByDate(days),
       mentalHealthScore,
     });
   } catch (err) {
@@ -183,114 +288,110 @@ exports.mentalHealthData = async function (req, res) {
 
 exports.trackedMetricsData = async function (req, res) {
   try {
-    const snapshots = await getLatestSnapshots(req.user.userId);
+    const days = await getDashboardDays(req.user.userId);
 
-    if (!snapshots.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No snapshot data found for this user",
-      });
-    }
+    const dates = getDates(days);
+    const today = days[days.length - 1];
+    const previousDay = days[days.length - 2] || today;
 
-    const snapShot1 = getSnapshotAt(snapshots, 0);
-    const snapShot2 = getSnapshotAt(snapshots, 1);
-
-    const sleepArray = buildArray(snapshots, "sleepHours");
-    const activityArray = buildArray(snapshots, "steps");
-    const screenTimeArray = buildArray(snapshots, "screenTimeHours");
-    const socialArray = buildSocialArray(snapshots);
-    const moodArray = buildArray(snapshots, "mood");
-    const stressArray = buildArray(snapshots, "stress");
+    const sleepArray = buildArray(days, "sleepHours");
+    const activityArray = buildArray(days, "steps");
+    const screenTimeArray = buildArray(days, "screenTimeHours");
+    const socialArray = buildSocialArray(days);
+    const moodArray = buildArray(days, "mood");
+    const stressArray = buildArray(days, "stress");
 
     const trackedMetrics = [
       {
         id: "sleep",
         title: "Sleep",
-        value: getNumber(snapShot1, "sleepHours"),
+        value: getNumber(today, "sleepHours", 0),
         suffix: "h",
         subtitle: "Sleep hours",
         trend: calculateTrend(
-          getNumber(snapShot1, "sleepHours"),
-          getNumber(snapShot2, "sleepHours"),
+          getNumber(today, "sleepHours", 0),
+          getNumber(previousDay, "sleepHours", 0),
           true,
         ),
         chart: sleepArray,
+        dates,
       },
-
       {
         id: "activity",
         title: "Activity",
-        value: getNumber(snapShot1, "steps"),
+        value: getNumber(today, "steps", 0),
         subtitle: "Steps from pedometer",
         trend: calculateTrend(
-          getNumber(snapShot1, "steps"),
-          getNumber(snapShot2, "steps"),
+          getNumber(today, "steps", 0),
+          getNumber(previousDay, "steps", 0),
           true,
         ),
         chart: activityArray,
+        dates,
       },
-
       {
         id: "screen-time",
         title: "Screen Time",
-        value: getNumber(snapShot1, "screenTimeHours"),
+        value: getNumber(today, "screenTimeHours", 0),
         suffix: "h",
         subtitle: "Device screen time",
         trend: calculateTrend(
-          getNumber(snapShot1, "screenTimeHours"),
-          getNumber(snapShot2, "screenTimeHours"),
+          getNumber(today, "screenTimeHours", 0),
+          getNumber(previousDay, "screenTimeHours", 0),
           false,
         ),
         chart: screenTimeArray,
+        dates,
       },
-
       {
         id: "socialization",
         title: "Socialization",
-        value: getSocialConnection(snapShot1),
+        value: getSocialConnection(today),
         suffix: "/5",
         subtitle: "Social connection",
         trend: calculateTrend(
-          getSocialConnection(snapShot1),
-          getSocialConnection(snapShot2),
+          getSocialConnection(today),
+          getSocialConnection(previousDay),
           true,
         ),
         chart: socialArray,
+        dates,
       },
-
       {
         id: "mood",
         title: "Mood",
-        value: getNumber(snapShot1, "mood"),
+        value: getNumber(today, "mood", 0),
         suffix: "/5",
         subtitle: "Mood check-in",
         trend: calculateTrend(
-          getNumber(snapShot1, "mood"),
-          getNumber(snapShot2, "mood"),
+          getNumber(today, "mood", 0),
+          getNumber(previousDay, "mood", 0),
           true,
         ),
         chart: moodArray,
+        dates,
       },
-
       {
         id: "stress",
         title: "Stress",
-        value: getNumber(snapShot1, "stress"),
+        value: getNumber(today, "stress", 0),
         suffix: "/5",
         subtitle: "Baseline stress level",
         trend: calculateTrend(
-          getNumber(snapShot1, "stress"),
-          getNumber(snapShot2, "stress"),
+          getNumber(today, "stress", 0),
+          getNumber(previousDay, "stress", 0),
           false,
         ),
         chart: stressArray,
+        dates,
       },
     ];
 
     return res.json({
       success: true,
       message: "Tracked metrics data retrieval successful",
-      latestDate: snapshots[0]?.date ?? null,
+      dates,
+      hasDataByDate: getHasDataByDate(days),
       trackedMetrics,
     });
   } catch (err) {
@@ -306,30 +407,22 @@ exports.trackedMetricsData = async function (req, res) {
 
 exports.calculatedScoresData = async function (req, res) {
   try {
-    const snapshots = await getLatestSnapshots(req.user.userId);
+    const days = await getDashboardDays(req.user.userId);
 
-    if (!snapshots.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No snapshot data found for this user",
-      });
-    }
+    const dates = getDates(days);
+    const hasAnyData = days.some((day) => day.hasData);
 
-    const anxietyArray = buildArray(snapshots, "anxiety");
-    const moodArray = buildArray(snapshots, "mood");
-    const stressArray = buildArray(snapshots, "stress");
+    const anxietyChart = days.map((day) => getInvertedScore(day, "anxiety"));
+    const stressChart = days.map((day) => getInvertedScore(day, "stress"));
+    const moodChart = days.map((day) => getPositiveScore(day, "mood"));
 
-    const anxietyScore = average(anxietyArray) * 20;
-    const moodScore = average(moodArray) * 20;
-    const stressScore = average(stressArray) * 20;
+    const anxietyValue = hasAnyData ? average(anxietyChart) : 0;
+    const stressValue = hasAnyData ? average(stressChart) : 0;
+    const moodValue = hasAnyData ? average(moodChart) : 0;
 
-    const anxietyValue = 100 - anxietyScore;
-    const stressValue = 100 - stressScore;
-    const moodValue = moodScore;
-
-    const anxietyStatus = getStatus(anxietyValue);
-    const stressStatus = getStatus(stressValue);
-    const moodStatus = getStatus(moodValue);
+    const anxietyStatus = getStatus(anxietyValue, hasAnyData);
+    const stressStatus = getStatus(stressValue, hasAnyData);
+    const moodStatus = getStatus(moodValue, hasAnyData);
 
     const calculatedScores = [
       {
@@ -340,9 +433,9 @@ exports.calculatedScoresData = async function (req, res) {
         subtitle: "Based on recent patterns",
         level: anxietyStatus.level,
         status: anxietyStatus.status,
-        chart: anxietyArray.map((v) => 100 - v * 20),
+        chart: anxietyChart,
+        dates,
       },
-
       {
         id: "stress-level",
         title: "Stress Level",
@@ -350,9 +443,9 @@ exports.calculatedScoresData = async function (req, res) {
         subtitle: "Work, school and daily pressure",
         level: stressStatus.level,
         status: stressStatus.status,
-        chart: stressArray.map((v) => 100 - v * 20),
+        chart: stressChart,
+        dates,
       },
-
       {
         id: "mood-balance",
         title: "Mood Balance",
@@ -361,14 +454,16 @@ exports.calculatedScoresData = async function (req, res) {
         subtitle: "Mood, sleep and social signals",
         level: moodStatus.level,
         status: moodStatus.status,
-        chart: moodArray.map((v) => v * 20),
+        chart: moodChart,
+        dates,
       },
     ];
 
     return res.json({
       success: true,
       message: "Calculated scores retrieval successful",
-      latestDate: snapshots[0]?.date ?? null,
+      dates,
+      hasDataByDate: getHasDataByDate(days),
       calculatedScores,
     });
   } catch (err) {
@@ -384,57 +479,54 @@ exports.calculatedScoresData = async function (req, res) {
 
 exports.trendsData = async function (req, res) {
   try {
-    const snapshots = await getLatestSnapshots(req.user.userId);
+    const days = await getDashboardDays(req.user.userId);
 
-    if (!snapshots.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No snapshot data found for this user",
-      });
-    }
+    const dates = getDates(days);
 
-    const sleepArray = buildArray(snapshots, "sleepHours");
-    const socialArray = buildSocialArray(snapshots);
-    const activityArray = buildArray(snapshots, "steps");
-    const screenTimeArray = buildArray(snapshots, "screenTimeHours");
-    const stressArray = buildArray(snapshots, "stress");
+    const sleepArray = buildArray(days, "sleepHours");
+    const socialArray = buildSocialArray(days);
+    const activityArray = buildArray(days, "steps");
+    const screenTimeArray = buildArray(days, "screenTimeHours");
+    const stressArray = buildArray(days, "stress");
 
     const trends = [
       {
         id: "sleep",
         label: "Sleep (hrs)",
         data: sleepArray,
+        dates,
       },
-
       {
         id: "movement",
         label: "Movement (steps)",
         data: activityArray,
+        dates,
       },
-
       {
         id: "social-score",
         label: "Social Score",
-        data: socialArray.map((s) => s * 20),
+        data: socialArray.map((value) => value * 20),
+        dates,
       },
-
       {
         id: "stress-level",
         label: "Stress Level",
-        data: stressArray.map((s) => s * 20),
+        data: stressArray.map((value) => value * 20),
+        dates,
       },
-
       {
         id: "screen-time",
         label: "Screen Time (hrs)",
-        data: screenTimeArray.map((s) => Math.round(s * 10)),
+        data: screenTimeArray.map((value) => Math.round(value * 10)),
+        dates,
       },
     ];
 
     return res.json({
       success: true,
       message: "Trends retrieval successful",
-      latestDate: snapshots[0]?.date ?? null,
+      dates,
+      hasDataByDate: getHasDataByDate(days),
       trends,
     });
   } catch (err) {

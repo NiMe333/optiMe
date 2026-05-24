@@ -1,59 +1,127 @@
-import { homeColors, mockHomeData } from "@/data/mockHomeData";
-import type { HomeDashboardData } from "@/types/home";
+import type {
+  HomeDashboardData,
+  HomeScoreStatus,
+  HomeTrendDirection,
+} from "@/types/home";
 
-const USE_MOCK_HOME_DATA = false;
+const DAYS_TO_SHOW = 6;
+
+const homeColors = {
+  blue: "#2D7EF7",
+  blueSoft: "#EAF4FF",
+  green: "#19B88A",
+  greenSoft: "#E8F8F2",
+  purple: "#8B3DDB",
+  purpleSoft: "#F1E8FF",
+  orange: "#FF8A3D",
+  orangeSoft: "#FFF2E9",
+  pink: "#EE4D8B",
+  pinkSoft: "#FFEAF3",
+  yellow: "#F6B62D",
+  yellowSoft: "#FFF8E6",
+};
+
+function normalizeScoreStatus(status: unknown): HomeScoreStatus {
+  if (
+    status === "healthy" ||
+    status === "okay" ||
+    status === "warning" ||
+    status === "critical"
+  ) {
+    return status;
+  }
+
+  if (status === "danger") {
+    return "critical";
+  }
+
+  return "warning";
+}
+
+function normalizeTrendDirection(direction: unknown): HomeTrendDirection {
+  if (direction === "up" || direction === "down" || direction === "same") {
+    return direction;
+  }
+
+  return "same";
+}
+
+const emptyTrend: {
+  direction: HomeTrendDirection;
+  value: number;
+  isGood: boolean;
+} = {
+  direction: "same",
+  value: 0,
+  isGood: true,
+};
 
 const trackedMetricUiConfig: Record<string, any> = {
   sleep: {
+    id: "sleep",
+    title: "Sleep",
     variant: "average",
     source: "measured",
     valueLabel: "Last night",
+    suffix: "h",
+    subtitle: "Sleep hours",
     color: homeColors.purple,
   },
 
   activity: {
+    id: "activity",
+    title: "Activity",
     variant: "double",
     source: "measured",
     valueLabel: "Today",
+    subtitle: "Steps from pedometer",
     maxValue: 8000,
     color: homeColors.green,
   },
 
   "screen-time": {
+    id: "screen-time",
+    title: "Screen Time",
     variant: "average",
     source: "measured",
     valueLabel: "Today",
+    suffix: "h",
+    subtitle: "Device screen time",
     color: homeColors.orange,
   },
 
   socialization: {
+    id: "socialization",
+    title: "Socialization",
     variant: "score",
     source: "entered",
     valueLabel: "Social score",
+    suffix: "/5",
+    subtitle: "Social connection",
     maxValue: 5,
     color: homeColors.purple,
   },
 
   mood: {
+    id: "mood",
+    title: "Mood",
     variant: "score",
     source: "entered",
     valueLabel: "Today",
+    suffix: "/5",
+    subtitle: "Mood check-in",
     maxValue: 5,
     color: homeColors.yellow,
   },
 
   stress: {
+    id: "stress",
+    title: "Stress",
     variant: "score",
     source: "entered",
     valueLabel: "Financial / Work / School",
-    maxValue: 5,
-    color: homeColors.pink,
-  },
-
-  "financial-work-school-stress": {
-    variant: "score",
-    source: "entered",
-    valueLabel: "Financial / Work / School",
+    suffix: "/5",
+    subtitle: "Baseline stress level",
     maxValue: 5,
     color: homeColors.pink,
   },
@@ -61,44 +129,59 @@ const trackedMetricUiConfig: Record<string, any> = {
 
 const calculatedScoreUiConfig: Record<string, any> = {
   "anxiety-signals": {
+    id: "anxiety-signals",
+    title: "Anxiety Signals",
+    suffix: "/100",
+    subtitle: "Based on recent patterns",
     color: homeColors.purple,
   },
 
   "stress-level": {
+    id: "stress-level",
+    title: "Stress Level",
+    subtitle: "Work, school and daily pressure",
     color: homeColors.orange,
   },
 
   "mood-balance": {
+    id: "mood-balance",
+    title: "Mood Balance",
+    suffix: "/100",
+    subtitle: "Mood, sleep and social signals",
     color: homeColors.green,
   },
 };
 
 const trendUiConfig: Record<string, any> = {
   sleep: {
+    id: "sleep",
+    label: "Sleep (hrs)",
     color: homeColors.purple,
   },
 
   movement: {
+    id: "movement",
+    label: "Movement (steps)",
     color: homeColors.green,
   },
 
   "social-score": {
+    id: "social-score",
+    label: "Social Score",
     color: homeColors.blue,
   },
 
   "stress-level": {
+    id: "stress-level",
+    label: "Stress Level",
     color: homeColors.pink,
   },
 
   "screen-time": {
+    id: "screen-time",
+    label: "Screen Time (hrs)",
     color: homeColors.orange,
   },
-};
-
-const emptyTrend = {
-  direction: "same",
-  value: 0,
-  isGood: true,
 };
 
 function getDateKey(date: Date) {
@@ -109,258 +192,358 @@ function getDateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function getTodayKey() {
-  return getDateKey(new Date());
+function getDefaultDates() {
+  const today = new Date();
+
+  return Array.from({ length: DAYS_TO_SHOW }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (DAYS_TO_SHOW - 1 - index));
+
+    return getDateKey(date);
+  });
 }
 
-function parseDateKey(value: unknown) {
-  if (!value) {
-    return "";
+function normalizeDates(dates?: unknown) {
+  if (!Array.isArray(dates)) {
+    return getDefaultDates();
   }
 
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return getDateKey(value);
+  const normalizedDates = dates.filter(
+    (date): date is string => typeof date === "string",
+  );
+
+  if (normalizedDates.length === 0) {
+    return getDefaultDates();
   }
 
-  if (typeof value === "string") {
-    const date = new Date(value);
-
-    if (!Number.isNaN(date.getTime())) {
-      return getDateKey(date);
-    }
-  }
-
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "$date" in value &&
-    typeof (value as any).$date === "string"
-  ) {
-    const date = new Date((value as any).$date);
-
-    if (!Number.isNaN(date.getTime())) {
-      return getDateKey(date);
-    }
-  }
-
-  return "";
+  return normalizedDates.slice(-DAYS_TO_SHOW);
 }
 
-function hasTodaySnapshot(latestDate: unknown) {
-  const latestDateKey = parseDateKey(latestDate);
-
-  if (!latestDateKey) {
-    // Če backend še ne pošilja datuma, ne moremo vedeti.
-    // Zato ne nastavimo na 0 kar na slepo.
-    return true;
-  }
-
-  return latestDateKey === getTodayKey();
-}
-
-function getMissingDaysFromToday(latestDate: unknown) {
-  const latestDateKey = parseDateKey(latestDate);
-
-  if (!latestDateKey) {
-    return 0;
-  }
-
-  const today = new Date(`${getTodayKey()}T00:00:00`);
-  const latest = new Date(`${latestDateKey}T00:00:00`);
-
-  if (Number.isNaN(today.getTime()) || Number.isNaN(latest.getTime())) {
-    return 0;
-  }
-
-  const oneDay = 24 * 60 * 60 * 1000;
-  const diff = Math.round((today.getTime() - latest.getTime()) / oneDay);
-
-  return Math.max(0, diff);
-}
-
-function normalizeChart(chart?: number[], latestDate?: unknown) {
-  if (!Array.isArray(chart)) {
-    return [];
-  }
-
-  // Backend vrača [najnovejši, starejši, ...],
-  // frontend graf pa naj riše [starejši, ..., najnovejši].
-  const reversedChart = [...chart].reverse();
-
-  const chartWithSevenValues =
-    reversedChart.length >= 7
-      ? reversedChart.slice(-7)
-      : [...Array(7 - reversedChart.length).fill(0), ...reversedChart];
-
-  const missingDays = getMissingDaysFromToday(latestDate);
-
-  if (missingDays <= 0) {
-    return chartWithSevenValues;
-  }
-
-  if (missingDays >= 7) {
-    return Array(7).fill(0);
-  }
-
-  // Če zadnji zapis ni današnji, npr. manjka 1 dan:
-  // [18,19,20,21,22,23] -> [18,19,20,21,22,23,0]
-  return [
-    ...chartWithSevenValues.slice(missingDays),
-    ...Array(missingDays).fill(0),
-  ];
-}
-
-function formatSteps(value: unknown) {
-  if (typeof value !== "number") {
+function normalizeNumber(value: unknown) {
+  if (typeof value === "number" && !Number.isNaN(value)) {
     return value;
   }
 
-  return value.toLocaleString("en-US");
+  return 0;
 }
 
-function normalizeMentalHealthScore(score: any, latestDate?: unknown) {
-  const hasTodayData = hasTodaySnapshot(latestDate);
+function normalizeValue(value: unknown) {
+  if (typeof value === "string") {
+    return value;
+  }
 
+  return normalizeNumber(value);
+}
+
+function normalizeChart(chart?: unknown, dates?: string[]) {
+  const targetLength = dates?.length || DAYS_TO_SHOW;
+
+  if (!Array.isArray(chart)) {
+    return Array(targetLength).fill(0);
+  }
+
+  const normalizedChart = chart.map(normalizeNumber);
+
+  if (normalizedChart.length >= targetLength) {
+    return normalizedChart.slice(-targetLength);
+  }
+
+  return [
+    ...Array(targetLength - normalizedChart.length).fill(0),
+    ...normalizedChart,
+  ];
+}
+
+function normalizeTrendObject(trend: any): {
+  direction: HomeTrendDirection;
+  value: number;
+  isGood: boolean;
+} {
+  if (!trend) {
+    return emptyTrend;
+  }
+
+  return {
+    direction: normalizeTrendDirection(trend.direction),
+    value: normalizeNumber(trend.value),
+    isGood: typeof trend.isGood === "boolean" ? trend.isGood : true,
+  };
+}
+
+function formatSteps(value: unknown) {
+  const numberValue = normalizeNumber(value);
+
+  return numberValue.toLocaleString("en-US");
+}
+
+function getResponseData<T>(
+  result: PromiseSettledResult<any>,
+  key: string,
+): T | null {
+  if (result.status !== "fulfilled") {
+    console.log(`${key} failed:`, {
+      message: result.reason?.message,
+      status: result.reason?.response?.status,
+      data: result.reason?.response?.data,
+    });
+
+    return null;
+  }
+
+  return result.value?.data ?? null;
+}
+
+function createEmptyMentalHealthScore(): HomeDashboardData["mentalHealthScore"] {
+  return {
+    value: 0,
+    label: "No data",
+    status: "warning",
+    changeFromLastWeek: 0,
+  };
+}
+
+function normalizeMentalHealthScore(
+  score: any,
+): HomeDashboardData["mentalHealthScore"] {
   if (!score) {
-    return mockHomeData.mentalHealthScore;
+    return createEmptyMentalHealthScore();
   }
 
-  if (!hasTodayData) {
-    return {
-      ...score,
-      value: 0,
-      label: "No data",
-      status: "warning",
-      changeFromLastWeek: 0,
-    };
-  }
-
-  return score;
+  return {
+    value: normalizeNumber(score.value),
+    label: typeof score.label === "string" ? score.label : "No data",
+    status: normalizeScoreStatus(score.status),
+    changeFromLastWeek: normalizeNumber(score.changeFromLastWeek),
+  };
 }
 
-function normalizeTrackedMetric(metric: any, latestDate?: unknown) {
-  const config = trackedMetricUiConfig[metric.id] ?? {};
-  const hasTodayData = hasTodaySnapshot(latestDate);
+function createEmptyTrackedMetric(id: string, dates = getDefaultDates()) {
+  const config = trackedMetricUiConfig[id];
 
-  const rawValue = hasTodayData ? metric.value : 0;
+  return {
+    ...config,
+    value: id === "activity" ? "0" : 0,
+    trend: emptyTrend,
+    chart: Array(dates.length).fill(0),
+    dates,
+  };
+}
+
+function normalizeTrackedMetric(
+  metric: any,
+  fallbackDates = getDefaultDates(),
+) {
+  const id = metric?.id;
+  const config = trackedMetricUiConfig[id] ?? {};
+  const dates = normalizeDates(metric?.dates ?? fallbackDates);
+  const rawValue = normalizeNumber(metric?.value);
 
   const normalizedMetric = {
-    ...metric,
     ...config,
+    ...metric,
     value: rawValue,
-    trend: hasTodayData ? metric.trend : emptyTrend,
-    chart: normalizeChart(metric.chart, latestDate),
+    trend: normalizeTrendObject(metric?.trend),
+    chart: normalizeChart(metric?.chart, dates),
+    dates,
   };
 
-  if (metric.id === "activity") {
+  if (id === "activity") {
     normalizedMetric.value = formatSteps(rawValue);
   }
 
   return normalizedMetric;
 }
 
-function normalizeCalculatedScore(score: any, latestDate?: unknown) {
-  const config = calculatedScoreUiConfig[score.id] ?? {};
-  const hasTodayData = hasTodaySnapshot(latestDate);
+function createEmptyTrackedMetrics(dates = getDefaultDates()) {
+  return Object.keys(trackedMetricUiConfig).map((id) =>
+    createEmptyTrackedMetric(id, dates),
+  );
+}
+
+function createEmptyCalculatedScore(id: string, dates = getDefaultDates()) {
+  const config = calculatedScoreUiConfig[id];
 
   return {
-    ...score,
     ...config,
-    value: hasTodayData ? score.value : 0,
-    level: hasTodayData ? score.level : "No data",
-    status: hasTodayData ? score.status : "warning",
-    chart: normalizeChart(score.chart, latestDate),
+    value: 0,
+    level: "No data",
+    status: "warning" as HomeScoreStatus,
+    chart: Array(dates.length).fill(0),
+    dates,
   };
 }
 
-function normalizeTrend(trend: any, latestDate?: unknown) {
-  const config = trendUiConfig[trend.id] ?? {};
+function normalizeCalculatedScore(
+  score: any,
+  fallbackDates = getDefaultDates(),
+) {
+  const id = score?.id;
+  const config = calculatedScoreUiConfig[id] ?? {};
+  const dates = normalizeDates(score?.dates ?? fallbackDates);
 
   return {
-    ...trend,
     ...config,
-    data: normalizeChart(trend.data, latestDate),
+    ...score,
+    value: normalizeValue(score?.value),
+    level: typeof score?.level === "string" ? score.level : "No data",
+    status: normalizeScoreStatus(score?.status),
+    chart: normalizeChart(score?.chart, dates),
+    dates,
+  };
+}
+
+function createEmptyCalculatedScores(dates = getDefaultDates()) {
+  return Object.keys(calculatedScoreUiConfig).map((id) =>
+    createEmptyCalculatedScore(id, dates),
+  );
+}
+
+function createEmptyTrend(id: string, dates = getDefaultDates()) {
+  const config = trendUiConfig[id];
+
+  return {
+    ...config,
+    data: Array(dates.length).fill(0),
+    dates,
+  };
+}
+
+function normalizeTrend(trend: any, fallbackDates = getDefaultDates()) {
+  const id = trend?.id;
+  const config = trendUiConfig[id] ?? {};
+  const dates = normalizeDates(trend?.dates ?? fallbackDates);
+
+  return {
+    ...config,
+    ...trend,
+    data: normalizeChart(trend?.data, dates),
+    dates,
+  };
+}
+
+function createEmptyTrends(dates = getDefaultDates()) {
+  return Object.keys(trendUiConfig).map((id) => createEmptyTrend(id, dates));
+}
+
+function createEmptyHomeDashboardData(
+  dates = getDefaultDates(),
+): HomeDashboardData {
+  return {
+    user: {
+      username: "",
+      gender: "",
+      dateOfBirth: "",
+      education: "",
+      employment: "",
+    },
+
+    mentalHealthScore: createEmptyMentalHealthScore(),
+
+    trackedMetrics: createEmptyTrackedMetrics(dates),
+
+    calculatedScores: createEmptyCalculatedScores(dates),
+
+    trends: createEmptyTrends(dates),
+
+    achievements: [],
+
+    articles: [],
   };
 }
 
 export async function getHomeDashboardData(): Promise<HomeDashboardData> {
-  if (USE_MOCK_HOME_DATA) {
-    return mockHomeData;
-  }
+  const defaultDates = getDefaultDates();
 
   try {
     const api = await import("@/services/apiI");
 
     const [
-      mentalHealthResponse,
-      trackedMetricsResponse,
-      calculatedScoresResponse,
-      trendsResponse,
-    ] = await Promise.all([
+      mentalHealthResult,
+      trackedMetricsResult,
+      calculatedScoresResult,
+      trendsResult,
+    ] = await Promise.allSettled([
       api.default.get("/data/mentalHealthScore"),
       api.default.get("/data/trackedMetrics"),
       api.default.get("/data/calculatedScores"),
       api.default.get("/data/trends"),
     ]);
 
-    const mentalHealthLatestDate =
-      mentalHealthResponse.data?.latestDate ?? null;
-
-    const trackedMetricsLatestDate =
-      trackedMetricsResponse.data?.latestDate ?? null;
-
-    const calculatedScoresLatestDate =
-      calculatedScoresResponse.data?.latestDate ?? null;
-
-    const trendsLatestDate = trendsResponse.data?.latestDate ?? null;
-
-    const mentalHealthScore = normalizeMentalHealthScore(
-      mentalHealthResponse.data?.mentalHealthScore ??
-        mockHomeData.mentalHealthScore,
-      mentalHealthLatestDate,
+    const mentalHealthData = getResponseData<any>(
+      mentalHealthResult,
+      "mentalHealthScore",
     );
 
-    const trackedMetrics = Array.isArray(
-      trackedMetricsResponse.data?.trackedMetrics,
-    )
-      ? trackedMetricsResponse.data.trackedMetrics.map((metric: any) =>
-          normalizeTrackedMetric(metric, trackedMetricsLatestDate),
+    const trackedMetricsData = getResponseData<any>(
+      trackedMetricsResult,
+      "trackedMetrics",
+    );
+
+    const calculatedScoresData = getResponseData<any>(
+      calculatedScoresResult,
+      "calculatedScores",
+    );
+
+    const trendsData = getResponseData<any>(trendsResult, "trends");
+
+    const dates = normalizeDates(
+      trackedMetricsData?.dates ??
+        trendsData?.dates ??
+        calculatedScoresData?.dates ??
+        mentalHealthData?.dates ??
+        defaultDates,
+    );
+
+    const mentalHealthScore = normalizeMentalHealthScore(
+      mentalHealthData?.mentalHealthScore,
+    );
+
+    const trackedMetrics = Array.isArray(trackedMetricsData?.trackedMetrics)
+      ? trackedMetricsData.trackedMetrics.map((metric: any) =>
+          normalizeTrackedMetric(metric, dates),
         )
-      : mockHomeData.trackedMetrics;
+      : createEmptyTrackedMetrics(dates);
 
     const calculatedScores = Array.isArray(
-      calculatedScoresResponse.data?.calculatedScores,
+      calculatedScoresData?.calculatedScores,
     )
-      ? calculatedScoresResponse.data.calculatedScores.map((score: any) =>
-          normalizeCalculatedScore(score, calculatedScoresLatestDate),
+      ? calculatedScoresData.calculatedScores.map((score: any) =>
+          normalizeCalculatedScore(score, dates),
         )
-      : mockHomeData.calculatedScores;
+      : createEmptyCalculatedScores(dates);
 
-    const trends = Array.isArray(trendsResponse.data?.trends)
-      ? trendsResponse.data.trends.map((trend: any) =>
-          normalizeTrend(trend, trendsLatestDate),
-        )
-      : mockHomeData.trends;
+    const trends = Array.isArray(trendsData?.trends)
+      ? trendsData.trends.map((trend: any) => normalizeTrend(trend, dates))
+      : createEmptyTrends(dates);
 
     return {
-      ...mockHomeData,
+      user: {
+        username: "",
+        gender: "",
+        dateOfBirth: "",
+        education: "",
+        employment: "",
+      },
 
       mentalHealthScore,
+
       trackedMetrics,
+
       calculatedScores,
+
       trends,
 
-      // To backend še ne vrača
-      achievements: mockHomeData.achievements,
-      articles: mockHomeData.articles,
+      achievements: [],
+
+      articles: [],
     };
   } catch (error) {
-    console.log("Home data fetch failed, using mock data:", {
+    console.log("Home data fetch failed, using empty dashboard data:", {
       message: (error as any)?.message,
       status: (error as any)?.response?.status,
       data: (error as any)?.response?.data,
     });
 
-    return mockHomeData;
+    return createEmptyHomeDashboardData(defaultDates);
   }
 }

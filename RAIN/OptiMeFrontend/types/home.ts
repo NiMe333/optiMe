@@ -59,6 +59,11 @@ export type HomeTrackedMetric = {
   };
 
   chart: number[];
+
+  // Datumi za vrednosti v chart arrayu.
+  // Primer: chart[0] pripada dates[0].
+  dates?: string[];
+
   color: string;
 };
 
@@ -73,6 +78,10 @@ export type HomeCalculatedScore = {
 
   subtitle: string;
   chart: number[];
+
+  // Datumi za vrednosti v chart arrayu.
+  dates?: string[];
+
   color: string;
 };
 
@@ -81,6 +90,9 @@ export type HomeTrendSeries = {
   label: string;
   color: string;
   data: number[];
+
+  // Datumi za vrednosti v data arrayu.
+  dates?: string[];
 };
 
 export type HomeAchievement = {
