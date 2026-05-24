@@ -30,10 +30,15 @@ export default function MentalHealthScoreCard({
   mobile = false,
   onMenuPress,
 }: MentalHealthScoreCardProps) {
-  const changeIsPositive = score.changeFromLastWeek >= 0;
-  const changeSymbol = changeIsPositive ? "↑" : "↓";
-  const absoluteChange = Math.abs(score.changeFromLastWeek);
+  const scoreValue = score.value ?? 0;
+  const changeFromLastWeek = score.changeFromLastWeek ?? 0;
 
+  const hasScoreData = score.value !== null;
+  const hasChangeData = score.changeFromLastWeek !== null;
+
+  const changeIsPositive = changeFromLastWeek >= 0;
+  const changeSymbol = changeIsPositive ? "↑" : "↓";
+  const absoluteChange = Math.abs(changeFromLastWeek);
   return (
     <View
       style={
@@ -49,8 +54,8 @@ export default function MentalHealthScoreCard({
       </View>
 
       <ScoreDonutChart
-        value={score.value}
-        label={score.label}
+        value={scoreValue}
+        label={hasScoreData ? score.label : "No data"}
         status={score.status}
         mobile={mobile}
       />
@@ -63,13 +68,21 @@ export default function MentalHealthScoreCard({
         <Text
           style={[
             componentStyles.scoreChangeText,
-            { color: changeIsPositive ? colors.green : colors.red },
+            {
+              color: hasChangeData
+                ? changeIsPositive
+                  ? colors.green
+                  : colors.red
+                : colors.white,
+            },
           ]}
         >
-          {changeSymbol} {absoluteChange} pts
+          {hasChangeData ? `${changeSymbol} ${absoluteChange} pts` : "No data"}
         </Text>
 
-        <Text style={componentStyles.scoreChangeMuted}> from last week</Text>
+        {hasChangeData && (
+          <Text style={componentStyles.scoreChangeMuted}> from last week</Text>
+        )}
       </View>
     </View>
   );

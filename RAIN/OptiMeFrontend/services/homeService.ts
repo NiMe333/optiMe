@@ -2,9 +2,10 @@ import type {
   HomeDashboardData,
   HomeScoreStatus,
   HomeTrendDirection,
+  NullableNumber,
 } from "@/types/home";
 
-const DAYS_TO_SHOW = 6;
+const DAYS_TO_SHOW = 7;
 
 const homeColors = {
   blue: "#2D7EF7",
@@ -203,6 +204,10 @@ function getDefaultDates() {
   });
 }
 
+function getTodayKey() {
+  return getDateKey(new Date());
+}
+
 function normalizeDates(dates?: unknown) {
   if (!Array.isArray(dates)) {
     return getDefaultDates();
@@ -219,39 +224,90 @@ function normalizeDates(dates?: unknown) {
   return normalizedDates.slice(-DAYS_TO_SHOW);
 }
 
-function normalizeNumber(value: unknown) {
+function normalizeNullableNumber(value: unknown): NullableNumber {
   if (typeof value === "number" && !Number.isNaN(value)) {
     return value;
   }
 
-  return 0;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
 }
 
-function normalizeValue(value: unknown) {
-  if (typeof value === "string") {
+function normalizeRequiredNumber(value: unknown) {
+  return normalizeNullableNumber(value) ?? 0;
+}
+
+function normalizeDisplayValue(value: unknown): string | number | null {
+  if (typeof value === "string" && value.trim() !== "") {
     return value;
   }
 
-  return normalizeNumber(value);
+  return normalizeNullableNumber(value);
 }
 
-function normalizeChart(chart?: unknown, dates?: string[]) {
-  const targetLength = dates?.length || DAYS_TO_SHOW;
+function normalizeChartByDate(
+  chart: unknown,
+  dates: string[],
+  source: string,
+): NullableNumber[] {
+  const targetLength = dates.length;
 
   if (!Array.isArray(chart)) {
-    return Array(targetLength).fill(0);
+    console.log(
+      `[HOME DATA] ${source}: backend did not return chart/data array`,
+    );
+
+    return Array(targetLength).fill(null);
   }
 
-  const normalizedChart = chart.map(normalizeNumber);
+  const values = chart.map(normalizeNullableNumber);
 
-  if (normalizedChart.length >= targetLength) {
-    return normalizedChart.slice(-targetLength);
+  let normalizedValues: NullableNumber[];
+
+  if (values.length === targetLength) {
+    normalizedValues = values;
+  } else if (values.length > targetLength) {
+    normalizedValues = values.slice(-targetLength);
+
+    console.log(`[HOME DATA] ${source}: backend returned too many values`, {
+      received: values.length,
+      expected: targetLength,
+      usedValues: normalizedValues,
+    });
+  } else {
+    const missingCount = targetLength - values.length;
+
+    normalizedValues = [...Array(missingCount).fill(null), ...values];
+
+    console.log(`[HOME DATA] ${source}: backend returned too few values`, {
+      received: values.length,
+      expected: targetLength,
+      paddedWithNullAtStart: missingCount,
+    });
   }
 
-  return [
-    ...Array(targetLength - normalizedChart.length).fill(0),
-    ...normalizedChart,
-  ];
+  console.table(
+    dates.map((date, index) => ({
+      source,
+      date,
+      value: normalizedValues[index],
+    })),
+  );
+
+  normalizedValues.forEach((value, index) => {
+    if (value === null) {
+      console.log(`[HOME DATA] Missing value for ${source} on ${dates[index]}`);
+    }
+  });
+
+  return normalizedValues;
 }
 
 function normalizeTrendObject(trend: any): {
@@ -265,13 +321,17 @@ function normalizeTrendObject(trend: any): {
 
   return {
     direction: normalizeTrendDirection(trend.direction),
-    value: normalizeNumber(trend.value),
+    value: normalizeRequiredNumber(trend.value),
     isGood: typeof trend.isGood === "boolean" ? trend.isGood : true,
   };
 }
 
 function formatSteps(value: unknown) {
-  const numberValue = normalizeNumber(value);
+  const numberValue = normalizeNullableNumber(value);
+
+  if (numberValue === null) {
+    return null;
+  }
 
   return numberValue.toLocaleString("en-US");
 }
@@ -281,50 +341,67 @@ function getResponseData<T>(
   key: string,
 ): T | null {
   if (result.status !== "fulfilled") {
-    console.log(`${key} failed:`, {
+    console.log(`[HOME DATA] ${key} request failed:`, {
       message: result.reason?.message,
       status: result.reason?.response?.status,
       data: result.reason?.response?.data,
+      url: result.reason?.config?.url,
     });
 
     return null;
   }
 
+  console.log(`[HOME DATA] ${key} raw response:`, result.value?.data);
+
   return result.value?.data ?? null;
 }
 
-function createEmptyMentalHealthScore(): HomeDashboardData["mentalHealthScore"] {
+function createEmptyMentalHealthScore(
+  date = getTodayKey(),
+): HomeDashboardData["mentalHealthScore"] {
   return {
-    value: 0,
+    value: null,
     label: "No data",
     status: "warning",
-    changeFromLastWeek: 0,
+    changeFromLastWeek: null,
+    date,
   };
 }
 
 function normalizeMentalHealthScore(
   score: any,
+  date = getTodayKey(),
 ): HomeDashboardData["mentalHealthScore"] {
   if (!score) {
-    return createEmptyMentalHealthScore();
+    console.log(`[HOME DATA] mentalHealthScore: no data for ${date}`);
+
+    return createEmptyMentalHealthScore(date);
   }
 
   return {
-    value: normalizeNumber(score.value),
+    value: normalizeNullableNumber(score.value),
     label: typeof score.label === "string" ? score.label : "No data",
     status: normalizeScoreStatus(score.status),
-    changeFromLastWeek: normalizeNumber(score.changeFromLastWeek),
+    changeFromLastWeek: normalizeNullableNumber(score.changeFromLastWeek),
+    date: typeof score.date === "string" ? score.date : date,
   };
 }
 
-function createEmptyTrackedMetric(id: string, dates = getDefaultDates()) {
+function createEmptyTrackedMetric(
+  id: string,
+  dates = getDefaultDates(),
+): HomeDashboardData["trackedMetrics"][number] {
   const config = trackedMetricUiConfig[id];
+
+  console.log(
+    `[HOME DATA] trackedMetrics.${id}: backend did not return metric`,
+  );
 
   return {
     ...config,
-    value: id === "activity" ? "0" : 0,
+    value: null,
     trend: emptyTrend,
-    chart: Array(dates.length).fill(0),
+    chart: Array(dates.length).fill(null),
     dates,
   };
 }
@@ -332,23 +409,40 @@ function createEmptyTrackedMetric(id: string, dates = getDefaultDates()) {
 function normalizeTrackedMetric(
   metric: any,
   fallbackDates = getDefaultDates(),
-) {
+): HomeDashboardData["trackedMetrics"][number] {
   const id = metric?.id;
   const config = trackedMetricUiConfig[id] ?? {};
   const dates = normalizeDates(metric?.dates ?? fallbackDates);
-  const rawValue = normalizeNumber(metric?.value);
 
-  const normalizedMetric = {
+  const rawValue = normalizeNullableNumber(metric?.value);
+
+  const normalizedMetric: HomeDashboardData["trackedMetrics"][number] = {
     ...config,
     ...metric,
     value: rawValue,
     trend: normalizeTrendObject(metric?.trend),
-    chart: normalizeChart(metric?.chart, dates),
+    chart: normalizeChartByDate(metric?.chart, dates, `trackedMetrics.${id}`),
     dates,
   };
 
   if (id === "activity") {
     normalizedMetric.value = formatSteps(rawValue);
+  }
+
+  const today = getTodayKey();
+  const todayIndex = dates.indexOf(today);
+
+  if (todayIndex !== -1) {
+    console.log(`[HOME DATA] Today value for trackedMetrics.${id}:`, {
+      date: today,
+      valueFromCard: normalizedMetric.value,
+      valueFromChart: normalizedMetric.chart[todayIndex],
+    });
+  } else {
+    console.log(
+      `[HOME DATA] Today (${today}) is not included in trackedMetrics.${id} dates`,
+      dates,
+    );
   }
 
   return normalizedMetric;
@@ -360,15 +454,22 @@ function createEmptyTrackedMetrics(dates = getDefaultDates()) {
   );
 }
 
-function createEmptyCalculatedScore(id: string, dates = getDefaultDates()) {
+function createEmptyCalculatedScore(
+  id: string,
+  dates = getDefaultDates(),
+): HomeDashboardData["calculatedScores"][number] {
   const config = calculatedScoreUiConfig[id];
+
+  console.log(
+    `[HOME DATA] calculatedScores.${id}: backend did not return calculated score`,
+  );
 
   return {
     ...config,
-    value: 0,
+    value: null,
     level: "No data",
-    status: "warning" as HomeScoreStatus,
-    chart: Array(dates.length).fill(0),
+    status: "warning",
+    chart: Array(dates.length).fill(null),
     dates,
   };
 }
@@ -376,20 +477,22 @@ function createEmptyCalculatedScore(id: string, dates = getDefaultDates()) {
 function normalizeCalculatedScore(
   score: any,
   fallbackDates = getDefaultDates(),
-) {
+): HomeDashboardData["calculatedScores"][number] {
   const id = score?.id;
   const config = calculatedScoreUiConfig[id] ?? {};
   const dates = normalizeDates(score?.dates ?? fallbackDates);
 
-  return {
+  const normalizedScore: HomeDashboardData["calculatedScores"][number] = {
     ...config,
     ...score,
-    value: normalizeValue(score?.value),
+    value: normalizeDisplayValue(score?.value),
     level: typeof score?.level === "string" ? score.level : "No data",
     status: normalizeScoreStatus(score?.status),
-    chart: normalizeChart(score?.chart, dates),
+    chart: normalizeChartByDate(score?.chart, dates, `calculatedScores.${id}`),
     dates,
   };
+
+  return normalizedScore;
 }
 
 function createEmptyCalculatedScores(dates = getDefaultDates()) {
@@ -398,27 +501,37 @@ function createEmptyCalculatedScores(dates = getDefaultDates()) {
   );
 }
 
-function createEmptyTrend(id: string, dates = getDefaultDates()) {
+function createEmptyTrend(
+  id: string,
+  dates = getDefaultDates(),
+): HomeDashboardData["trends"][number] {
   const config = trendUiConfig[id];
+
+  console.log(`[HOME DATA] trends.${id}: backend did not return trend`);
 
   return {
     ...config,
-    data: Array(dates.length).fill(0),
+    data: Array(dates.length).fill(null),
     dates,
   };
 }
 
-function normalizeTrend(trend: any, fallbackDates = getDefaultDates()) {
+function normalizeTrend(
+  trend: any,
+  fallbackDates = getDefaultDates(),
+): HomeDashboardData["trends"][number] {
   const id = trend?.id;
   const config = trendUiConfig[id] ?? {};
   const dates = normalizeDates(trend?.dates ?? fallbackDates);
 
-  return {
+  const normalizedTrend: HomeDashboardData["trends"][number] = {
     ...config,
     ...trend,
-    data: normalizeChart(trend?.data, dates),
+    data: normalizeChartByDate(trend?.data, dates, `trends.${id}`),
     dates,
   };
+
+  return normalizedTrend;
 }
 
 function createEmptyTrends(dates = getDefaultDates()) {
@@ -449,6 +562,43 @@ function createEmptyHomeDashboardData(
 
     articles: [],
   };
+}
+
+function logNormalizedHomeData(data: HomeDashboardData) {
+  console.groupCollapsed("[HOME DATA] Normalized frontend data");
+
+  console.log("mentalHealthScore:", data.mentalHealthScore);
+
+  console.table(
+    data.trackedMetrics.map((metric) => ({
+      id: metric.id,
+      value: metric.value,
+      dates: metric.dates?.join(", "),
+      chart: metric.chart.join(", "),
+    })),
+  );
+
+  console.table(
+    data.calculatedScores.map((score) => ({
+      id: score.id,
+      value: score.value,
+      level: score.level,
+      status: score.status,
+      dates: score.dates?.join(", "),
+      chart: score.chart.join(", "),
+    })),
+  );
+
+  console.table(
+    data.trends.map((trend) => ({
+      id: trend.id,
+      label: trend.label,
+      dates: trend.dates?.join(", "),
+      data: trend.data.join(", "),
+    })),
+  );
+
+  console.groupEnd();
 }
 
 export async function getHomeDashboardData(): Promise<HomeDashboardData> {
@@ -494,8 +644,11 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
         defaultDates,
     );
 
+    console.log("[HOME DATA] Final dates used on frontend:", dates);
+
     const mentalHealthScore = normalizeMentalHealthScore(
       mentalHealthData?.mentalHealthScore,
+      getTodayKey(),
     );
 
     const trackedMetrics = Array.isArray(trackedMetricsData?.trackedMetrics)
@@ -516,7 +669,7 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
       ? trendsData.trends.map((trend: any) => normalizeTrend(trend, dates))
       : createEmptyTrends(dates);
 
-    return {
+    const homeData: HomeDashboardData = {
       user: {
         username: "",
         gender: "",
@@ -526,24 +679,28 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
       },
 
       mentalHealthScore,
-
       trackedMetrics,
-
       calculatedScores,
-
       trends,
 
       achievements: [],
-
       articles: [],
     };
+
+    logNormalizedHomeData(homeData);
+
+    return homeData;
   } catch (error) {
-    console.log("Home data fetch failed, using empty dashboard data:", {
+    console.log("[HOME DATA] Home data fetch crashed completely:", {
       message: (error as any)?.message,
       status: (error as any)?.response?.status,
       data: (error as any)?.response?.data,
     });
 
-    return createEmptyHomeDashboardData(defaultDates);
+    const emptyData = createEmptyHomeDashboardData(defaultDates);
+
+    logNormalizedHomeData(emptyData);
+
+    return emptyData;
   }
 }

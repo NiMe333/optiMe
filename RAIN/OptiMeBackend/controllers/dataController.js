@@ -77,7 +77,7 @@ function getHasDataByDate(days) {
   return days.map((day) => day.hasData);
 }
 
-function getNumber(day, field, fallback = 0) {
+function getNumber(day, field, fallback = null) {
   const value = day?.snapshot?.[field];
 
   if (typeof value === "number" && !Number.isNaN(value)) {
@@ -103,10 +103,10 @@ function getSocialConnection(day) {
 function buildArray(days, field) {
   return days.map((day) => {
     if (!day.hasData) {
-      return 0;
+      return null;
     }
 
-    return getNumber(day, field, 0);
+    return getNumber(day, field, null);
   });
 }
 
@@ -301,16 +301,29 @@ exports.trackedMetricsData = async function (req, res) {
     const moodArray = buildArray(days, "mood");
     const stressArray = buildArray(days, "stress");
 
+    console.table(
+      days.map((day, index) => ({
+        date: day.dateKey,
+        hasData: day.hasData,
+        sleepHours: sleepArray[index],
+        steps: activityArray[index],
+        screenTimeHours: screenTimeArray[index],
+        socialConnection: socialArray[index],
+        mood: moodArray[index],
+        stress: stressArray[index],
+      })),
+    );
+
     const trackedMetrics = [
       {
         id: "sleep",
         title: "Sleep",
-        value: getNumber(today, "sleepHours", 0),
+        value: getNumber(today, "sleepHours", null),
         suffix: "h",
         subtitle: "Sleep hours",
         trend: calculateTrend(
-          getNumber(today, "sleepHours", 0),
-          getNumber(previousDay, "sleepHours", 0),
+          getNumber(today, "sleepHours", null),
+          getNumber(previousDay, "sleepHours", null),
           true,
         ),
         chart: sleepArray,
@@ -319,11 +332,11 @@ exports.trackedMetricsData = async function (req, res) {
       {
         id: "activity",
         title: "Activity",
-        value: getNumber(today, "steps", 0),
+        value: getNumber(today, "steps", null),
         subtitle: "Steps from pedometer",
         trend: calculateTrend(
-          getNumber(today, "steps", 0),
-          getNumber(previousDay, "steps", 0),
+          getNumber(today, "steps", null),
+          getNumber(previousDay, "steps", null),
           true,
         ),
         chart: activityArray,
@@ -332,12 +345,12 @@ exports.trackedMetricsData = async function (req, res) {
       {
         id: "screen-time",
         title: "Screen Time",
-        value: getNumber(today, "screenTimeHours", 0),
+        value: getNumber(today, "screenTimeHours", null),
         suffix: "h",
         subtitle: "Device screen time",
         trend: calculateTrend(
-          getNumber(today, "screenTimeHours", 0),
-          getNumber(previousDay, "screenTimeHours", 0),
+          getNumber(today, "screenTimeHours", null),
+          getNumber(previousDay, "screenTimeHours", null),
           false,
         ),
         chart: screenTimeArray,
@@ -360,12 +373,12 @@ exports.trackedMetricsData = async function (req, res) {
       {
         id: "mood",
         title: "Mood",
-        value: getNumber(today, "mood", 0),
+        value: getNumber(today, "mood", null),
         suffix: "/5",
         subtitle: "Mood check-in",
         trend: calculateTrend(
-          getNumber(today, "mood", 0),
-          getNumber(previousDay, "mood", 0),
+          getNumber(today, "mood", null),
+          getNumber(previousDay, "mood", null),
           true,
         ),
         chart: moodArray,
@@ -374,18 +387,31 @@ exports.trackedMetricsData = async function (req, res) {
       {
         id: "stress",
         title: "Stress",
-        value: getNumber(today, "stress", 0),
+        value: getNumber(today, "stress", null),
         suffix: "/5",
         subtitle: "Baseline stress level",
         trend: calculateTrend(
-          getNumber(today, "stress", 0),
-          getNumber(previousDay, "stress", 0),
+          getNumber(today, "stress", null),
+          getNumber(previousDay, "stress", null),
           false,
         ),
         chart: stressArray,
         dates,
       },
     ];
+
+    console.log(
+      "TRACKED METRICS RESPONSE:",
+      JSON.stringify(
+        {
+          dates,
+          hasDataByDate: getHasDataByDate(days),
+          trackedMetrics,
+        },
+        null,
+        2,
+      ),
+    );
 
     return res.json({
       success: true,

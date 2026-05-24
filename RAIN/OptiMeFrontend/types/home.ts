@@ -4,6 +4,8 @@ export type HomeMetricSource = "measured" | "entered" | "calculated";
 
 export type HomeScoreStatus = "healthy" | "okay" | "warning" | "critical";
 
+export type NullableNumber = number | null;
+
 export type HomeDashboardData = {
   user: {
     username: string;
@@ -14,10 +16,11 @@ export type HomeDashboardData = {
   };
 
   mentalHealthScore: {
-    value: number;
+    value: NullableNumber;
     label: string;
     status: HomeScoreStatus;
-    changeFromLastWeek: number;
+    changeFromLastWeek: NullableNumber;
+    date?: string;
   };
 
   trackedMetrics: HomeTrackedMetric[];
@@ -42,9 +45,9 @@ export type HomeTrackedMetric = {
   source: HomeMetricSource;
 
   valueLabel?: string;
-  value: string | number;
+  value: string | number | null;
 
-  secondValue?: string | number;
+  secondValue?: string | number | null;
   secondLabel?: string;
 
   suffix?: string;
@@ -58,10 +61,7 @@ export type HomeTrackedMetric = {
     isGood: boolean;
   };
 
-  chart: number[];
-
-  // Datumi za vrednosti v chart arrayu.
-  // Primer: chart[0] pripada dates[0].
+  chart: NullableNumber[];
   dates?: string[];
 
   color: string;
@@ -70,16 +70,14 @@ export type HomeTrackedMetric = {
 export type HomeCalculatedScore = {
   id: string;
   title: string;
-  value: string | number;
+  value: string | number | null;
   suffix?: string;
 
   level?: string;
   status?: HomeScoreStatus;
 
   subtitle: string;
-  chart: number[];
-
-  // Datumi za vrednosti v chart arrayu.
+  chart: NullableNumber[];
   dates?: string[];
 
   color: string;
@@ -89,9 +87,7 @@ export type HomeTrendSeries = {
   id: string;
   label: string;
   color: string;
-  data: number[];
-
-  // Datumi za vrednosti v data arrayu.
+  data: NullableNumber[];
   dates?: string[];
 };
 
