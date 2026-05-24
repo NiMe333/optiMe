@@ -22,7 +22,7 @@ const homeColors = {
   yellowSoft: "#FFF8E6",
 };
 
-const hardcodedAchievements = [
+const hardcodedAchievements: HomeDashboardData["achievements"] = [
   {
     id: "sleep-balance",
     title: "Sleep Balance",
@@ -49,7 +49,7 @@ const hardcodedAchievements = [
   },
 ];
 
-const hardcodedArticles = [
+const hardcodedArticles: HomeDashboardData["articles"] = [
   {
     id: "screen-time-mind",
     category: "MENTAL HEALTH",
@@ -553,9 +553,9 @@ function createEmptyHomeDashboardData(
 
     trends: createEmptyTrends(dates),
 
-    achievements: [],
+    achievements: hardcodedAchievements,
 
-    articles: [],
+    articles: hardcodedArticles,
   };
 }
 
@@ -626,12 +626,16 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
       },
 
       mentalHealthScore,
+
       trackedMetrics,
+
       calculatedScores,
+
       trends,
 
-      achievements: [],
-      articles: [],
+      achievements: hardcodedAchievements,
+
+      articles: hardcodedArticles,
     };
   } catch {
     return createEmptyHomeDashboardData(defaultDates);
