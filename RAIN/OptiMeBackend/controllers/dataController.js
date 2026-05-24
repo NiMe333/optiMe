@@ -167,6 +167,7 @@ exports.mentalHealthData = async function (req, res) {
     return res.json({
       success: true,
       message: "Mental health score retrieval successful",
+      latestDate: snapshots[0]?.date ?? null,
       mentalHealthScore,
     });
   } catch (err) {
@@ -289,6 +290,7 @@ exports.trackedMetricsData = async function (req, res) {
     return res.json({
       success: true,
       message: "Tracked metrics data retrieval successful",
+      latestDate: snapshots[0]?.date ?? null,
       trackedMetrics,
     });
   } catch (err) {
@@ -366,6 +368,7 @@ exports.calculatedScoresData = async function (req, res) {
     return res.json({
       success: true,
       message: "Calculated scores retrieval successful",
+      latestDate: snapshots[0]?.date ?? null,
       calculatedScores,
     });
   } catch (err) {
@@ -431,6 +434,7 @@ exports.trendsData = async function (req, res) {
     return res.json({
       success: true,
       message: "Trends retrieval successful",
+      latestDate: snapshots[0]?.date ?? null,
       trends,
     });
   } catch (err) {
