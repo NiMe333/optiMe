@@ -5,9 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Index() {
   const { user, authLoading } = useAuth();
-  const isLoggedIn = false;
   usePedometer();
-
 
   if (authLoading) {
     return (

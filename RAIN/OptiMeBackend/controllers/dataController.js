@@ -256,19 +256,36 @@ function calculateMentalHealthScore(day) {
     return null;
   }
 
-  const scores = [
-    getPositiveScore(day, "mood"),
-    getInvertedScore(day, "stress"),
-    getInvertedScore(day, "anxiety"),
-  ].filter((value) => typeof value === "number" && !Number.isNaN(value));
-
-  if (!scores.length) {
-    return null;
-  }
-
-  return Math.round(
-    scores.reduce((sum, value) => sum + value, 0) / scores.length,
-  );
+  return weightedAverage([
+    {
+      score: getPositiveScore(day, "mood"),
+      weight: 0.25,
+    },
+    {
+      score: getInvertedScore(day, "stress"),
+      weight: 0.2,
+    },
+    {
+      score: getInvertedScore(day, "anxiety"),
+      weight: 0.2,
+    },
+    {
+      score: getSleepScore(day),
+      weight: 0.15,
+    },
+    {
+      score: getSocialScore(day),
+      weight: 0.1,
+    },
+    {
+      score: getStepsScore(day),
+      weight: 0.05,
+    },
+    {
+      score: getScreenTimeScore(day),
+      weight: 0.05,
+    },
+  ]);
 }
 
 function multiplyOrNull(value, multiplier) {
@@ -279,14 +296,114 @@ function multiplyOrNull(value, multiplier) {
   return Math.round(value * multiplier);
 }
 
+function weightedAverage(items) {
+  const validItems = items.filter(
+    (item) =>
+      typeof item.score === "number" &&
+      !Number.isNaN(item.score) &&
+      typeof item.weight === "number" &&
+      item.weight > 0,
+  );
+
+  if (!validItems.length) {
+    return null;
+  }
+
+  const weightedSum = validItems.reduce(
+    (sum, item) => sum + item.score * item.weight,
+    0,
+  );
+
+  const totalWeight = validItems.reduce((sum, item) => sum + item.weight, 0);
+
+  return Math.round(weightedSum / totalWeight);
+}
+
+function getSleepScore(day) {
+  const sleepHours = getNumber(day, "sleepHours", null);
+
+  if (typeof sleepHours !== "number" || Number.isNaN(sleepHours)) {
+    return null;
+  }
+
+  // Idealno: 7-9h = 100
+  if (sleepHours >= 7 && sleepHours <= 9) {
+    return 100;
+  }
+
+  // Malo premalo / preveč
+  if (sleepHours >= 6 && sleepHours < 7) {
+    return 80;
+  }
+
+  if (sleepHours > 9 && sleepHours <= 10) {
+    return 80;
+  }
+
+  // Slabše
+  if (sleepHours >= 5 && sleepHours < 6) {
+    return 60;
+  }
+
+  if (sleepHours > 10 && sleepHours <= 11) {
+    return 60;
+  }
+
+  if (sleepHours >= 4 && sleepHours < 5) {
+    return 40;
+  }
+
+  return 20;
+}
+
+function getStepsScore(day) {
+  const steps = getNumber(day, "steps", null);
+
+  if (typeof steps !== "number" || Number.isNaN(steps)) {
+    return null;
+  }
+
+  // 8000+ korakov = 100
+  return clampScore((steps / 8000) * 100);
+}
+
+function getScreenTimeScore(day) {
+  const screenTimeHours = getNumber(day, "screenTimeHours", null);
+
+  if (typeof screenTimeHours !== "number" || Number.isNaN(screenTimeHours)) {
+    return null;
+  }
+
+  // Manj screen time = boljše.
+  // 0h = 100, 8h+ = 0
+  return clampScore(100 - (screenTimeHours / 8) * 100);
+}
+
+function getSocialScore(day) {
+  const socialConnection = getSocialConnection(day);
+
+  if (typeof socialConnection !== "number" || Number.isNaN(socialConnection)) {
+    return null;
+  }
+
+  return clampScore(socialConnection * 20);
+}
+
 exports.mentalHealthData = async function (req, res) {
   try {
     const days = await getDashboardDays(req.user.userId);
 
-    const today = days[days.length - 1];
-    const previousDay = days[days.length - 2] || today;
+    const currentDay =
+      [...days].reverse().find((day) => day.hasData) || days[days.length - 1];
 
-    const currentScore = calculateMentalHealthScore(today);
+    const currentDayIndex = days.findIndex(
+      (day) => day.dateKey === currentDay.dateKey,
+    );
+
+    const previousDay =
+      currentDayIndex > 0 ? days[currentDayIndex - 1] : currentDay;
+
+    const currentScore = calculateMentalHealthScore(currentDay);
     const previousScore = calculateMentalHealthScore(previousDay);
 
     const hasCurrentScore = typeof currentScore === "number";
@@ -300,6 +417,7 @@ exports.mentalHealthData = async function (req, res) {
         hasCurrentScore && hasPreviousScore
           ? currentScore - previousScore
           : null,
+      date: currentDay.dateKey,
     };
 
     return res.json({
