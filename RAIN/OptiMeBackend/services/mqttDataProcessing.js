@@ -90,10 +90,11 @@ function connectMqtt() {
     try {
       const data = parseStepsMessage(topic, message);
 
+      console.log("MQTT message received");
       console.log("Topic:", topic);
       console.log("User ID:", data.userId);
       console.log("Steps:", data.steps);
-      console.log("Date:", data.startOfDay);
+      console.log("Start of day:", data.startOfDay);
 
       const result = await UserSnapshot.updateOne(
         {

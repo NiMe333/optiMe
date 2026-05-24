@@ -259,15 +259,15 @@ function calculateMentalHealthScore(day) {
   return weightedAverage([
     {
       score: getPositiveScore(day, "mood"),
-      weight: 0.25,
+      weight: 0.22,
     },
     {
       score: getInvertedScore(day, "stress"),
-      weight: 0.2,
+      weight: 0.18,
     },
     {
       score: getInvertedScore(day, "anxiety"),
-      weight: 0.2,
+      weight: 0.18,
     },
     {
       score: getSleepScore(day),
@@ -279,7 +279,7 @@ function calculateMentalHealthScore(day) {
     },
     {
       score: getStepsScore(day),
-      weight: 0.05,
+      weight: 0.12,
     },
     {
       score: getScreenTimeScore(day),
