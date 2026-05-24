@@ -119,6 +119,7 @@ exports.login = async function (req, res) {
     }
 
     const accessToken = Auth.createAccessToken(user);
+
     const refreshToken = Auth.createRefreshToken(user);
 
     await Auth.storeRefreshToken(user, refreshToken);
@@ -310,3 +311,42 @@ exports.me = async function (req, res) {
     });
   }
 };
+
+exports.userProfile = async function (req, res) {
+  try {
+    const userId = req.user.userId || req.user.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token payload",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    const username = user.username;
+    const gender = user.gender;
+    const dateOfBirth = user.dateOfBirth;
+    const education = user.education;
+    const employment = user.employment;
+
+    return res.json({
+      success: true,
+      message: "User profile data retrieval successfull",
+      username,
+      gender,
+      dateOfBirth,
+      education,
+      employment
+    });
+
+  }
+  catch(err)
+  {
+    return res.status(500).json({
+      success: false,
+      message: "User profile data retrival failed",
+    });
+  }
+}

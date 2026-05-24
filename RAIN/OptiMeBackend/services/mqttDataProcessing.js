@@ -24,9 +24,9 @@ client.on('message', async (topic, message) => {
     console.log('Topic:', topic)
     console.log('Payload:', data)
 
-    await UserSnapshot.updateOne(
+    const result = await UserSnapshot.updateOne(
             {
-              userId: data.id,
+              userId: data.userId,
               date: new Date(data.date)
             },
             {
@@ -37,6 +37,8 @@ client.on('message', async (topic, message) => {
           );
 
     console.log("UserSnapShot updated")
+    console.log("Matched:", result.matchedCount);
+    console.log("Modified:", result.modifiedCount);
 
   } catch (err) {
 

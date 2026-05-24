@@ -2,9 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
 
-const UserStData = require('../../models/userStDataModel');
+const UserStData = require('../models/userStDataModel');
 
-const USER_DATA_DIR = path.join(__dirname, '../../userData');
+const USER_DATA_DIR = path.join(__dirname, '../userData');
 
 function detectOSType(csvContent) {
 
