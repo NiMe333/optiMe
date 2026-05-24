@@ -135,7 +135,7 @@ exports.calculatedScoresData = async function (req, res) {
     }
 }
 
-exports.TrendsData = async function (req, res) {
+exports.trendsData = async function (req, res) {
     try {
         
         const snapShot1 = await SnapshotModel.findOne({
