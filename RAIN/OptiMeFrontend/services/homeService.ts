@@ -161,10 +161,10 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
       calculatedScoresResponse,
       trendsResponse,
     ] = await Promise.all([
-      api.default.get("/home/mental-health"),
-      api.default.get("/home/tracked-metrics"),
-      api.default.get("/home/calculated-scores"),
-      api.default.get("/home/trends"),
+      api.default.get("/data/mentalHealthScore"),
+      api.default.get("/data/trackedMetrics"),
+      api.default.get("/data/calculatedScores"),
+      api.default.get("/data/trends"),
     ]);
 
     const mentalHealthScore =
@@ -197,7 +197,7 @@ export async function getHomeDashboardData(): Promise<HomeDashboardData> {
       calculatedScores,
       trends,
 
-      // To backend še ne vrača, zato zaenkrat ostane iz mock podatkov.
+      // To backend še ne vrača
       achievements: mockHomeData.achievements,
       articles: mockHomeData.articles,
     };
