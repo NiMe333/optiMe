@@ -55,11 +55,19 @@ function parseStepsMessage(topic, message) {
 
   const { startOfDay, startOfNextDay } = getDayRange(data.date);
 
+  const timestamp = data.timestamp ? new Date(data.timestamp) : new Date();
+
+  if (Number.isNaN(timestamp.getTime())) {
+    throw new Error("Invalid timestamp");
+  }
+
   return {
     userId: userIdFromTopic,
     steps,
     startOfDay,
     startOfNextDay,
+    timestamp,
+    source: data.source || "pedometer",
   };
 }
 
@@ -67,6 +75,7 @@ async function connectMongo() {
   await mongoose.connect(
     "mongodb://zigalebic02:jp8bQs3yA1FSR0sH@ac-rxpanwp-shard-00-00.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-01.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-02.yjssyxx.mongodb.net:27017/OptiMe?ssl=true&replicaSet=atlas-822hpm-shard-0&authSource=admin&appName=OptiMe",
   );
+
   console.log("MongoDB connected");
 }
 
@@ -95,6 +104,8 @@ function connectMqtt() {
       console.log("User ID:", data.userId);
       console.log("Steps:", data.steps);
       console.log("Start of day:", data.startOfDay);
+      console.log("Timestamp:", data.timestamp);
+      console.log("Source:", data.source);
 
       const result = await UserSnapshot.updateOne(
         {
@@ -105,8 +116,12 @@ function connectMqtt() {
           },
         },
         {
-          $set: {
+          $max: {
             steps: data.steps,
+            lastPedometerSyncAt: data.timestamp,
+          },
+          $set: {
+            pedometerSource: data.source,
           },
           $setOnInsert: {
             userId: data.userId,

@@ -20,6 +20,16 @@ const UserSnapshotSchema = new Schema({
   steps: { type: Number, required: false },
   screenTimeHours: { type: Number, required: false },
   socialConnection: { type: Number, required: false },
+
+  lastPedometerSyncAt: {
+    type: Date,
+    required: false,
+  },
+
+  pedometerSource: {
+    type: String,
+    required: false,
+  },
 });
 
 module.exports = mongoose.model("userSnapshots", UserSnapshotSchema);
