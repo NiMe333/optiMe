@@ -61,6 +61,7 @@ export default function usePedometer() {
 
   const latestStepsRef = useRef(0);
   const lastAckedStepsRef = useRef<number | null>(null);
+  const lastPendingStepsRef = useRef<number | null>(null);
 
   const subscriptionRef = useRef<any>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -90,6 +91,24 @@ export default function usePedometer() {
 
     let unsubscribeStepsAck: (() => void) | null = null;
     let unsubscribeMqttConnect: (() => void) | null = null;
+
+    async function savePendingIfChanged(
+      topic: string,
+      payload: PedometerPayload,
+    ) {
+      if (lastPendingStepsRef.current === payload.steps) {
+        return;
+      }
+
+      lastPendingStepsRef.current = payload.steps;
+
+      await savePendingPedometerPayload({
+        topic,
+        payload,
+      });
+
+      console.log("Pedometer saved for retry:", payload.steps);
+    }
 
     async function flushPendingPedometerPayload() {
       if (isFlushingPendingRef.current) {
@@ -136,6 +155,7 @@ export default function usePedometer() {
 
         latestStepsRef.current = Math.max(latestStepsRef.current, savedSteps);
         lastAckedStepsRef.current = latestStepsRef.current;
+        lastPendingStepsRef.current = null;
 
         setSteps(latestStepsRef.current);
 
@@ -196,12 +216,7 @@ export default function usePedometer() {
         return;
       }
 
-      await savePendingPedometerPayload({
-        topic,
-        payload,
-      });
-
-      console.log("Pedometer saved for retry:", currentSteps);
+      await savePendingIfChanged(topic, payload);
     }
 
     async function readTodaySteps() {
@@ -276,6 +291,9 @@ export default function usePedometer() {
 
           latestStepsRef.current = currentSteps;
           setSteps(currentSteps);
+
+          // Tukaj NE shranjujemo pending payload.
+          // Pošiljanje/shranjevanje se zgodi samo na 10s interval.
         });
 
         console.log("Pedometer watcher started");
