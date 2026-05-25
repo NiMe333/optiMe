@@ -3,8 +3,18 @@ import { AppState, Platform } from "react-native";
 import { Pedometer } from "expo-sensors";
 
 import { useAuth } from "@/context/AuthContext";
-import { publishJson, subscribeJson } from "@/services/mqttClient";
+import {
+  publishJson,
+  subscribeJson,
+  onMqttConnect,
+} from "@/services/mqttClient";
 import { notifyPedometerSync } from "@/services/pedometerSyncEvents";
+
+import {
+  savePendingPedometerPayload,
+  getPendingPedometerPayload,
+  clearPendingPedometerPayload,
+} from "@/services/pendingPedometerQueue";
 
 const SYNC_INTERVAL_MS = 10000;
 
@@ -16,6 +26,14 @@ type StepsAckPayload = {
   savedAt: string;
   requestTimestamp: string;
   snapshotDate: string;
+};
+
+type PedometerPayload = {
+  userId: string;
+  steps: number;
+  date: string;
+  timestamp: string;
+  source: string;
 };
 
 function formatDateForApi(date: Date) {
@@ -42,7 +60,7 @@ export default function usePedometer() {
   const [steps, setSteps] = useState(0);
 
   const latestStepsRef = useRef(0);
-  const lastPublishedStepsRef = useRef<number | null>(null);
+  const lastAckedStepsRef = useRef<number | null>(null);
 
   const subscriptionRef = useRef<any>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -51,15 +69,13 @@ export default function usePedometer() {
   const isMountedRef = useRef(true);
   const isStartingRef = useRef(false);
   const isSyncingRef = useRef(false);
+  const isFlushingPendingRef = useRef(false);
 
   useEffect(() => {
     isMountedRef.current = true;
 
     if (authLoading) return;
-
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
     const userId = getUserId(user);
 
@@ -73,10 +89,40 @@ export default function usePedometer() {
     }
 
     let unsubscribeStepsAck: (() => void) | null = null;
+    let unsubscribeMqttConnect: (() => void) | null = null;
+
+    async function flushPendingPedometerPayload() {
+      if (isFlushingPendingRef.current) {
+        return;
+      }
+
+      isFlushingPendingRef.current = true;
+
+      try {
+        const pending = await getPendingPedometerPayload();
+
+        if (!pending) {
+          return;
+        }
+
+        const published = publishJson(pending.topic, pending.payload);
+
+        if (published) {
+          console.log(
+            "Pending pedometer payload resent:",
+            pending.payload.steps,
+          );
+        }
+      } catch (err) {
+        console.log("Could not flush pending pedometer payload:", err);
+      } finally {
+        isFlushingPendingRef.current = false;
+      }
+    }
 
     unsubscribeStepsAck = subscribeJson<StepsAckPayload>(
       `users/${userId}/steps/ack`,
-      (ack) => {
+      async (ack) => {
         if (!ack.success) {
           console.log("Steps ACK failed:", ack);
           return;
@@ -89,6 +135,8 @@ export default function usePedometer() {
         }
 
         latestStepsRef.current = Math.max(latestStepsRef.current, savedSteps);
+        lastAckedStepsRef.current = latestStepsRef.current;
+
         setSteps(latestStepsRef.current);
 
         notifyPedometerSync({
@@ -97,9 +145,15 @@ export default function usePedometer() {
           timestamp: ack.savedAt,
         });
 
+        await clearPendingPedometerPayload();
+
         console.log("Steps saved by backend:", latestStepsRef.current);
       },
     );
+
+    unsubscribeMqttConnect = onMqttConnect(() => {
+      void flushPendingPedometerPayload();
+    });
 
     function stopWatcher() {
       if (subscriptionRef.current) {
@@ -120,14 +174,14 @@ export default function usePedometer() {
       stopInterval();
     }
 
-    function publishSteps(currentSteps: number, force = false) {
-      if (!force && lastPublishedStepsRef.current === currentSteps) {
+    async function publishSteps(currentSteps: number, force = false) {
+      if (!force && lastAckedStepsRef.current === currentSteps) {
         return;
       }
 
-      lastPublishedStepsRef.current = currentSteps;
+      const topic = `users/${userId}/steps`;
 
-      const payload = {
+      const payload: PedometerPayload = {
         userId,
         steps: currentSteps,
         date: formatDateForApi(new Date()),
@@ -135,11 +189,19 @@ export default function usePedometer() {
         source: "pedometer",
       };
 
-      const published = publishJson(`users/${userId}/steps`, payload);
+      const published = publishJson(topic, payload);
 
       if (published) {
         console.log("Pedometer sent:", currentSteps);
+        return;
       }
+
+      await savePendingPedometerPayload({
+        topic,
+        payload,
+      });
+
+      console.log("Pedometer saved for retry:", currentSteps);
     }
 
     async function readTodaySteps() {
@@ -166,7 +228,7 @@ export default function usePedometer() {
         latestStepsRef.current = bestSteps;
         setSteps(bestSteps);
 
-        publishSteps(bestSteps, force);
+        await publishSteps(bestSteps, force);
       } catch (err) {
         console.log("Pedometer system check error:", err);
       } finally {
@@ -203,7 +265,7 @@ export default function usePedometer() {
         latestStepsRef.current = baseSteps;
         setSteps(baseSteps);
 
-        publishSteps(baseSteps, forcePublish);
+        await publishSteps(baseSteps, forcePublish);
 
         subscriptionRef.current = Pedometer.watchStepCount((result) => {
           const currentSteps = baseSteps + result.steps;
@@ -228,7 +290,7 @@ export default function usePedometer() {
       stopInterval();
 
       intervalRef.current = setInterval(() => {
-        syncFromSystemAndPublish(false);
+        void syncFromSystemAndPublish(false);
       }, SYNC_INTERVAL_MS);
     }
 
@@ -237,17 +299,19 @@ export default function usePedometer() {
 
       await new Promise((resolve) => setTimeout(resolve, 300));
 
+      await flushPendingPedometerPayload();
       await startWatcherFromTodaySteps(forcePublish);
+
       startPublishInterval();
     }
 
-    rebuildPedometer(true);
+    void rebuildPedometer(true);
 
     appStateSubscriptionRef.current = AppState.addEventListener(
       "change",
       async (nextAppState) => {
         if (nextAppState === "active") {
-          await rebuildPedometer(true);
+          await rebuildPedometer(false);
         }
       },
     );
@@ -259,6 +323,10 @@ export default function usePedometer() {
 
       if (unsubscribeStepsAck) {
         unsubscribeStepsAck();
+      }
+
+      if (unsubscribeMqttConnect) {
+        unsubscribeMqttConnect();
       }
 
       if (appStateSubscriptionRef.current) {

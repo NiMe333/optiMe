@@ -111,8 +111,10 @@ async function connectMongo() {
 }
 
 function connectMqtt() {
-  const client = mqtt.connect("mqtt://localhost:1883");
-
+  const client = mqtt.connect("mqtt://localhost:1883", {
+    reconnectPeriod: 15000,
+    connectTimeout: 10000,
+  });
   client.on("connect", () => {
     console.log("Connected to MQTT broker");
 
@@ -174,8 +176,15 @@ function connectMqtt() {
     }
   });
 
+  let lastMqttErrorAt = 0;
+
   client.on("error", (err) => {
-    console.error("MQTT client error:", err.message || err);
+    const now = Date.now();
+
+    if (now - lastMqttErrorAt > 30000) {
+      console.error("MQTT client error:", err.message || err);
+      lastMqttErrorAt = now;
+    }
   });
 }
 

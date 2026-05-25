@@ -6,8 +6,12 @@ const COMPUTER_IP = "192.168.0.20";
 export const MQTT_URL =
   Platform.OS === "web" ? "ws://localhost:9001" : `ws://${COMPUTER_IP}:9001`;
 
+type MqttConnectListener = () => void;
+
+const connectListeners = new Set<MqttConnectListener>();
+
 const client = mqtt.connect(MQTT_URL, {
-  reconnectPeriod: 3000,
+  reconnectPeriod: 15000,
   connectTimeout: 10000,
   clean: true,
   resubscribe: true,
@@ -15,6 +19,10 @@ const client = mqtt.connect(MQTT_URL, {
 
 client.on("connect", () => {
   console.log("MQTT connected:", MQTT_URL);
+
+  connectListeners.forEach((listener) => {
+    listener();
+  });
 });
 
 client.on("reconnect", () => {
@@ -29,9 +37,21 @@ client.on("close", () => {
   console.log("MQTT connection closed");
 });
 
+export function onMqttConnect(listener: MqttConnectListener) {
+  connectListeners.add(listener);
+
+  return () => {
+    connectListeners.delete(listener);
+  };
+}
+
+export function isMqttConnected() {
+  return client.connected;
+}
+
 export function publishJson(topic: string, payload: object) {
   if (!client.connected) {
-    console.log("MQTT not connected yet, skipping publish");
+    console.log("MQTT not connected, publish skipped");
     return false;
   }
 
