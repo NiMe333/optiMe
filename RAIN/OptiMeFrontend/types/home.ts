@@ -57,6 +57,10 @@ export type HomeTrackedMetric = {
   suffix?: string;
   maxValue?: number;
 
+  goal?: number;
+  progress?: number | null;
+  lastSyncedAt?: string | null;
+
   subtitle: string;
 
   trend: {

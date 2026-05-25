@@ -63,15 +63,21 @@ export default function usePedometer() {
 
       lastPublishedStepsRef.current = currentSteps;
 
-      publishJson(`users/${userId}/steps`, {
+      const payload = {
         userId,
         steps: currentSteps,
         date: formatDateForApi(new Date()),
         timestamp: new Date().toISOString(),
         source: "pedometer",
-      });
+      };
 
-      notifyPedometerSync();
+      publishJson(`users/${userId}/steps`, payload);
+
+      notifyPedometerSync({
+        steps: payload.steps,
+        date: payload.date,
+        timestamp: payload.timestamp,
+      });
 
       console.log("Published pedometer steps:", currentSteps);
     }

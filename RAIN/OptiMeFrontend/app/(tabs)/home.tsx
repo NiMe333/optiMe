@@ -67,26 +67,57 @@ export default function HomeScreen() {
   }, [todayKey, loadHomeData]);
 
   useEffect(() => {
-    const unsubscribe = subscribePedometerSync(() => {
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
+    const unsubscribe = subscribePedometerSync((payload) => {
+      setHomeData((prev) => {
+        if (!prev) {
+          return prev;
+        }
 
-      refreshTimeoutRef.current = setTimeout(() => {
-        console.log("Refreshing Home after pedometer sync...");
-        setScoreCardKey((prev) => prev + 1);
-        loadHomeData();
-      }, 800);
+        return {
+          ...prev,
+          trackedMetrics: prev.trackedMetrics.map((metric) => {
+            const isActivity =
+              metric.id === "activity" ||
+              metric.id === "movement" ||
+              metric.id === "steps";
+
+            if (!isActivity) {
+              return metric;
+            }
+
+            const goal = metric.goal || metric.maxValue || 8000;
+            const progress = Math.min(
+              100,
+              Math.round((payload.steps / goal) * 100),
+            );
+
+            const chart = [...(metric.chart || [])];
+            const dates = metric.dates || [];
+
+            const todayIndex = dates.findIndex((date) => date === payload.date);
+
+            if (todayIndex >= 0) {
+              chart[todayIndex] = payload.steps;
+            }
+
+            return {
+              ...metric,
+              value: payload.steps,
+              chart,
+              maxValue: goal,
+              goal,
+              progress,
+              lastSyncedAt: payload.timestamp,
+            };
+          }),
+        };
+      });
     });
 
     return () => {
       unsubscribe();
-
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
     };
-  }, [loadHomeData]);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
