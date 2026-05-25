@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { Pedometer } from "expo-sensors";
-
+import { notifyPedometerSync } from "@/services/pedometerSyncEvents";
 import { useAuth } from "@/context/AuthContext";
 import { publishJson } from "@/services/mqttClient";
 
@@ -32,9 +32,7 @@ export default function usePedometer() {
   const lastPublishedStepsRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
+    if (authLoading) return;
 
     if (!user) {
       console.log("Pedometer skipped: user not logged in");
@@ -57,10 +55,9 @@ export default function usePedometer() {
     let publishInterval: ReturnType<typeof setInterval> | null = null;
     let appStateSubscription: any = null;
     let isMounted = true;
-    let baseSteps = 0;
 
-    function publishSteps(currentSteps: number) {
-      if (lastPublishedStepsRef.current === currentSteps) {
+    function publishSteps(currentSteps: number, force = false) {
+      if (!force && lastPublishedStepsRef.current === currentSteps) {
         return;
       }
 
@@ -74,28 +71,47 @@ export default function usePedometer() {
         source: "pedometer",
       });
 
+      notifyPedometerSync();
+
       console.log("Published pedometer steps:", currentSteps);
     }
 
-    async function readTodayStepsAndPublish() {
-      try {
-        const start = getStartOfToday();
-        const end = new Date();
+    async function readTodaySteps() {
+      const start = getStartOfToday();
+      const end = new Date();
 
-        const result = await Pedometer.getStepCountAsync(start, end);
-        const currentSteps = result.steps || 0;
+      const result = await Pedometer.getStepCountAsync(start, end);
 
-        if (!isMounted) {
-          return;
-        }
+      return result.steps || 0;
+    }
+
+    function startWatchingFrom(baseSteps: number) {
+      if (subscription) {
+        subscription.remove();
+      }
+
+      subscription = Pedometer.watchStepCount((result) => {
+        const currentSteps = baseSteps + result.steps;
 
         latestStepsRef.current = currentSteps;
-        baseSteps = currentSteps;
+        setSteps(currentSteps);
+      });
+    }
+
+    async function syncTodaySteps(forcePublish = false) {
+      try {
+        const currentSteps = await readTodaySteps();
+
+        if (!isMounted) return;
+
+        latestStepsRef.current = currentSteps;
         setSteps(currentSteps);
 
-        publishSteps(currentSteps);
+        publishSteps(currentSteps, forcePublish);
+
+        startWatchingFrom(currentSteps);
       } catch (err) {
-        console.log("Could not read today's steps:", err);
+        console.log("Could not sync today's steps:", err);
       }
     }
 
@@ -117,14 +133,7 @@ export default function usePedometer() {
 
         console.log("Pedometer started for user:", userId);
 
-        await readTodayStepsAndPublish();
-
-        subscription = Pedometer.watchStepCount((result) => {
-          const currentSteps = baseSteps + result.steps;
-
-          latestStepsRef.current = currentSteps;
-          setSteps(currentSteps);
-        });
+        await syncTodaySteps(true);
 
         publishInterval = setInterval(() => {
           publishSteps(latestStepsRef.current);
@@ -135,7 +144,7 @@ export default function usePedometer() {
           async (nextAppState) => {
             if (nextAppState === "active") {
               console.log("App returned to foreground, syncing steps...");
-              await readTodayStepsAndPublish();
+              await syncTodaySteps(true);
             }
           },
         );
