@@ -65,7 +65,7 @@ export default function StartingForm() {
     Animated.timing(progressAnim, {
       toValue: progressValue,
       duration: 350,
-      useNativeDriver: Platform.OS !== "web",
+      useNativeDriver: false,
     }).start();
   }, [progressValue, progressAnim]);
 
