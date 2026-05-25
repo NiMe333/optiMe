@@ -21,6 +21,6 @@ npm run mqtt
 cd ./RAIN/OptiMeFrontend
 npx expo start
 
-### Terminal 5 - test
+### Terminal 5 - subscriber
 
-mosquitto_pub -h 127.0.0.1 -p 1883 -t users/6a0a09bf38dbbc2f6a65d41b/steps -m '{"userId":"6a0a09bf38dbbc2f6a65d41b","steps":2222,"date":"2026-05-25"}'
+mosquitto_sub -h 127.0.0.1 -p 1883 -t 'users/+/steps/ack' -v

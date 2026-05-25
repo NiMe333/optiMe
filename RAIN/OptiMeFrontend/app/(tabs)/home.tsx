@@ -178,14 +178,6 @@ export default function HomeScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadHomeData();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [loadHomeData]);
-
   function getLocalDateKey(date = new Date()) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");

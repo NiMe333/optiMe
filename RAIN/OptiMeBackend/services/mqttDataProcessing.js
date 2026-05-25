@@ -71,6 +71,37 @@ function parseStepsMessage(topic, message) {
   };
 }
 
+function publishStepsAck(client, data, snapshot) {
+  const ackTopic = `users/${data.userId}/steps/ack`;
+
+  const ackPayload = {
+    success: true,
+    userId: data.userId,
+    receivedSteps: data.steps,
+    savedSteps: snapshot.steps,
+    savedAt: new Date().toISOString(),
+    requestTimestamp: data.timestamp.toISOString(),
+    snapshotDate: snapshot.date,
+  };
+
+  client.publish(
+    ackTopic,
+    JSON.stringify(ackPayload),
+    {
+      qos: 0,
+      retain: false,
+    },
+    (err) => {
+      if (err) {
+        console.error("MQTT ACK publish error:", err.message);
+        return;
+      }
+
+      console.log("MQTT ACK published:", ackTopic);
+    },
+  );
+}
+
 async function connectMongo() {
   await mongoose.connect(
     "mongodb://zigalebic02:jp8bQs3yA1FSR0sH@ac-rxpanwp-shard-00-00.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-01.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-02.yjssyxx.mongodb.net:27017/OptiMe?ssl=true&replicaSet=atlas-822hpm-shard-0&authSource=admin&appName=OptiMe",
@@ -80,8 +111,10 @@ async function connectMongo() {
 }
 
 function connectMqtt() {
-  const client = mqtt.connect("mqtt://localhost:1883");
-
+  const client = mqtt.connect("mqtt://localhost:1883", {
+    reconnectPeriod: 15000,
+    connectTimeout: 10000,
+  });
   client.on("connect", () => {
     console.log("Connected to MQTT broker");
 
@@ -99,15 +132,13 @@ function connectMqtt() {
     try {
       const data = parseStepsMessage(topic, message);
 
-      console.log("MQTT message received");
-      console.log("Topic:", topic);
-      console.log("User ID:", data.userId);
-      console.log("Steps:", data.steps);
-      console.log("Start of day:", data.startOfDay);
-      console.log("Timestamp:", data.timestamp);
-      console.log("Source:", data.source);
+      console.log("MQTT steps received:", {
+        userId: data.userId,
+        steps: data.steps,
+        timestamp: data.timestamp,
+      });
 
-      const result = await UserSnapshot.updateOne(
+      const updatedSnapshot = await UserSnapshot.findOneAndUpdate(
         {
           userId: data.userId,
           date: {
@@ -130,20 +161,30 @@ function connectMqtt() {
         },
         {
           upsert: true,
+          new: true,
         },
       );
 
-      console.log("UserSnapshot updated");
-      console.log("Matched:", result.matchedCount);
-      console.log("Modified:", result.modifiedCount);
-      console.log("Upserted:", result.upsertedCount);
+      console.log("UserSnapshot updated:", {
+        snapshotId: updatedSnapshot._id,
+        savedSteps: updatedSnapshot.steps,
+      });
+
+      publishStepsAck(client, data, updatedSnapshot);
     } catch (err) {
       console.error("MQTT message error:", err.message);
     }
   });
 
+  let lastMqttErrorAt = 0;
+
   client.on("error", (err) => {
-    console.error("MQTT client error:", err.message);
+    const now = Date.now();
+
+    if (now - lastMqttErrorAt > 30000) {
+      console.error("MQTT client error:", err.message || err);
+      lastMqttErrorAt = now;
+    }
   });
 }
 
