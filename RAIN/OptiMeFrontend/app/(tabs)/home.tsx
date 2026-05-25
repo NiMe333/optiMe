@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { ScrollView, View, Text, useWindowDimensions } from "react-native";
 
@@ -12,6 +12,7 @@ import type { HomeDashboardData } from "@/types/home";
 import MentalHealthScoreCard from "@/components/home/MentalHealthScoreCard";
 import TrackedMetricCard from "@/components/home/TrackedMetricCard";
 import CalculatedScoresSection from "@/components/home/CalculatedScoresSection";
+import { subscribePedometerSync } from "@/services/pedometerSyncEvents";
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
@@ -21,10 +22,36 @@ export default function HomeScreen() {
   const [todayKey, setTodayKey] = useState(getLocalDateKey());
   const [scoreCardKey, setScoreCardKey] = useState(0);
 
+  const isMountedRef = useRef(true);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadHomeData = useCallback(async () => {
+    try {
+      const data = await getHomeDashboardData();
+
+      if (isMountedRef.current) {
+        setHomeData(data);
+      }
+    } catch (err) {
+      console.log("Home data refresh error:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       setScoreCardKey((prev) => prev + 1);
-    }, []),
+      loadHomeData();
+    }, [loadHomeData]),
   );
 
   useEffect(() => {
@@ -36,22 +63,38 @@ export default function HomeScreen() {
   }, [todayKey]);
 
   useEffect(() => {
-    let mounted = true;
-
-    async function loadHomeData() {
-      const data = await getHomeDashboardData();
-
-      if (mounted) {
-        setHomeData(data);
-      }
-    }
-
     loadHomeData();
+  }, [todayKey, loadHomeData]);
+
+  useEffect(() => {
+    const unsubscribe = subscribePedometerSync(() => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+
+      refreshTimeoutRef.current = setTimeout(() => {
+        console.log("Refreshing Home after pedometer sync...");
+        setScoreCardKey((prev) => prev + 1);
+        loadHomeData();
+      }, 800);
+    });
 
     return () => {
-      mounted = false;
+      unsubscribe();
+
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
     };
-  }, [todayKey]);
+  }, [loadHomeData]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadHomeData();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [loadHomeData]);
 
   function getLocalDateKey(date = new Date()) {
     const year = date.getFullYear();

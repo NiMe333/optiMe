@@ -1,6 +1,7 @@
 var SnapshotModel = require("../models/userSnapshotModel");
 
 const DAYS_TO_SHOW = 7;
+const DAILY_STEP_GOAL = 8000;
 
 function startOfDay(date = new Date()) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -10,6 +11,14 @@ function addDays(date, days) {
   const newDate = new Date(date);
   newDate.setDate(newDate.getDate() + days);
   return newDate;
+}
+
+function getStepGoalProgress(steps) {
+  if (typeof steps !== "number" || Number.isNaN(steps)) {
+    return null;
+  }
+
+  return Math.min(100, Math.round((steps / DAILY_STEP_GOAL) * 100));
 }
 
 function getDateKey(date) {
@@ -364,7 +373,7 @@ function getStepsScore(day) {
   }
 
   // 8000+ korakov = 100
-  return clampScore((steps / 8000) * 100);
+  return clampScore((steps / DAILY_STEP_GOAL) * 100);
 }
 
 function getScreenTimeScore(day) {
@@ -472,6 +481,10 @@ exports.trackedMetricsData = async function (req, res) {
         id: "activity",
         title: "Activity",
         value: getNumber(today, "steps", null),
+        maxValue: DAILY_STEP_GOAL,
+        goal: DAILY_STEP_GOAL,
+        progress: getStepGoalProgress(getNumber(today, "steps", null)),
+        lastSyncedAt: today?.snapshot?.lastPedometerSyncAt || null,
         subtitle: "Steps from pedometer",
         trend: calculateTrend(
           getNumber(today, "steps", null),

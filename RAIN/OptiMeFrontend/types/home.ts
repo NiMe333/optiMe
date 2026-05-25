@@ -32,6 +32,10 @@ export type HomeDashboardData = {
   achievements: HomeAchievement[];
 
   articles: HomeArticle[];
+
+  lastSyncedAt?: string | null;
+  progress?: number | null;
+  goal?: number | null;
 };
 
 export type HomeTrackedMetricVariant = "average" | "double" | "score";
