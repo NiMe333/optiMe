@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { Pedometer } from "expo-sensors";
-import { notifyPedometerSync } from "@/services/pedometerSyncEvents";
+
 import { useAuth } from "@/context/AuthContext";
 import { publishJson } from "@/services/mqttClient";
+import { notifyPedometerSync } from "@/services/pedometerSyncEvents";
+
+const SYNC_INTERVAL_MS = 10000; // za test, kasneje daj 15000 ali 30000
 
 function formatDateForApi(date: Date) {
   const year = date.getFullYear();
@@ -31,7 +34,16 @@ export default function usePedometer() {
   const latestStepsRef = useRef(0);
   const lastPublishedStepsRef = useRef<number | null>(null);
 
+  const subscriptionRef = useRef<any>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const appStateSubscriptionRef = useRef<any>(null);
+
+  const isMountedRef = useRef(true);
+  const isStartingRef = useRef(false);
+
   useEffect(() => {
+    isMountedRef.current = true;
+
     if (authLoading) return;
 
     if (!user) {
@@ -51,10 +63,24 @@ export default function usePedometer() {
       return;
     }
 
-    let subscription: any = null;
-    let publishInterval: ReturnType<typeof setInterval> | null = null;
-    let appStateSubscription: any = null;
-    let isMounted = true;
+    function stopWatcher() {
+      if (subscriptionRef.current) {
+        subscriptionRef.current.remove();
+        subscriptionRef.current = null;
+      }
+    }
+
+    function stopInterval() {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    function stopEverything() {
+      stopWatcher();
+      stopInterval();
+    }
 
     function publishSteps(currentSteps: number, force = false) {
       if (!force && lastPublishedStepsRef.current === currentSteps) {
@@ -91,89 +117,105 @@ export default function usePedometer() {
       return result.steps || 0;
     }
 
-    function startWatchingFrom(baseSteps: number) {
-      if (subscription) {
-        subscription.remove();
+    async function startWatcherFromTodaySteps(forcePublish = true) {
+      if (isStartingRef.current) {
+        return;
       }
 
-      subscription = Pedometer.watchStepCount((result) => {
-        const currentSteps = baseSteps + result.steps;
+      isStartingRef.current = true;
 
-        latestStepsRef.current = currentSteps;
-        setSteps(currentSteps);
-      });
-    }
-
-    async function syncTodaySteps(forcePublish = false) {
       try {
-        const currentSteps = await readTodaySteps();
+        console.log("Starting pedometer watcher...");
 
-        if (!isMounted) return;
-
-        latestStepsRef.current = currentSteps;
-        setSteps(currentSteps);
-
-        publishSteps(currentSteps, forcePublish);
-
-        startWatchingFrom(currentSteps);
-      } catch (err) {
-        console.log("Could not sync today's steps:", err);
-      }
-    }
-
-    async function startPedometer() {
-      try {
         const available = await Pedometer.isAvailableAsync();
+        console.log("Pedometer available:", available);
 
         if (!available) {
-          console.log("Pedometer not available on this device");
           return;
         }
 
         const permission = await Pedometer.requestPermissionsAsync();
+        console.log("Pedometer permission granted:", permission.granted);
 
         if (!permission.granted) {
-          console.log("Pedometer permission not granted");
           return;
         }
 
-        console.log("Pedometer started for user:", userId);
+        stopWatcher();
 
-        await syncTodaySteps(true);
+        const baseSteps = await readTodaySteps();
 
-        publishInterval = setInterval(() => {
-          publishSteps(latestStepsRef.current);
-        }, 15000);
+        if (!isMountedRef.current) {
+          return;
+        }
 
-        appStateSubscription = AppState.addEventListener(
-          "change",
-          async (nextAppState) => {
-            if (nextAppState === "active") {
-              console.log("App returned to foreground, syncing steps...");
-              await syncTodaySteps(true);
-            }
-          },
-        );
+        latestStepsRef.current = baseSteps;
+        setSteps(baseSteps);
+
+        console.log("Initial today steps:", baseSteps);
+
+        publishSteps(baseSteps, forcePublish);
+
+        subscriptionRef.current = Pedometer.watchStepCount((result) => {
+          const currentSteps = baseSteps + result.steps;
+
+          latestStepsRef.current = currentSteps;
+          setSteps(currentSteps);
+
+          console.log("Pedometer live update:", {
+            baseSteps,
+            deltaSteps: result.steps,
+            currentSteps,
+          });
+        });
+
+        console.log("Pedometer watcher started");
       } catch (err) {
-        console.log("Pedometer error:", err);
+        console.log("Pedometer watcher start error:", err);
+      } finally {
+        isStartingRef.current = false;
       }
+    }
+
+    function startPublishInterval() {
+      stopInterval();
+
+      intervalRef.current = setInterval(() => {
+        console.log("10s pedometer MQTT sync:", latestStepsRef.current);
+
+        publishSteps(latestStepsRef.current);
+      }, SYNC_INTERVAL_MS);
+    }
+
+    async function startPedometer() {
+      await startWatcherFromTodaySteps(true);
+      startPublishInterval();
     }
 
     startPedometer();
 
+    appStateSubscriptionRef.current = AppState.addEventListener(
+      "change",
+      async (nextAppState) => {
+        console.log("AppState changed:", nextAppState);
+
+        if (nextAppState === "active") {
+          console.log("App active again, rebuilding pedometer watcher...");
+
+          await startWatcherFromTodaySteps(true);
+          startPublishInterval();
+        }
+      },
+    );
+
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
 
-      if (subscription) {
-        subscription.remove();
-      }
+      stopEverything();
 
-      if (publishInterval) {
-        clearInterval(publishInterval);
-      }
-
-      if (appStateSubscription) {
-        appStateSubscription.remove();
+      if (appStateSubscriptionRef.current) {
+        appStateSubscriptionRef.current.remove();
+        appStateSubscriptionRef.current = null;
       }
     };
   }, [authLoading, user]);

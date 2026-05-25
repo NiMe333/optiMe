@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { ScrollView, View, Text, useWindowDimensions } from "react-native";
+import {
+  AppState,
+  ScrollView,
+  View,
+  Text,
+  useWindowDimensions,
+} from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, styles } from "@/styles/home.styles";
@@ -23,9 +29,18 @@ export default function HomeScreen() {
   const [scoreCardKey, setScoreCardKey] = useState(0);
 
   const isMountedRef = useRef(true);
+  const appStateRef = useRef(AppState.currentState);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLoadingHomeDataRef = useRef(false);
 
   const loadHomeData = useCallback(async () => {
+    if (isLoadingHomeDataRef.current) {
+      console.log("Home data refresh skipped, already loading");
+      return;
+    }
+
+    isLoadingHomeDataRef.current = true;
+
     try {
       const data = await getHomeDashboardData();
 
@@ -34,6 +49,8 @@ export default function HomeScreen() {
       }
     } catch (err) {
       console.log("Home data refresh error:", err);
+    } finally {
+      isLoadingHomeDataRef.current = false;
     }
   }, []);
 
@@ -55,6 +72,27 @@ export default function HomeScreen() {
   );
 
   useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      const previousAppState = appStateRef.current;
+      appStateRef.current = nextAppState;
+
+      const wasInBackground =
+        previousAppState === "background" || previousAppState === "inactive";
+
+      if (wasInBackground && nextAppState === "active") {
+        console.log("Home active again, refreshing dashboard...");
+
+        setScoreCardKey((prev) => prev + 1);
+        loadHomeData();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [loadHomeData]);
+
+  useEffect(() => {
     const timeout = setTimeout(() => {
       setTodayKey(getLocalDateKey());
     }, getMsUntilNextLocalMidnight());
@@ -68,6 +106,8 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const unsubscribe = subscribePedometerSync((payload) => {
+      console.log("Home received pedometer sync:", payload);
+
       setHomeData((prev) => {
         if (!prev) {
           return prev;
@@ -86,6 +126,7 @@ export default function HomeScreen() {
             }
 
             const goal = metric.goal || metric.maxValue || 8000;
+
             const progress = Math.min(
               100,
               Math.round((payload.steps / goal) * 100),
@@ -122,7 +163,7 @@ export default function HomeScreen() {
   useEffect(() => {
     const interval = setInterval(() => {
       loadHomeData();
-    }, 30000);
+    }, 20000);
 
     return () => clearInterval(interval);
   }, [loadHomeData]);
@@ -213,14 +254,17 @@ export default function HomeScreen() {
         contentContainerStyle={styles.mobileContent}
       >
         <DashboardHeader username={username} todayLabel={todayLabel} mobile />
+
         <MentalHealthScoreCard
           key={`score-mobile-${scoreCardKey}`}
           score={homeData.mentalHealthScore}
           mobile
         />
+
         <View style={styles.mobileSectionHeader}>
           <Text style={styles.panelTitle}>Tracked Metrics</Text>
         </View>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -240,8 +284,11 @@ export default function HomeScreen() {
             </View>
           ))}
         </ScrollView>
+
         <CalculatedScoresSection scores={homeData.calculatedScores} mobile />
+
         <AchievementsPanel achievements={homeData.achievements} mobile />
+
         <ArticlesSection articles={homeData.articles} mobile />
       </ScrollView>
     </SafeAreaView>
