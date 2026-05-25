@@ -47,7 +47,6 @@ export default function usePedometer() {
     if (authLoading) return;
 
     if (!user) {
-      console.log("Pedometer skipped: user not logged in");
       return;
     }
 
@@ -59,7 +58,6 @@ export default function usePedometer() {
     }
 
     if (Platform.OS === "web") {
-      console.log("Pedometer skipped: not available on web");
       return;
     }
 
@@ -84,7 +82,6 @@ export default function usePedometer() {
 
     function publishSteps(currentSteps: number, force = false) {
       if (!force && lastPublishedStepsRef.current === currentSteps) {
-        console.log("Publish skipped, same steps:", currentSteps);
         return;
       }
 
@@ -106,7 +103,7 @@ export default function usePedometer() {
         timestamp: payload.timestamp,
       });
 
-      console.log("Published pedometer steps:", currentSteps);
+      console.log("Pedometer synced:", currentSteps);
     }
 
     async function readTodaySteps() {
@@ -133,12 +130,6 @@ export default function usePedometer() {
         latestStepsRef.current = bestSteps;
         setSteps(bestSteps);
 
-        console.log("10s pedometer system check:", {
-          systemSteps,
-          latestSteps: latestStepsRef.current,
-          lastPublished: lastPublishedStepsRef.current,
-        });
-
         publishSteps(bestSteps, force);
       } catch (err) {
         console.log("Pedometer system check error:", err);
@@ -153,17 +144,19 @@ export default function usePedometer() {
       isStartingRef.current = true;
 
       try {
-        console.log("Starting pedometer watcher...");
-
         const available = await Pedometer.isAvailableAsync();
-        console.log("Pedometer available:", available);
 
-        if (!available) return;
+        if (!available) {
+          console.log("Pedometer not available on this device");
+          return;
+        }
 
         const permission = await Pedometer.requestPermissionsAsync();
-        console.log("Pedometer permission granted:", permission.granted);
 
-        if (!permission.granted) return;
+        if (!permission.granted) {
+          console.log("Pedometer permission not granted");
+          return;
+        }
 
         stopWatcher();
 
@@ -173,8 +166,6 @@ export default function usePedometer() {
 
         latestStepsRef.current = baseSteps;
         setSteps(baseSteps);
-
-        console.log("Initial today steps:", baseSteps);
 
         publishSteps(baseSteps, forcePublish);
 
@@ -187,12 +178,6 @@ export default function usePedometer() {
 
           latestStepsRef.current = currentSteps;
           setSteps(currentSteps);
-
-          console.log("Pedometer live update:", {
-            baseSteps,
-            deltaSteps: result.steps,
-            currentSteps,
-          });
         });
 
         console.log("Pedometer watcher started");
@@ -214,7 +199,6 @@ export default function usePedometer() {
     async function rebuildPedometer(forcePublish = true) {
       stopEverything();
 
-      // majhen delay pomaga po reloadu / vrnitvi v app, da iOS/Expo sprosti star watcher
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       await startWatcherFromTodaySteps(forcePublish);
@@ -226,10 +210,7 @@ export default function usePedometer() {
     appStateSubscriptionRef.current = AppState.addEventListener(
       "change",
       async (nextAppState) => {
-        console.log("AppState changed:", nextAppState);
-
         if (nextAppState === "active") {
-          console.log("App active again, rebuilding pedometer watcher...");
           await rebuildPedometer(true);
         }
       },
