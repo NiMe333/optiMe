@@ -1,47 +1,232 @@
-import { useEffect, useState } from 'react';
-import { Pedometer } from 'expo-sensors';
-import client from '@/services/mqttClient';
+import { useEffect, useRef, useState } from "react";
+import { AppState, Platform } from "react-native";
+import { Pedometer } from "expo-sensors";
 
-const USER_ID = '6a05fd3e2a7cf4be350a8ea1';
+import { useAuth } from "@/context/AuthContext";
+import { publishJson } from "@/services/mqttClient";
+import { notifyPedometerSync } from "@/services/pedometerSyncEvents";
+
+const SYNC_INTERVAL_MS = 10000;
+
+function formatDateForApi(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getStartOfToday() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function getUserId(user: any) {
+  return user?._id || user?.id || user?.userId;
+}
 
 export default function usePedometer() {
+  const { user, authLoading } = useAuth();
+
   const [steps, setSteps] = useState(0);
 
+  const latestStepsRef = useRef(0);
+  const lastPublishedStepsRef = useRef<number | null>(null);
+
+  const subscriptionRef = useRef<any>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const appStateSubscriptionRef = useRef<any>(null);
+
+  const isMountedRef = useRef(true);
+  const isStartingRef = useRef(false);
+  const isSyncingRef = useRef(false);
+
   useEffect(() => {
-    let subscription: any;
+    isMountedRef.current = true;
 
-    const start = async () => {
-      const available = await Pedometer.isAvailableAsync();
+    if (authLoading) return;
 
-      if (!available) {
-        console.log('Pedometer not available on this device');
+    if (!user) {
+      return;
+    }
+
+    const userId = getUserId(user);
+
+    if (!userId) {
+      console.log("Pedometer skipped: userId missing");
+      return;
+    }
+
+    if (Platform.OS === "web") {
+      return;
+    }
+
+    function stopWatcher() {
+      if (subscriptionRef.current) {
+        subscriptionRef.current.remove();
+        subscriptionRef.current = null;
+      }
+    }
+
+    function stopInterval() {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    function stopEverything() {
+      stopWatcher();
+      stopInterval();
+    }
+
+    function publishSteps(currentSteps: number, force = false) {
+      if (!force && lastPublishedStepsRef.current === currentSteps) {
         return;
       }
-      if(available)
-      {
-        console.log("pedo is here");
-      }
 
-      subscription = Pedometer.watchStepCount((result) => {
-        setSteps(result.steps);
+      lastPublishedStepsRef.current = currentSteps;
 
-        client.publish(
-          `users/${USER_ID}/steps`,
-          JSON.stringify({
-            userId: USER_ID,
-            steps: result.steps,
-            date: '2026-05-14'
-          })
-        );
+      const payload = {
+        userId,
+        steps: currentSteps,
+        date: formatDateForApi(new Date()),
+        timestamp: new Date().toISOString(),
+        source: "pedometer",
+      };
+
+      publishJson(`users/${userId}/steps`, payload);
+
+      notifyPedometerSync({
+        steps: payload.steps,
+        date: payload.date,
+        timestamp: payload.timestamp,
       });
-    };
 
-    start();
+      console.log("Pedometer synced:", currentSteps);
+    }
+
+    async function readTodaySteps() {
+      const start = getStartOfToday();
+      const end = new Date();
+
+      const result = await Pedometer.getStepCountAsync(start, end);
+
+      return result.steps || 0;
+    }
+
+    async function syncFromSystemAndPublish(force = false) {
+      if (isSyncingRef.current) return;
+
+      isSyncingRef.current = true;
+
+      try {
+        const systemSteps = await readTodaySteps();
+
+        if (!isMountedRef.current) return;
+
+        const bestSteps = Math.max(latestStepsRef.current, systemSteps);
+
+        latestStepsRef.current = bestSteps;
+        setSteps(bestSteps);
+
+        publishSteps(bestSteps, force);
+      } catch (err) {
+        console.log("Pedometer system check error:", err);
+      } finally {
+        isSyncingRef.current = false;
+      }
+    }
+
+    async function startWatcherFromTodaySteps(forcePublish = true) {
+      if (isStartingRef.current) return;
+
+      isStartingRef.current = true;
+
+      try {
+        const available = await Pedometer.isAvailableAsync();
+
+        if (!available) {
+          console.log("Pedometer not available on this device");
+          return;
+        }
+
+        const permission = await Pedometer.requestPermissionsAsync();
+
+        if (!permission.granted) {
+          console.log("Pedometer permission not granted");
+          return;
+        }
+
+        stopWatcher();
+
+        const baseSteps = await readTodaySteps();
+
+        if (!isMountedRef.current) return;
+
+        latestStepsRef.current = baseSteps;
+        setSteps(baseSteps);
+
+        publishSteps(baseSteps, forcePublish);
+
+        subscriptionRef.current = Pedometer.watchStepCount((result) => {
+          const currentSteps = baseSteps + result.steps;
+
+          if (currentSteps <= latestStepsRef.current) {
+            return;
+          }
+
+          latestStepsRef.current = currentSteps;
+          setSteps(currentSteps);
+        });
+
+        console.log("Pedometer watcher started");
+      } catch (err) {
+        console.log("Pedometer watcher start error:", err);
+      } finally {
+        isStartingRef.current = false;
+      }
+    }
+
+    function startPublishInterval() {
+      stopInterval();
+
+      intervalRef.current = setInterval(() => {
+        syncFromSystemAndPublish(false);
+      }, SYNC_INTERVAL_MS);
+    }
+
+    async function rebuildPedometer(forcePublish = true) {
+      stopEverything();
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      await startWatcherFromTodaySteps(forcePublish);
+      startPublishInterval();
+    }
+
+    rebuildPedometer(true);
+
+    appStateSubscriptionRef.current = AppState.addEventListener(
+      "change",
+      async (nextAppState) => {
+        if (nextAppState === "active") {
+          await rebuildPedometer(true);
+        }
+      },
+    );
 
     return () => {
-      subscription?.remove();
+      isMountedRef.current = false;
+
+      stopEverything();
+
+      if (appStateSubscriptionRef.current) {
+        appStateSubscriptionRef.current.remove();
+        appStateSubscriptionRef.current = null;
+      }
     };
-  }, []);
+  }, [authLoading, user]);
 
   return steps;
 }
