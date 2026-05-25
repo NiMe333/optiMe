@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { publishJson } from "@/services/mqttClient";
 import { notifyPedometerSync } from "@/services/pedometerSyncEvents";
 
-const SYNC_INTERVAL_MS = 10000; // za test, kasneje daj 15000 ali 30000
+const SYNC_INTERVAL_MS = 10000;
 
 function formatDateForApi(date: Date) {
   const year = date.getFullYear();
@@ -18,7 +18,6 @@ function formatDateForApi(date: Date) {
 
 function getStartOfToday() {
   const now = new Date();
-
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
@@ -40,6 +39,7 @@ export default function usePedometer() {
 
   const isMountedRef = useRef(true);
   const isStartingRef = useRef(false);
+  const isSyncingRef = useRef(false);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -84,6 +84,7 @@ export default function usePedometer() {
 
     function publishSteps(currentSteps: number, force = false) {
       if (!force && lastPublishedStepsRef.current === currentSteps) {
+        console.log("Publish skipped, same steps:", currentSteps);
         return;
       }
 
@@ -117,10 +118,37 @@ export default function usePedometer() {
       return result.steps || 0;
     }
 
-    async function startWatcherFromTodaySteps(forcePublish = true) {
-      if (isStartingRef.current) {
-        return;
+    async function syncFromSystemAndPublish(force = false) {
+      if (isSyncingRef.current) return;
+
+      isSyncingRef.current = true;
+
+      try {
+        const systemSteps = await readTodaySteps();
+
+        if (!isMountedRef.current) return;
+
+        const bestSteps = Math.max(latestStepsRef.current, systemSteps);
+
+        latestStepsRef.current = bestSteps;
+        setSteps(bestSteps);
+
+        console.log("10s pedometer system check:", {
+          systemSteps,
+          latestSteps: latestStepsRef.current,
+          lastPublished: lastPublishedStepsRef.current,
+        });
+
+        publishSteps(bestSteps, force);
+      } catch (err) {
+        console.log("Pedometer system check error:", err);
+      } finally {
+        isSyncingRef.current = false;
       }
+    }
+
+    async function startWatcherFromTodaySteps(forcePublish = true) {
+      if (isStartingRef.current) return;
 
       isStartingRef.current = true;
 
@@ -130,24 +158,18 @@ export default function usePedometer() {
         const available = await Pedometer.isAvailableAsync();
         console.log("Pedometer available:", available);
 
-        if (!available) {
-          return;
-        }
+        if (!available) return;
 
         const permission = await Pedometer.requestPermissionsAsync();
         console.log("Pedometer permission granted:", permission.granted);
 
-        if (!permission.granted) {
-          return;
-        }
+        if (!permission.granted) return;
 
         stopWatcher();
 
         const baseSteps = await readTodaySteps();
 
-        if (!isMountedRef.current) {
-          return;
-        }
+        if (!isMountedRef.current) return;
 
         latestStepsRef.current = baseSteps;
         setSteps(baseSteps);
@@ -158,6 +180,10 @@ export default function usePedometer() {
 
         subscriptionRef.current = Pedometer.watchStepCount((result) => {
           const currentSteps = baseSteps + result.steps;
+
+          if (currentSteps <= latestStepsRef.current) {
+            return;
+          }
 
           latestStepsRef.current = currentSteps;
           setSteps(currentSteps);
@@ -181,18 +207,21 @@ export default function usePedometer() {
       stopInterval();
 
       intervalRef.current = setInterval(() => {
-        console.log("10s pedometer MQTT sync:", latestStepsRef.current);
-
-        publishSteps(latestStepsRef.current);
+        syncFromSystemAndPublish(false);
       }, SYNC_INTERVAL_MS);
     }
 
-    async function startPedometer() {
-      await startWatcherFromTodaySteps(true);
+    async function rebuildPedometer(forcePublish = true) {
+      stopEverything();
+
+      // majhen delay pomaga po reloadu / vrnitvi v app, da iOS/Expo sprosti star watcher
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      await startWatcherFromTodaySteps(forcePublish);
       startPublishInterval();
     }
 
-    startPedometer();
+    rebuildPedometer(true);
 
     appStateSubscriptionRef.current = AppState.addEventListener(
       "change",
@@ -201,9 +230,7 @@ export default function usePedometer() {
 
         if (nextAppState === "active") {
           console.log("App active again, rebuilding pedometer watcher...");
-
-          await startWatcherFromTodaySteps(true);
-          startPublishInterval();
+          await rebuildPedometer(true);
         }
       },
     );

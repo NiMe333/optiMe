@@ -30,12 +30,14 @@ export default function HomeScreen() {
 
   const isMountedRef = useRef(true);
   const appStateRef = useRef(AppState.currentState);
-  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const isLoadingHomeDataRef = useRef(false);
+  const pendingRefreshRef = useRef(false);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadHomeData = useCallback(async () => {
     if (isLoadingHomeDataRef.current) {
-      console.log("Home data refresh skipped, already loading");
+      pendingRefreshRef.current = true;
       return;
     }
 
@@ -51,12 +53,28 @@ export default function HomeScreen() {
       console.log("Home data refresh error:", err);
     } finally {
       isLoadingHomeDataRef.current = false;
+
+      if (pendingRefreshRef.current && isMountedRef.current) {
+        pendingRefreshRef.current = false;
+
+        if (refreshTimeoutRef.current) {
+          clearTimeout(refreshTimeoutRef.current);
+        }
+
+        refreshTimeoutRef.current = setTimeout(() => {
+          loadHomeData();
+        }, 500);
+      }
     }
   }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     return () => {
       isMountedRef.current = false;
+      pendingRefreshRef.current = false;
+      isLoadingHomeDataRef.current = false;
 
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
@@ -163,7 +181,7 @@ export default function HomeScreen() {
   useEffect(() => {
     const interval = setInterval(() => {
       loadHomeData();
-    }, 20000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [loadHomeData]);
