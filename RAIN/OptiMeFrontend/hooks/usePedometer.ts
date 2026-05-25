@@ -3,10 +3,20 @@ import { AppState, Platform } from "react-native";
 import { Pedometer } from "expo-sensors";
 
 import { useAuth } from "@/context/AuthContext";
-import { publishJson } from "@/services/mqttClient";
+import { publishJson, subscribeJson } from "@/services/mqttClient";
 import { notifyPedometerSync } from "@/services/pedometerSyncEvents";
 
 const SYNC_INTERVAL_MS = 10000;
+
+type StepsAckPayload = {
+  success: boolean;
+  userId: string;
+  receivedSteps: number;
+  savedSteps: number;
+  savedAt: string;
+  requestTimestamp: string;
+  snapshotDate: string;
+};
 
 function formatDateForApi(date: Date) {
   const year = date.getFullYear();
@@ -18,6 +28,7 @@ function formatDateForApi(date: Date) {
 
 function getStartOfToday() {
   const now = new Date();
+
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
@@ -61,6 +72,35 @@ export default function usePedometer() {
       return;
     }
 
+    let unsubscribeStepsAck: (() => void) | null = null;
+
+    unsubscribeStepsAck = subscribeJson<StepsAckPayload>(
+      `users/${userId}/steps/ack`,
+      (ack) => {
+        if (!ack.success) {
+          console.log("Steps ACK failed:", ack);
+          return;
+        }
+
+        const savedSteps = Number(ack.savedSteps);
+
+        if (!Number.isFinite(savedSteps)) {
+          return;
+        }
+
+        latestStepsRef.current = Math.max(latestStepsRef.current, savedSteps);
+        setSteps(latestStepsRef.current);
+
+        notifyPedometerSync({
+          steps: latestStepsRef.current,
+          date: formatDateForApi(new Date(ack.snapshotDate)),
+          timestamp: ack.savedAt,
+        });
+
+        console.log("Steps saved by backend:", latestStepsRef.current);
+      },
+    );
+
     function stopWatcher() {
       if (subscriptionRef.current) {
         subscriptionRef.current.remove();
@@ -95,15 +135,11 @@ export default function usePedometer() {
         source: "pedometer",
       };
 
-      publishJson(`users/${userId}/steps`, payload);
+      const published = publishJson(`users/${userId}/steps`, payload);
 
-      notifyPedometerSync({
-        steps: payload.steps,
-        date: payload.date,
-        timestamp: payload.timestamp,
-      });
-
-      console.log("Pedometer synced:", currentSteps);
+      if (published) {
+        console.log("Pedometer sent:", currentSteps);
+      }
     }
 
     async function readTodaySteps() {
@@ -220,6 +256,10 @@ export default function usePedometer() {
       isMountedRef.current = false;
 
       stopEverything();
+
+      if (unsubscribeStepsAck) {
+        unsubscribeStepsAck();
+      }
 
       if (appStateSubscriptionRef.current) {
         appStateSubscriptionRef.current.remove();
