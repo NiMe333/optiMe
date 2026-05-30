@@ -54,10 +54,20 @@ def predict_image(image_path):
     image_path = Path(image_path)
 
     if not image_path.exists():
-        raise FileNotFoundError(f"Slika ne obstaja: {image_path}")
+        return {
+            "success": False,
+            "accepted": False,
+            "status": "dismissed",
+            "error": f"Slika ne obstaja: {image_path}",
+        }
 
     if not MODEL_PATH.exists():
-        raise FileNotFoundError(f"Model ne obstaja: {MODEL_PATH}")
+        return {
+            "success": False,
+            "accepted": False,
+            "status": "dismissed",
+            "error": f"Model ne obstaja: {MODEL_PATH}",
+        }
 
     model = tf.keras.models.load_model(MODEL_PATH)
     class_names = load_class_names()
@@ -70,21 +80,28 @@ def predict_image(image_path):
     predicted_index = 1 if probability >= threshold else 0
     predicted_class = class_names[predicted_index]
 
-    print("Slika:", image_path)
-    print("Threshold:", threshold)
-    print("Verjetnost za razred 1:", round(probability, 4))
-    print("Napoved:", predicted_class)
+    accepted = predicted_class == "pencil"
 
-    if predicted_class == "pencil":
-        print("Rezultat: pravilna slika - na sliki je kuli/pencil.")
-    else:
-        print("Rezultat: napačna slika - na sliki ni kulija/pencil.")
+    return {
+        "success": True,
+        "accepted": accepted,
+        "status": "accepted" if accepted else "dismissed",
+        "predicted_class": predicted_class,
+        "probability": round(probability, 4),
+        "threshold": threshold,
+    }
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Uporaba:")
-        print("python predict_image.py pot/do/slike.jpg")
+        result = {
+            "success": False,
+            "accepted": False,
+            "status": "dismissed",
+            "error": "Manjka pot do slike. Uporaba: python predict_image.py pot/do/slike.jpg",
+        }
+        print(json.dumps(result))
         sys.exit(1)
 
-    predict_image(sys.argv[1])
+    result = predict_image(sys.argv[1])
+    print(json.dumps(result))
