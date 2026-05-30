@@ -3,13 +3,9 @@ name: Frontend Test
 on:
   push:
     branches:
-      - main
-      - development
       - SCRUM-68-Fixed-functionality-for-the-application
   pull_request:
     branches:
-      - main
-      - development
       - SCRUM-68-Fixed-functionality-for-the-application
   workflow_dispatch:
 
