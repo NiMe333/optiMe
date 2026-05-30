@@ -7,10 +7,7 @@ import numpy as np
 import tensorflow as tf
 from sklearn.metrics import classification_report, confusion_matrix
 
-
-# --------------------------------------------------
 # Osnovne nastavitve
-# --------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent
 DATASET_DIR = BASE_DIR.parent / "Orv_preprocessing" / "dataset" / "processed"
@@ -30,9 +27,7 @@ SEED = 42
 THRESHOLD = 0.5
 
 
-# --------------------------------------------------
 # Preverjanje dataseta
-# --------------------------------------------------
 
 def check_dataset():
     if not DATASET_DIR.exists():
@@ -54,9 +49,9 @@ def check_dataset():
     print("no_pencil slike:", no_pencil_count)
 
 
-# --------------------------------------------------
+
 # Priprava datasetov
-# --------------------------------------------------
+
 
 def create_datasets():
     train_ds = tf.keras.utils.image_dataset_from_directory(
@@ -94,9 +89,9 @@ def create_datasets():
     return train_ds, val_ds, class_names
 
 
-# --------------------------------------------------
+
 # Gradnja modela
-# --------------------------------------------------
+
 
 def build_model():
     data_augmentation = tf.keras.Sequential(
@@ -137,9 +132,9 @@ def build_model():
     return model
 
 
-# --------------------------------------------------
+
 # Risanje grafov
-# --------------------------------------------------
+
 
 def save_training_plots(history):
     plt.figure()
@@ -163,9 +158,8 @@ def save_training_plots(history):
     plt.close()
 
 
-# --------------------------------------------------
 # Vrednotenje modela
-# --------------------------------------------------
+
 
 def evaluate_model(model, val_ds, class_names):
     probabilities = model.predict(val_ds)
@@ -199,10 +193,6 @@ def evaluate_model(model, val_ds, class_names):
     with open(RESULTS_DIR / "confusion_matrix.txt", "w") as file:
         file.write(str(matrix))
 
-
-# --------------------------------------------------
-# Glavni program
-# --------------------------------------------------
 
 def main():
     check_dataset()
