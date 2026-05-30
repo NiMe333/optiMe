@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.utils import load_img, img_to_array
+from tensorflow.keras.utils import img_to_array, load_img
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -12,11 +12,11 @@ BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "models" / "pencil_classifier.keras"
 CLASS_NAMES_PATH = BASE_DIR / "models" / "class_names.json"
 CONFIG_PATH = BASE_DIR / "models" / "training_config.json"
+BEST_THRESHOLD_PATH = BASE_DIR / "models" / "best_threshold.json"
 
 IMAGE_SIZE = (224, 224)
 DEFAULT_THRESHOLD = 0.5
 
-BEST_THRESHOLD_PATH = BASE_DIR / "models" / "best_threshold.json"
 
 def load_class_names():
     if not CLASS_NAMES_PATH.exists():
@@ -33,13 +33,14 @@ def load_threshold():
 
         return data.get("best_threshold", DEFAULT_THRESHOLD)
 
-    if not CONFIG_PATH.exists():
-        return DEFAULT_THRESHOLD
+    if CONFIG_PATH.exists():
+        with open(CONFIG_PATH, "r") as file:
+            config = json.load(file)
 
-    with open(CONFIG_PATH, "r") as file:
-        config = json.load(file)
+        return config.get("threshold", DEFAULT_THRESHOLD)
 
-    return config.get("threshold", DEFAULT_THRESHOLD)
+    return DEFAULT_THRESHOLD
+
 
 def prepare_image(image_path):
     img = load_img(image_path, target_size=IMAGE_SIZE)
