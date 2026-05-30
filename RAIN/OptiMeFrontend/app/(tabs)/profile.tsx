@@ -191,7 +191,7 @@ function ProfileContent({
                 fontWeight: "900",
               }}
             >
-              Enable 2FA
+              Enable 2-FA
             </Text>
 
             <Text
