@@ -61,7 +61,6 @@ def load_and_preprocess_image(image_path, label):
     image.set_shape(IMAGE_SIZE + (3,))
     return image, label
 
-
 def create_datasets():
     image_paths = []
     labels = []
