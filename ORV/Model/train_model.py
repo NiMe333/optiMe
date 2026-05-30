@@ -26,6 +26,9 @@ LEARNING_RATE = 0.0001
 VALIDATION_SPLIT = 0.2
 SEED = 42
 THRESHOLD = 0.5
+FINE_TUNE_EPOCHS = 10
+FINE_TUNE_LEARNING_RATE = 0.00001
+FINE_TUNE_AT = 100
 
 
 # Preverjanje dataseta
@@ -143,8 +146,7 @@ def build_model():
         metrics=["accuracy"],
     )
 
-    return model
-
+    return model, base_model
 
 
 # Risanje grafov
@@ -213,7 +215,7 @@ def main():
 
     train_ds, val_ds, class_names = create_datasets()
 
-    model = build_model()
+    model, base_model = build_model()
     model.summary()
 
     callbacks = [
@@ -236,6 +238,28 @@ def main():
         epochs=EPOCHS,
         callbacks=callbacks,
     )
+    print("\nZačetek fine-tuning faze...")
+
+    base_model.trainable = True
+
+    for layer in base_model.layers[:FINE_TUNE_AT]:
+        layer.trainable = False
+
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=FINE_TUNE_LEARNING_RATE),
+        loss="binary_crossentropy",
+        metrics=["accuracy"],
+    )
+
+    fine_tune_history = model.fit(
+        train_ds,
+        validation_data=val_ds,
+        epochs=FINE_TUNE_EPOCHS,
+        callbacks=callbacks,
+    )
+
+    for key in fine_tune_history.history:
+        history.history[key].extend(fine_tune_history.history[key])
 
     model.save(MODEL_DIR / "pencil_classifier.keras")
 
@@ -248,6 +272,9 @@ def main():
         "threshold": THRESHOLD,
         "model": "MobileNetV2 transfer learning",
         "classes": class_names,
+        "fine_tune_epochs": FINE_TUNE_EPOCHS,
+        "fine_tune_learning_rate": FINE_TUNE_LEARNING_RATE,
+        "fine_tune_at": FINE_TUNE_AT,
     }
 
     with open(MODEL_DIR / "training_config.json", "w") as file:
