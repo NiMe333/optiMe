@@ -75,6 +75,12 @@ Backend is running
 docker compose down
 ```
 
+## Imagi
+
+```bash
+docker images
+```
+
 ---
 
 ## Pomembno
