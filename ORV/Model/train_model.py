@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
 
 # Osnovne nastavitve
 
@@ -53,42 +54,56 @@ def check_dataset():
 # Priprava datasetov
 
 
+def load_and_preprocess_image(image_path, label):
+    image = tf.io.read_file(image_path)
+    image = tf.image.decode_image(image, channels=3, expand_animations=False)
+    image = tf.image.resize(image, IMAGE_SIZE)
+    image.set_shape(IMAGE_SIZE + (3,))
+    return image, label
+
+
 def create_datasets():
-    train_ds = tf.keras.utils.image_dataset_from_directory(
-        DATASET_DIR,
-        validation_split=VALIDATION_SPLIT,
-        subset="training",
-        seed=SEED,
-        image_size=IMAGE_SIZE,
-        batch_size=BATCH_SIZE,
-        label_mode="binary",
+    image_paths = []
+    labels = []
+
+    class_names = ["no_pencil", "pencil"]
+
+    for label, class_name in enumerate(class_names):
+        class_dir = DATASET_DIR / class_name
+
+        for image_path in class_dir.glob("*"):
+            if image_path.suffix.lower() in [".jpg", ".jpeg", ".png", ".webp"]:
+                image_paths.append(str(image_path))
+                labels.append(label)
+
+    train_paths, val_paths, train_labels, val_labels = train_test_split(
+        image_paths,
+        labels,
+        test_size=VALIDATION_SPLIT,
+        random_state=SEED,
+        stratify=labels,
     )
 
-    val_ds = tf.keras.utils.image_dataset_from_directory(
-        DATASET_DIR,
-        validation_split=VALIDATION_SPLIT,
-        subset="validation",
-        seed=SEED,
-        image_size=IMAGE_SIZE,
-        batch_size=BATCH_SIZE,
-        label_mode="binary",
-        shuffle=False,
-    )
-
-    class_names = train_ds.class_names
     print("Razredi:", class_names)
+    print("Train no_pencil:", train_labels.count(0))
+    print("Train pencil:", train_labels.count(1))
+    print("Validation no_pencil:", val_labels.count(0))
+    print("Validation pencil:", val_labels.count(1))
 
     with open(MODEL_DIR / "class_names.json", "w") as file:
         json.dump(class_names, file, indent=4)
 
-    AUTOTUNE = tf.data.AUTOTUNE
+    train_ds = tf.data.Dataset.from_tensor_slices((train_paths, train_labels))
+    val_ds = tf.data.Dataset.from_tensor_slices((val_paths, val_labels))
 
-    train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
-    val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
+    train_ds = train_ds.shuffle(buffer_size=len(train_paths), seed=SEED)
+    train_ds = train_ds.map(load_and_preprocess_image, num_parallel_calls=tf.data.AUTOTUNE)
+    train_ds = train_ds.batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
+
+    val_ds = val_ds.map(load_and_preprocess_image, num_parallel_calls=tf.data.AUTOTUNE)
+    val_ds = val_ds.batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
 
     return train_ds, val_ds, class_names
-
-
 
 # Gradnja modela
 
