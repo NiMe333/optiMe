@@ -41,7 +41,7 @@ docker compose logs -f
 docker compose logs -f backend
 ```
 
-### MQTT processor
+### MQTT processor - Heartbeat
 
 ```bash
 docker compose logs -f mqtt-processor

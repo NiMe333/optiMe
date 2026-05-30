@@ -175,13 +175,18 @@ function average(arr) {
   );
 }
 
-function calculateTrend(current, previous, higherIsGood = true) {
+function calculateTrend(
+  current,
+  previous,
+  higherIsGood = true,
+  maxPercent = 100,
+) {
   if (
     typeof current !== "number" ||
     typeof previous !== "number" ||
     Number.isNaN(current) ||
     Number.isNaN(previous) ||
-    previous === 0
+    previous <= 0
   ) {
     return {
       direction: "same",
@@ -191,7 +196,8 @@ function calculateTrend(current, previous, higherIsGood = true) {
   }
 
   const diff = current - previous;
-  const percent = Math.abs(Math.round((diff / previous) * 100));
+  const rawPercent = Math.abs(Math.round((diff / previous) * 100));
+  const percent = Math.min(rawPercent, maxPercent);
 
   return {
     direction: diff > 0 ? "up" : diff < 0 ? "down" : "same",

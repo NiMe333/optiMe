@@ -24,17 +24,13 @@ client.on("connect", () => {
   });
 });
 
-client.on("reconnect", () => {
-  console.log("MQTT reconnecting...");
-});
+client.on("reconnect", () => {});
 
 client.on("error", (err) => {
   console.log("MQTT error:", err.message);
 });
 
-client.on("close", () => {
-  console.log("MQTT connection closed");
-});
+client.on("close", () => {});
 
 export function onMqttConnect(listener: MqttConnectListener) {
   connectListeners.add(listener);
