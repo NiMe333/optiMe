@@ -1,10 +1,9 @@
 import mqtt from "mqtt";
 import { Platform } from "react-native";
-
-const COMPUTER_IP = "192.168.0.20";
+import { MQTT_WS_URL } from "@/src/config/network.generated";
 
 export const MQTT_URL =
-  Platform.OS === "web" ? "ws://localhost:9001" : `ws://${COMPUTER_IP}:9001`;
+  Platform.OS === "web" ? "ws://localhost:9001" : MQTT_WS_URL;
 
 type MqttConnectListener = () => void;
 

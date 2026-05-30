@@ -1,0 +1,88 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: optime-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./OptiMeBackend/docker/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./OptiMeBackend/docker/mosquitto/data:/mosquitto/data
+      - ./OptiMeBackend/docker/mosquitto/log:/mosquitto/log
+
+  backend:
+    build:
+      context: ./OptiMeBackend
+    image: optime-backend-dev
+    container_name: optime-backend
+    restart: unless-stopped
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      MQTT_URL: mqtt://mosquitto:1883
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+    volumes:
+      - ./OptiMeBackend:/app
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      - mosquitto
+
+  mqtt-processor:
+    build:
+      context: ./OptiMeBackend
+    image: optime-backend-dev
+    container_name: optime-mqtt-processor
+    restart: unless-stopped
+    command: npm run mqtt
+    environment:
+      NODE_ENV: development
+      MQTT_URL: mqtt://mosquitto:1883
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+    volumes:
+      - ./OptiMeBackend:/app
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      - mosquitto
+      - backend
+
+  frontend:
+    build:
+      context: ./OptiMeFrontend
+    image: optime-frontend-dev
+    container_name: optime-frontend
+    restart: unless-stopped
+    command: npm start -- --host lan
+    ports:
+      - "8081:8081"
+      - "19000:19000"
+      - "19000:19000/udp"
+      - "19001:19001"
+      - "19001:19001/udp"
+      - "19002:19002"
+    environment:
+      NODE_ENV: development
+      HOST_IP: ${HOST_IP}
+      REACT_NATIVE_PACKAGER_HOSTNAME: ${HOST_IP}
+      API_PORT: 3000
+      MQTT_WS_PORT: 9001
+      EXPO_DEVTOOLS_LISTEN_ADDRESS: 0.0.0.0
+      CHOKIDAR_USEPOLLING: true
+      WATCHPACK_POLLING: true
+    volumes:
+      - ./OptiMeFrontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+      - mosquitto
+    stdin_open: true
+    tty: true
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:

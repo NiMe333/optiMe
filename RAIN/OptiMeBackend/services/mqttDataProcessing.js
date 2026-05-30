@@ -1,6 +1,11 @@
 const mqtt = require("mqtt");
-const UserSnapshot = require("../models/userSnapshotModel");
 const mongoose = require("mongoose");
+
+const UserSnapshot = require("../models/userSnapshotModel");
+
+const MONGO_URI =
+  "mongodb://zigalebic02:jp8bQs3yA1FSR0sH@ac-rxpanwp-shard-00-00.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-01.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-02.yjssyxx.mongodb.net:27017/OptiMe?ssl=true&replicaSet=atlas-822hpm-shard-0&authSource=admin&appName=OptiMe";
+const MQTT_URL = process.env.MQTT_URL || "mqtt://localhost:1883";
 
 function getDayRange(dateValue) {
   const date = dateValue ? new Date(dateValue) : new Date();
@@ -103,20 +108,21 @@ function publishStepsAck(client, data, snapshot) {
 }
 
 async function connectMongo() {
-  await mongoose.connect(
-    "mongodb://zigalebic02:jp8bQs3yA1FSR0sH@ac-rxpanwp-shard-00-00.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-01.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-02.yjssyxx.mongodb.net:27017/OptiMe?ssl=true&replicaSet=atlas-822hpm-shard-0&authSource=admin&appName=OptiMe",
-  );
+  await mongoose.connect(MONGO_URI);
 
   console.log("MongoDB connected");
 }
 
 function connectMqtt() {
-  const client = mqtt.connect("mqtt://localhost:1883", {
+  console.log("Connecting to MQTT broker:", MQTT_URL);
+
+  const client = mqtt.connect(MQTT_URL, {
     reconnectPeriod: 15000,
     connectTimeout: 10000,
   });
+
   client.on("connect", () => {
-    console.log("Connected to MQTT broker");
+    console.log("Connected to MQTT broker:", MQTT_URL);
 
     client.subscribe("users/+/steps", (err) => {
       if (err) {
@@ -176,6 +182,14 @@ function connectMqtt() {
     }
   });
 
+  client.on("reconnect", () => {
+    console.log("MQTT reconnecting...");
+  });
+
+  client.on("close", () => {
+    console.log("MQTT connection closed");
+  });
+
   let lastMqttErrorAt = 0;
 
   client.on("error", (err) => {
@@ -193,7 +207,7 @@ async function start() {
     await connectMongo();
     connectMqtt();
   } catch (err) {
-    console.error("Server failed to start:", err.message);
+    console.error("MQTT processor failed to start:", err.message);
     process.exit(1);
   }
 }
