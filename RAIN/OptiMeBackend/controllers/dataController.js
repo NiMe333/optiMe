@@ -496,6 +496,7 @@ exports.trackedMetricsData = async function (req, res) {
           getNumber(today, "steps", null),
           getNumber(previousDay, "steps", null),
           true,
+          100,
         ),
         chart: activityArray,
         dates,
