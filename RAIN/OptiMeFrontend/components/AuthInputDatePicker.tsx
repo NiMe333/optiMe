@@ -24,6 +24,12 @@ export default function AuthInputDatePicker({
   const [showPicker, setShowPicker] = useState(false);
   const datePickerRef = useRef<HTMLInputElement | null>(null);
 
+  const currentPlatform = Platform.OS as string;
+
+  const isWeb = currentPlatform === "web";
+  const isIOS = currentPlatform === "ios";
+  const isAndroid = currentPlatform === "android";
+
   const isValidDate = value instanceof Date && !isNaN(value.getTime());
   const safeDate = isValidDate ? value : new Date();
 
@@ -152,7 +158,7 @@ export default function AuthInputDatePicker({
     picker.click();
   }
 
-  if (Platform.OS === "web") {
+  if (isWeb) {
     return (
       <View style={styles.inputWrapper}>
         <View style={styles.labelContainer}>
@@ -202,7 +208,7 @@ export default function AuthInputDatePicker({
               padding: 0,
             }}
           >
-            <Ionicons name="calendar-outline" size={23} color="#555" />{" "}
+            <Ionicons name="calendar-outline" size={23} color="#555" />
           </button>
 
           <input
@@ -240,28 +246,36 @@ export default function AuthInputDatePicker({
       </View>
 
       <TouchableOpacity
+        activeOpacity={0.8}
         style={styles.input}
         onPress={() => setShowPicker(true)}
       >
         <Text style={styles.inputText}>{displayDateValue}</Text>
+
+        <Ionicons name="calendar-outline" size={22} color="#555" />
       </TouchableOpacity>
 
-      {Platform.OS === "ios" && (
+      {isIOS && showPicker ? (
         <Modal visible={showPicker} transparent animationType="slide">
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <TouchableOpacity
-                style={styles.doneButton}
-                onPress={() => setShowPicker(false)}
-              >
-                <Text style={styles.doneText}>Close</Text>
-              </TouchableOpacity>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                  style={styles.doneButton}
+                  onPress={() => setShowPicker(false)}
+                >
+                  <Text style={styles.doneText}>Done</Text>
+                </TouchableOpacity>
+              </View>
 
               <DateTimePicker
                 value={safeDate}
                 mode="date"
                 display="spinner"
                 maximumDate={maxDate}
+                themeVariant="light"
+                textColor="#24364A"
+                style={styles.iosPicker}
                 onChange={(_, selectedDate) => {
                   if (selectedDate && !isNaN(selectedDate.getTime())) {
                     onChange(selectedDate);
@@ -271,23 +285,27 @@ export default function AuthInputDatePicker({
             </View>
           </View>
         </Modal>
-      )}
+      ) : null}
 
-      {Platform.OS === "android" && showPicker && (
+      {isAndroid && showPicker ? (
         <DateTimePicker
           value={safeDate}
           mode="date"
-          display="calendar"
+          display="default"
           maximumDate={maxDate}
-          onChange={(_, selectedDate) => {
+          onChange={(event, selectedDate) => {
             setShowPicker(false);
+
+            if (event.type === "dismissed") {
+              return;
+            }
 
             if (selectedDate && !isNaN(selectedDate.getTime())) {
               onChange(selectedDate);
             }
           }}
         />
-      )}
+      ) : null}
     </View>
   );
 }
@@ -321,7 +339,9 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     paddingLeft: 20,
     paddingRight: 20,
-    justifyContent: "center",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexDirection: "row",
     backgroundColor: "#fff",
   },
 
@@ -344,8 +364,11 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
 
+  modalHeader: {
+    alignItems: "flex-end",
+  },
+
   doneButton: {
-    alignSelf: "flex-end",
     paddingHorizontal: 24,
     paddingVertical: 12,
   },
@@ -354,5 +377,10 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
     color: "#204A78",
+  },
+
+  iosPicker: {
+    width: "100%",
+    height: 220,
   },
 });

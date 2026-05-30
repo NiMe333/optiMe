@@ -1,50 +1,215 @@
-const mqtt = require('mqtt')
-const UserSnapshot = require('../models/userSnapshotModel');
-const mongoose = require('mongoose');
+const mqtt = require("mqtt");
+const mongoose = require("mongoose");
 
+const UserSnapshot = require("../models/userSnapshotModel");
 
-async function start() {
-  await mongoose.connect('mongodb://zigalebic02:jp8bQs3yA1FSR0sH@ac-rxpanwp-shard-00-00.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-01.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-02.yjssyxx.mongodb.net:27017/OptiMe?ssl=true&replicaSet=atlas-822hpm-shard-0&authSource=admin&appName=OptiMe')
-  console.log('MongoDB connected')
+const MONGO_URI =
+  "mongodb://zigalebic02:jp8bQs3yA1FSR0sH@ac-rxpanwp-shard-00-00.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-01.yjssyxx.mongodb.net:27017,ac-rxpanwp-shard-00-02.yjssyxx.mongodb.net:27017/OptiMe?ssl=true&replicaSet=atlas-822hpm-shard-0&authSource=admin&appName=OptiMe";
+const MQTT_URL = process.env.MQTT_URL || "mqtt://localhost:1883";
+
+function getDayRange(dateValue) {
+  const date = dateValue ? new Date(dateValue) : new Date();
+
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Invalid date");
+  }
+
+  const startOfDay = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+
+  const startOfNextDay = new Date(startOfDay);
+  startOfNextDay.setDate(startOfNextDay.getDate() + 1);
+
+  return {
+    startOfDay,
+    startOfNextDay,
+  };
 }
 
-const client = mqtt.connect('mqtt://localhost:1883')
+function parseStepsMessage(topic, message) {
+  const data = JSON.parse(message.toString());
 
-client.on('connect', () => {
-  console.log('Connected to MQTT broker')
+  const topicParts = topic.split("/");
 
-  client.subscribe('users/+/steps') //topic you are subscribed to
-})
-
-client.on('message', async (topic, message) => {
-  try {
-
-    const data = JSON.parse(message.toString()) //becomes normal object
-
-    console.log('Topic:', topic)
-    console.log('Payload:', data)
-
-    const result = await UserSnapshot.updateOne(
-            {
-              userId: data.userId,
-              date: new Date(data.date)
-            },
-            {
-              $set: {
-                steps: data.steps
-              }
-            },
-          );
-
-    console.log("UserSnapShot updated")
-    console.log("Matched:", result.matchedCount);
-    console.log("Modified:", result.modifiedCount);
-
-  } catch (err) {
-
-    console.error('Invalid JSON:', err)
-
+  if (
+    topicParts.length !== 3 ||
+    topicParts[0] !== "users" ||
+    topicParts[2] !== "steps"
+  ) {
+    throw new Error("Invalid topic format");
   }
-})
+
+  const userIdFromTopic = topicParts[1];
+
+  if (!mongoose.Types.ObjectId.isValid(userIdFromTopic)) {
+    throw new Error("Invalid userId in topic");
+  }
+
+  if (data.userId && data.userId !== userIdFromTopic) {
+    throw new Error("userId in payload does not match userId in topic");
+  }
+
+  const steps = Number(data.steps);
+
+  if (!Number.isFinite(steps) || steps < 0) {
+    throw new Error("Invalid steps value");
+  }
+
+  const { startOfDay, startOfNextDay } = getDayRange(data.date);
+
+  const timestamp = data.timestamp ? new Date(data.timestamp) : new Date();
+
+  if (Number.isNaN(timestamp.getTime())) {
+    throw new Error("Invalid timestamp");
+  }
+
+  return {
+    userId: userIdFromTopic,
+    steps,
+    startOfDay,
+    startOfNextDay,
+    timestamp,
+    source: data.source || "pedometer",
+  };
+}
+
+function publishStepsAck(client, data, snapshot) {
+  const ackTopic = `users/${data.userId}/steps/ack`;
+
+  const ackPayload = {
+    success: true,
+    userId: data.userId,
+    receivedSteps: data.steps,
+    savedSteps: snapshot.steps,
+    savedAt: new Date().toISOString(),
+    requestTimestamp: data.timestamp.toISOString(),
+    snapshotDate: snapshot.date,
+  };
+
+  client.publish(
+    ackTopic,
+    JSON.stringify(ackPayload),
+    {
+      qos: 0,
+      retain: false,
+    },
+    (err) => {
+      if (err) {
+        console.error("MQTT ACK publish error:", err.message);
+        return;
+      }
+
+      console.log("MQTT ACK published:", ackTopic);
+    },
+  );
+}
+
+async function connectMongo() {
+  await mongoose.connect(MONGO_URI);
+
+  console.log("MongoDB connected");
+}
+
+function connectMqtt() {
+  console.log("Connecting to MQTT broker:", MQTT_URL);
+
+  const client = mqtt.connect(MQTT_URL, {
+    reconnectPeriod: 15000,
+    connectTimeout: 10000,
+  });
+
+  client.on("connect", () => {
+    console.log("Connected to MQTT broker:", MQTT_URL);
+
+    client.subscribe("users/+/steps", (err) => {
+      if (err) {
+        console.error("MQTT subscribe error:", err.message);
+        return;
+      }
+
+      console.log("Subscribed to topic: users/+/steps");
+    });
+  });
+
+  client.on("message", async (topic, message) => {
+    try {
+      const data = parseStepsMessage(topic, message);
+
+      console.log("MQTT steps received:", {
+        userId: data.userId,
+        steps: data.steps,
+        timestamp: data.timestamp,
+      });
+
+      const updatedSnapshot = await UserSnapshot.findOneAndUpdate(
+        {
+          userId: data.userId,
+          date: {
+            $gte: data.startOfDay,
+            $lt: data.startOfNextDay,
+          },
+        },
+        {
+          $max: {
+            steps: data.steps,
+            lastPedometerSyncAt: data.timestamp,
+          },
+          $set: {
+            pedometerSource: data.source,
+          },
+          $setOnInsert: {
+            userId: data.userId,
+            date: data.startOfDay,
+          },
+        },
+        {
+          upsert: true,
+          new: true,
+        },
+      );
+
+      console.log("UserSnapshot updated:", {
+        snapshotId: updatedSnapshot._id,
+        savedSteps: updatedSnapshot.steps,
+      });
+
+      publishStepsAck(client, data, updatedSnapshot);
+    } catch (err) {
+      console.error("MQTT message error:", err.message);
+    }
+  });
+
+  client.on("reconnect", () => {
+    console.log("MQTT reconnecting...");
+  });
+
+  client.on("close", () => {
+    console.log("MQTT connection closed");
+  });
+
+  let lastMqttErrorAt = 0;
+
+  client.on("error", (err) => {
+    const now = Date.now();
+
+    if (now - lastMqttErrorAt > 30000) {
+      console.error("MQTT client error:", err.message || err);
+      lastMqttErrorAt = now;
+    }
+  });
+}
+
+async function start() {
+  try {
+    await connectMongo();
+    connectMqtt();
+  } catch (err) {
+    console.error("MQTT processor failed to start:", err.message);
+    process.exit(1);
+  }
+}
 
 start();

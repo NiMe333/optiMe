@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
 import { colors } from "@/styles/home.styles";
 
+type NullableNumber = number | null;
+
 type MetricBarChartProps = {
-  data: number[];
+  data: NullableNumber[];
+  dates?: string[];
   color: string;
   maxValue?: number;
   height?: number;
@@ -16,9 +19,11 @@ type MetricBarChartProps = {
 export type SelectedBarPoint = {
   index: number;
   value: number;
+  rawValue: NullableNumber;
   dayLabel: string;
   dateLabel: string;
   headerLabel: string;
+  date?: string;
 };
 
 type ChartDay = {
@@ -26,10 +31,14 @@ type ChartDay = {
   fullLabel: string;
   dateLabel: string;
   isToday: boolean;
+  date?: string;
 };
+
+const DAYS_TO_SHOW = 7;
 
 export default function MetricBarChart({
   data,
+  dates,
   color,
   maxValue: _maxValue,
   height = 56,
@@ -39,16 +48,47 @@ export default function MetricBarChart({
   const [width, setWidth] = useState(0);
   const [chartReady, setChartReady] = useState(false);
 
-  const safeData = data.length > 0 ? data.slice(-7) : [0];
-  const dataKey = safeData.join("|");
+  const rawData = useMemo(() => {
+    if (!Array.isArray(data) || data.length === 0) {
+      return [null];
+    }
 
-  const days = getLastDays(safeData.length);
+    return data.slice(-DAYS_TO_SHOW);
+  }, [data]);
+
+  const safeData = useMemo(() => {
+    return rawData.map((value) => {
+      if (typeof value === "number" && !Number.isNaN(value)) {
+        return value;
+      }
+
+      return 0;
+    });
+  }, [rawData]);
+
+  const normalizedDates = useMemo(() => {
+    if (!Array.isArray(dates) || dates.length === 0) {
+      return undefined;
+    }
+
+    return dates.slice(-safeData.length);
+  }, [dates, safeData.length]);
+
+  const dataKey = `${safeData.join("|")}-${normalizedDates?.join("|") ?? ""}`;
+
+  const days = useMemo(() => {
+    if (normalizedDates && normalizedDates.length === safeData.length) {
+      return getDaysFromDates(normalizedDates);
+    }
+
+    return getLastDays(safeData.length);
+  }, [normalizedDates, safeData.length]);
 
   const [selectedIndex, setSelectedIndex] = useState(safeData.length - 1);
 
   useEffect(() => {
     setSelectedIndex(safeData.length - 1);
-  }, [safeData.length]);
+  }, [safeData.length, dataKey]);
 
   useEffect(() => {
     if (width <= 0) {
@@ -65,7 +105,10 @@ export default function MetricBarChart({
   }, [width, dataKey]);
 
   const selectedValue =
-    safeData[selectedIndex] ?? safeData[safeData.length - 1];
+    safeData[selectedIndex] ?? safeData[safeData.length - 1] ?? 0;
+
+  const selectedRawValue =
+    rawData[selectedIndex] ?? rawData[rawData.length - 1] ?? null;
 
   const selectedDay = days[selectedIndex] ?? days[days.length - 1];
 
@@ -77,13 +120,21 @@ export default function MetricBarChart({
     onSelectedBarChange?.({
       index: selectedIndex,
       value: selectedValue,
+      rawValue: selectedRawValue,
       dayLabel: selectedDay.fullLabel,
       dateLabel: selectedDay.dateLabel,
       headerLabel: selectedDay.isToday
         ? "Today"
         : `${selectedDay.shortLabel} · ${selectedDay.dateLabel}`,
+      date: selectedDay.date,
     });
-  }, [onSelectedBarChange, selectedDay, selectedIndex, selectedValue]);
+  }, [
+    onSelectedBarChange,
+    selectedDay,
+    selectedIndex,
+    selectedValue,
+    selectedRawValue,
+  ]);
 
   const minDataValue = Math.min(...safeData);
   const maxDataValue = Math.max(...safeData);
@@ -130,10 +181,11 @@ export default function MetricBarChart({
   const chartData = safeData.map((value, index) => {
     const isSelected = index === selectedIndex;
     const isToday = index === safeData.length - 1;
+    const hasRealData = rawData[index] !== null;
 
     const selectedBarColor = color;
-    const todayBarColor = hexToRgba(color, 0.72);
-    const normalBarColor = hexToRgba(color, 0.32);
+    const todayBarColor = hexToRgba(color, hasRealData ? 0.72 : 0.22);
+    const normalBarColor = hexToRgba(color, hasRealData ? 0.32 : 0.14);
 
     const barColor = isSelected
       ? selectedBarColor
@@ -202,6 +254,30 @@ export default function MetricBarChart({
   );
 }
 
+function getDaysFromDates(dates: string[]): ChartDay[] {
+  const todayKey = getDateKey(new Date());
+
+  return dates.map((dateKey) => {
+    const date = new Date(`${dateKey}T00:00:00`);
+    const isToday = dateKey === todayKey;
+
+    return {
+      shortLabel: new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+      }).format(date),
+      fullLabel: new Intl.DateTimeFormat("en-US", {
+        weekday: "long",
+      }).format(date),
+      dateLabel: new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+      }).format(date),
+      isToday,
+      date: dateKey,
+    };
+  });
+}
+
 function getLastDays(count: number): ChartDay[] {
   const today = new Date();
 
@@ -223,8 +299,17 @@ function getLastDays(count: number): ChartDay[] {
         day: "numeric",
       }).format(date),
       isToday,
+      date: getDateKey(date),
     };
   });
+}
+
+function getDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function hexToRgba(hex: string, opacity: number) {

@@ -1,12 +1,80 @@
-import { ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { useState } from "react";
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
-import WebSidebar from "@/components/navigation/WebSidebar";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { colors, styles } from "@/styles/home.styles";
 
 export default function ProfileScreen() {
   const { width } = useWindowDimensions();
   const isWebLayout = width >= 1000;
+
+  const { logout } = useAuth();
+  const { showToast, showConfirmToast } = useToast();
+
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+
+  function blurWebFocus() {
+    if (Platform.OS !== "web") return;
+
+    const activeElement = document.activeElement as HTMLElement | null;
+    activeElement?.blur();
+  }
+
+  function handleToggleTwoFactor() {
+    blurWebFocus();
+
+    setTwoFactorEnabled((currentValue) => {
+      const newValue = !currentValue;
+
+      showToast(
+        newValue
+          ? "Two-factor authentication enabled."
+          : "Two-factor authentication disabled.",
+        "success",
+      );
+
+      return newValue;
+    });
+  }
+
+  async function logoutConfirmed() {
+    if (isLoggingOut) return;
+
+    blurWebFocus();
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+      router.replace("/auth/login");
+    } catch (error) {
+      showToast("Logout failed. Please try again.", "error");
+      setIsLoggingOut(false);
+    }
+  }
+
+  function handleLogout() {
+    blurWebFocus();
+
+    showConfirmToast({
+      message: "Do you want to log out?",
+      type: "info",
+      confirmText: "Yes",
+      cancelText: "No",
+      onConfirm: logoutConfirmed,
+    });
+  }
 
   if (isWebLayout) {
     return (
@@ -15,7 +83,12 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.webContentInner}
         showsVerticalScrollIndicator={false}
       >
-        <ProfileContent />
+        <ProfileContent
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+          twoFactorEnabled={twoFactorEnabled}
+          onToggleTwoFactor={handleToggleTwoFactor}
+        />
       </ScrollView>
     );
   }
@@ -26,13 +99,31 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.mobileContent}
       >
-        <ProfileContent mobile />
+        <ProfileContent
+          mobile
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+          twoFactorEnabled={twoFactorEnabled}
+          onToggleTwoFactor={handleToggleTwoFactor}
+        />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function ProfileContent({ mobile = false }: { mobile?: boolean }) {
+function ProfileContent({
+  mobile = false,
+  onLogout,
+  isLoggingOut,
+  twoFactorEnabled,
+  onToggleTwoFactor,
+}: {
+  mobile?: boolean;
+  onLogout: () => void;
+  isLoggingOut: boolean;
+  twoFactorEnabled: boolean;
+  onToggleTwoFactor: () => void;
+}) {
   return (
     <View
       style={{
@@ -63,8 +154,104 @@ function ProfileContent({ mobile = false }: { mobile?: boolean }) {
           lineHeight: 21,
         }}
       >
-        To do!
+        Manage your account and app settings.
       </Text>
+
+      <View
+        style={{
+          marginTop: 28,
+          padding: 16,
+          borderRadius: 18,
+          backgroundColor: colors.background,
+          borderWidth: 1,
+          borderColor: colors.border,
+        }}
+      >
+        <Pressable
+          onPress={onToggleTwoFactor}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: twoFactorEnabled }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Ionicons
+            name={twoFactorEnabled ? "checkbox-outline" : "square-outline"}
+            size={26}
+            color={twoFactorEnabled ? colors.navy : colors.textSoft}
+          />
+
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: colors.navy,
+                fontSize: 15,
+                fontWeight: "900",
+              }}
+            >
+              Enable 2FA
+            </Text>
+
+            <Text
+              style={{
+                color: colors.textSoft,
+                fontSize: 13,
+                fontWeight: "700",
+                marginTop: 4,
+                lineHeight: 18,
+              }}
+            >
+              Require two-factor verification after login.
+            </Text>
+          </View>
+
+          <Text
+            style={{
+              color: twoFactorEnabled ? colors.navy : colors.textSoft,
+              fontSize: 13,
+              fontWeight: "900",
+            }}
+          >
+            {twoFactorEnabled ? "On" : "Off"}
+          </Text>
+        </Pressable>
+      </View>
+
+      <Pressable
+        onPress={onLogout}
+        disabled={isLoggingOut}
+        style={{
+          marginTop: 20,
+          height: 54,
+          borderRadius: 18,
+          backgroundColor: "rgba(239,83,80,0.08)",
+          borderWidth: 1,
+          borderColor: "rgba(239,83,80,0.16)",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "row",
+          gap: 10,
+          opacity: isLoggingOut ? 0.6 : 1,
+        }}
+      >
+        <Ionicons
+          name="log-out-outline"
+          size={22}
+          color={isLoggingOut ? "#C9A2A2" : "#EF5350"}
+        />
+
+        <Text
+          style={{
+            color: isLoggingOut ? "#C9A2A2" : "#EF5350",
+            fontSize: 15,
+            fontWeight: "900",
+          }}
+        >
+          {isLoggingOut ? "Logging out..." : "Log out"}
+        </Text>
+      </Pressable>
     </View>
   );
 }

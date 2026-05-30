@@ -36,7 +36,7 @@ export default function AuthInputGender({
           <Text style={[styles.inputText, !value && styles.placeholder]}>
             {value || "Select gender"}
           </Text>
-          <Ionicons name="chevron-down-outline" size={22} color="#555" />{" "}
+          <Ionicons name="chevron-down-outline" size={22} color="#555" />
         </TouchableOpacity>
       </View>
 

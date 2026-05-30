@@ -1,6 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { ScrollView, View, Text, useWindowDimensions } from "react-native";
+import {
+  AppState,
+  ScrollView,
+  View,
+  Text,
+  useWindowDimensions,
+} from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, styles } from "@/styles/home.styles";
@@ -12,6 +18,7 @@ import type { HomeDashboardData } from "@/types/home";
 import MentalHealthScoreCard from "@/components/home/MentalHealthScoreCard";
 import TrackedMetricCard from "@/components/home/TrackedMetricCard";
 import CalculatedScoresSection from "@/components/home/CalculatedScoresSection";
+import { subscribePedometerSync } from "@/services/pedometerSyncEvents";
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
@@ -21,11 +28,87 @@ export default function HomeScreen() {
   const [todayKey, setTodayKey] = useState(getLocalDateKey());
   const [scoreCardKey, setScoreCardKey] = useState(0);
 
+  const isMountedRef = useRef(true);
+  const appStateRef = useRef(AppState.currentState);
+
+  const isLoadingHomeDataRef = useRef(false);
+  const pendingRefreshRef = useRef(false);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadHomeData = useCallback(async () => {
+    if (isLoadingHomeDataRef.current) {
+      pendingRefreshRef.current = true;
+      return;
+    }
+
+    isLoadingHomeDataRef.current = true;
+
+    try {
+      const data = await getHomeDashboardData();
+
+      if (isMountedRef.current) {
+        setHomeData(data);
+      }
+    } catch (err) {
+      console.log("Home data refresh error:", err);
+    } finally {
+      isLoadingHomeDataRef.current = false;
+
+      if (pendingRefreshRef.current && isMountedRef.current) {
+        pendingRefreshRef.current = false;
+
+        if (refreshTimeoutRef.current) {
+          clearTimeout(refreshTimeoutRef.current);
+        }
+
+        refreshTimeoutRef.current = setTimeout(() => {
+          loadHomeData();
+        }, 500);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      pendingRefreshRef.current = false;
+      isLoadingHomeDataRef.current = false;
+
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       setScoreCardKey((prev) => prev + 1);
-    }, []),
+      loadHomeData();
+    }, [loadHomeData]),
   );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      const previousAppState = appStateRef.current;
+      appStateRef.current = nextAppState;
+
+      const wasInBackground =
+        previousAppState === "background" || previousAppState === "inactive";
+
+      if (wasInBackground && nextAppState === "active") {
+        console.log("Home active again, refreshing dashboard...");
+
+        setScoreCardKey((prev) => prev + 1);
+        loadHomeData();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [loadHomeData]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -36,22 +119,64 @@ export default function HomeScreen() {
   }, [todayKey]);
 
   useEffect(() => {
-    let mounted = true;
-
-    async function loadHomeData() {
-      const data = await getHomeDashboardData();
-
-      if (mounted) {
-        setHomeData(data);
-      }
-    }
-
     loadHomeData();
+  }, [todayKey, loadHomeData]);
+
+  useEffect(() => {
+    const unsubscribe = subscribePedometerSync((payload) => {
+      console.log("Home received pedometer sync:", payload);
+
+      setHomeData((prev) => {
+        if (!prev) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          trackedMetrics: prev.trackedMetrics.map((metric) => {
+            const isActivity =
+              metric.id === "activity" ||
+              metric.id === "movement" ||
+              metric.id === "steps";
+
+            if (!isActivity) {
+              return metric;
+            }
+
+            const goal = metric.goal || metric.maxValue || 8000;
+
+            const progress = Math.min(
+              100,
+              Math.round((payload.steps / goal) * 100),
+            );
+
+            const chart = [...(metric.chart || [])];
+            const dates = metric.dates || [];
+
+            const todayIndex = dates.findIndex((date) => date === payload.date);
+
+            if (todayIndex >= 0) {
+              chart[todayIndex] = payload.steps;
+            }
+
+            return {
+              ...metric,
+              value: payload.steps,
+              chart,
+              maxValue: goal,
+              goal,
+              progress,
+              lastSyncedAt: payload.timestamp,
+            };
+          }),
+        };
+      });
+    });
 
     return () => {
-      mounted = false;
+      unsubscribe();
     };
-  }, [todayKey]);
+  }, []);
 
   function getLocalDateKey(date = new Date()) {
     const year = date.getFullYear();
@@ -139,14 +264,17 @@ export default function HomeScreen() {
         contentContainerStyle={styles.mobileContent}
       >
         <DashboardHeader username={username} todayLabel={todayLabel} mobile />
+
         <MentalHealthScoreCard
           key={`score-mobile-${scoreCardKey}`}
           score={homeData.mentalHealthScore}
           mobile
         />
+
         <View style={styles.mobileSectionHeader}>
           <Text style={styles.panelTitle}>Tracked Metrics</Text>
         </View>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -166,8 +294,11 @@ export default function HomeScreen() {
             </View>
           ))}
         </ScrollView>
+
         <CalculatedScoresSection scores={homeData.calculatedScores} mobile />
+
         <AchievementsPanel achievements={homeData.achievements} mobile />
+
         <ArticlesSection articles={homeData.articles} mobile />
       </ScrollView>
     </SafeAreaView>

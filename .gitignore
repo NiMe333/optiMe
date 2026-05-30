@@ -1,0 +1,14 @@
+# Python virtual environments
+venv/
+ORV/Model/venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Model outputs
+ORV/Model/models/
+ORV/Model/results/
