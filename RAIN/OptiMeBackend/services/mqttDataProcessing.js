@@ -1,6 +1,6 @@
 const mqtt = require("mqtt");
 const mongoose = require("mongoose");
-
+const UserDeviceStatus = require("../models/userDeviceStatusModel");
 const UserSnapshot = require("../models/userSnapshotModel");
 
 const MONGO_URI =
@@ -76,6 +76,77 @@ function parseStepsMessage(topic, message) {
   };
 }
 
+function parseHeartbeatMessage(topic, message) {
+  const data = JSON.parse(message.toString());
+
+  const topicParts = topic.split("/");
+
+  if (
+    topicParts.length !== 3 ||
+    topicParts[0] !== "users" ||
+    topicParts[2] !== "heartbeat"
+  ) {
+    throw new Error("Invalid heartbeat topic format");
+  }
+
+  const userIdFromTopic = topicParts[1];
+
+  if (!mongoose.Types.ObjectId.isValid(userIdFromTopic)) {
+    throw new Error("Invalid userId in heartbeat topic");
+  }
+
+  if (data.userId && data.userId !== userIdFromTopic) {
+    throw new Error("userId in heartbeat payload does not match topic");
+  }
+
+  const timestamp = data.timestamp ? new Date(data.timestamp) : new Date();
+
+  if (Number.isNaN(timestamp.getTime())) {
+    throw new Error("Invalid heartbeat timestamp");
+  }
+
+  return {
+    userId: userIdFromTopic,
+    deviceId: data.deviceId || "default-device",
+    platform: data.platform || "unknown",
+    source: data.source || "mqtt-heartbeat",
+    timestamp,
+  };
+}
+
+async function handleHeartbeatMessage(topic, message) {
+  const data = parseHeartbeatMessage(topic, message);
+
+  const updatedStatus = await UserDeviceStatus.findOneAndUpdate(
+    {
+      userId: data.userId,
+      deviceId: data.deviceId,
+    },
+    {
+      $set: {
+        status: "online",
+        lastHeartbeatAt: data.timestamp,
+        platform: data.platform,
+        source: data.source,
+      },
+      $setOnInsert: {
+        userId: data.userId,
+        deviceId: data.deviceId,
+      },
+    },
+    {
+      upsert: true,
+      new: true,
+    },
+  );
+
+  console.log("Heartbeat received:", {
+    userId: updatedStatus.userId,
+    deviceId: updatedStatus.deviceId,
+    lastHeartbeatAt: updatedStatus.lastHeartbeatAt,
+  });
+}
+
 function publishStepsAck(client, data, snapshot) {
   const ackTopic = `users/${data.userId}/steps/ack`;
 
@@ -124,18 +195,23 @@ function connectMqtt() {
   client.on("connect", () => {
     console.log("Connected to MQTT broker:", MQTT_URL);
 
-    client.subscribe("users/+/steps", (err) => {
+    client.subscribe(["users/+/steps", "users/+/heartbeat"], (err) => {
       if (err) {
         console.error("MQTT subscribe error:", err.message);
         return;
       }
 
-      console.log("Subscribed to topic: users/+/steps");
+      console.log("Subscribed to topics: users/+/steps, users/+/heartbeat");
     });
   });
 
   client.on("message", async (topic, message) => {
     try {
+      if (topic.endsWith("/heartbeat")) {
+        await handleHeartbeatMessage(topic, message);
+        return;
+      }
+
       const data = parseStepsMessage(topic, message);
 
       console.log("MQTT steps received:", {

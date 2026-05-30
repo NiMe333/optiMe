@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   AppState,
+  Platform,
   ScrollView,
   View,
   Text,
@@ -18,7 +19,23 @@ import type { HomeDashboardData } from "@/types/home";
 import MentalHealthScoreCard from "@/components/home/MentalHealthScoreCard";
 import TrackedMetricCard from "@/components/home/TrackedMetricCard";
 import CalculatedScoresSection from "@/components/home/CalculatedScoresSection";
-import { subscribePedometerSync } from "@/services/pedometerSyncEvents";
+
+import {
+  subscribePedometerSync,
+  notifyPedometerSync,
+} from "@/services/pedometerSyncEvents";
+
+import { subscribeJson } from "@/services/mqttClient";
+
+type StepsAckPayload = {
+  success: boolean;
+  userId: string;
+  receivedSteps: number;
+  savedSteps: number;
+  savedAt: string;
+  requestTimestamp: string;
+  snapshotDate: string;
+};
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
@@ -34,6 +51,9 @@ export default function HomeScreen() {
   const isLoadingHomeDataRef = useRef(false);
   const pendingRefreshRef = useRef(false);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const currentUserId =
+    (user as any)?._id || (user as any)?.id || (user as any)?.userId;
 
   const loadHomeData = useCallback(async () => {
     if (isLoadingHomeDataRef.current) {
@@ -122,6 +142,41 @@ export default function HomeScreen() {
     loadHomeData();
   }, [todayKey, loadHomeData]);
 
+  // WEB real-time update:
+  // Web posluša isti ACK topic kot telefon.
+  // Ko backend potrdi shranjevanje steps, web sproži isti lokalni update kot telefon.
+  useEffect(() => {
+    if (Platform.OS !== "web") {
+      return;
+    }
+
+    if (!currentUserId) {
+      return;
+    }
+
+    const unsubscribe = subscribeJson<StepsAckPayload>(
+      `users/${currentUserId}/steps/ack`,
+      (ack) => {
+        if (!ack.success) {
+          return;
+        }
+
+        notifyPedometerSync({
+          steps: ack.savedSteps,
+          date: formatDateForApi(new Date(ack.snapshotDate)),
+          timestamp: ack.savedAt,
+        });
+      },
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUserId]);
+
+  // Lokalni update Activity kartice.
+  // Na telefonu pride iz usePedometer ACK listenerja.
+  // Na webu pride iz zgornjega MQTT ACK listenerja.
   useEffect(() => {
     const unsubscribe = subscribePedometerSync((payload) => {
       console.log("Home received pedometer sync:", payload);
@@ -143,7 +198,7 @@ export default function HomeScreen() {
               return metric;
             }
 
-            const goal = metric.goal || metric.maxValue || 8000;
+            const goal = (metric as any).goal || metric.maxValue || 8000;
 
             const progress = Math.min(
               100,
@@ -303,6 +358,14 @@ export default function HomeScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function formatDateForApi(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function getTodayLabel() {
