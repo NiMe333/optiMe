@@ -16,6 +16,7 @@ CONFIG_PATH = BASE_DIR / "models" / "training_config.json"
 IMAGE_SIZE = (224, 224)
 DEFAULT_THRESHOLD = 0.5
 
+BEST_THRESHOLD_PATH = BASE_DIR / "models" / "best_threshold.json"
 
 def load_class_names():
     if not CLASS_NAMES_PATH.exists():
@@ -26,6 +27,12 @@ def load_class_names():
 
 
 def load_threshold():
+    if BEST_THRESHOLD_PATH.exists():
+        with open(BEST_THRESHOLD_PATH, "r") as file:
+            data = json.load(file)
+
+        return data.get("best_threshold", DEFAULT_THRESHOLD)
+
     if not CONFIG_PATH.exists():
         return DEFAULT_THRESHOLD
 
@@ -33,7 +40,6 @@ def load_threshold():
         config = json.load(file)
 
     return config.get("threshold", DEFAULT_THRESHOLD)
-
 
 def prepare_image(image_path):
     img = load_img(image_path, target_size=IMAGE_SIZE)
