@@ -2,6 +2,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import PedometerTracker from "@/components/PedometerTracker";
+import MqttHeartbeatTracker from "@/components/MqttHeartbeatTracker";
 
 import { ToastProvider } from "@/context/ToastContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -89,6 +90,7 @@ export default function RootLayout() {
     <AuthProvider>
       <ToastProvider>
         <PedometerTracker />
+        <MqttHeartbeatTracker />
         <AuthGuard />
       </ToastProvider>
     </AuthProvider>
