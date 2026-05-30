@@ -1,26 +1,82 @@
 # RAIN
 
-## MQTT
+## Zagon
 
-### Terminal 1 - MQTT broker
+Pred zagonom mora biti Docker Desktop zagnan.
 
-/opt/homebrew/opt/mosquitto/sbin/mosquitto -v -c ~/mosquitto-dev.conf
+```bash
+cd ./RAIN
+./run.sh
+```
 
-### Terminal 2 - backend API
+Skripta zažene:
 
-cd ./RAIN/OptiMeBackend
-npm run dev
+- Mosquitto MQTT broker
+- backend API
+- MQTT processor
 
-### Terminal 3 - MQTT processor
+---
 
-cd ./RAIN/OptiMeBackend
-npm run mqtt
+## Porti
 
-### Terminal 4 - frontend
+```txt
+3000 - backend API
+1883 - MQTT
+9001 - MQTT WebSocket
+```
 
-cd ./RAIN/OptiMeFrontend
-npx expo start
+---
 
-### Terminal 5 - subscriber
+## Logi
 
-mosquitto_sub -h 127.0.0.1 -p 1883 -t 'users/+/steps/ack' -v
+### Vsi logi
+
+```bash
+docker compose logs -f
+```
+
+### Backend
+
+```bash
+docker compose logs -f backend
+```
+
+### MQTT processor
+
+```bash
+docker compose logs -f mqtt-processor
+```
+
+### Mosquitto
+
+```bash
+docker compose logs -f mosquitto
+```
+
+---
+
+## Test backenda
+
+```bash
+curl http://localhost:3000
+```
+
+Pričakovan odgovor:
+
+```txt
+Backend is running
+```
+
+---
+
+## Ustavitev
+
+```bash
+docker compose down
+```
+
+---
+
+## Pomembno
+
+Telefon in računalnik morata biti v istem omrežju.
