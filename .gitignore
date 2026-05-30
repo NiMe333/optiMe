@@ -13,4 +13,4 @@ __pycache__/
 ORV/Model/models/
 ORV/Model/results/
 
-RAIN/OptiMeBackedn/docker/mosquitto/data
+RAIN/OptiMeBackend/docker/mosquitto/data
