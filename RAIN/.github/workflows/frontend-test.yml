@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - development
+      - SCRUM-68-Fixed-functionality-for-the-application
   pull_request:
     branches:
       - main
       - development
+      - SCRUM-68-Fixed-functionality-for-the-application
 
 jobs:
   frontend-test:
