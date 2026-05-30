@@ -11,6 +11,7 @@ on:
       - main
       - development
       - SCRUM-68-Fixed-functionality-for-the-application
+  workflow_dispatch:
 
 jobs:
   frontend-test:

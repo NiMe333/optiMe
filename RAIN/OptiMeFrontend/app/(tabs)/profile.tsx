@@ -23,12 +23,30 @@ export default function ProfileScreen() {
   const { showToast, showConfirmToast } = useToast();
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   function blurWebFocus() {
     if (Platform.OS !== "web") return;
 
     const activeElement = document.activeElement as HTMLElement | null;
     activeElement?.blur();
+  }
+
+  function handleToggleTwoFactor() {
+    blurWebFocus();
+
+    setTwoFactorEnabled((currentValue) => {
+      const newValue = !currentValue;
+
+      showToast(
+        newValue
+          ? "Two-factor authentication enabled."
+          : "Two-factor authentication disabled.",
+        "success",
+      );
+
+      return newValue;
+    });
   }
 
   async function logoutConfirmed() {
@@ -65,7 +83,12 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.webContentInner}
         showsVerticalScrollIndicator={false}
       >
-        <ProfileContent onLogout={handleLogout} isLoggingOut={isLoggingOut} />
+        <ProfileContent
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+          twoFactorEnabled={twoFactorEnabled}
+          onToggleTwoFactor={handleToggleTwoFactor}
+        />
       </ScrollView>
     );
   }
@@ -80,6 +103,8 @@ export default function ProfileScreen() {
           mobile
           onLogout={handleLogout}
           isLoggingOut={isLoggingOut}
+          twoFactorEnabled={twoFactorEnabled}
+          onToggleTwoFactor={handleToggleTwoFactor}
         />
       </ScrollView>
     </SafeAreaView>
@@ -90,10 +115,14 @@ function ProfileContent({
   mobile = false,
   onLogout,
   isLoggingOut,
+  twoFactorEnabled,
+  onToggleTwoFactor,
 }: {
   mobile?: boolean;
   onLogout: () => void;
   isLoggingOut: boolean;
+  twoFactorEnabled: boolean;
+  onToggleTwoFactor: () => void;
 }) {
   return (
     <View
@@ -128,11 +157,73 @@ function ProfileContent({
         Manage your account and app settings.
       </Text>
 
+      <View
+        style={{
+          marginTop: 28,
+          padding: 16,
+          borderRadius: 18,
+          backgroundColor: colors.background,
+          borderWidth: 1,
+          borderColor: colors.border,
+        }}
+      >
+        <Pressable
+          onPress={onToggleTwoFactor}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: twoFactorEnabled }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Ionicons
+            name={twoFactorEnabled ? "checkbox-outline" : "square-outline"}
+            size={26}
+            color={twoFactorEnabled ? colors.navy : colors.textSoft}
+          />
+
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: colors.navy,
+                fontSize: 15,
+                fontWeight: "900",
+              }}
+            >
+              Enable 2FA
+            </Text>
+
+            <Text
+              style={{
+                color: colors.textSoft,
+                fontSize: 13,
+                fontWeight: "700",
+                marginTop: 4,
+                lineHeight: 18,
+              }}
+            >
+              Require two-factor verification after login.
+            </Text>
+          </View>
+
+          <Text
+            style={{
+              color: twoFactorEnabled ? colors.navy : colors.textSoft,
+              fontSize: 13,
+              fontWeight: "900",
+            }}
+          >
+            {twoFactorEnabled ? "On" : "Off"}
+          </Text>
+        </Pressable>
+      </View>
+
       <Pressable
         onPress={onLogout}
         disabled={isLoggingOut}
         style={{
-          marginTop: 28,
+          marginTop: 20,
           height: 54,
           borderRadius: 18,
           backgroundColor: "rgba(239,83,80,0.08)",
