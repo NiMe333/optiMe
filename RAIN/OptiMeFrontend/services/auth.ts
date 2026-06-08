@@ -12,22 +12,25 @@ export type AuthUserResponse = {
   email?: string;
   username?: string;
   formFinished: boolean;
+  twoFactorEnabled?: boolean;
 };
 
 type AuthResponse = {
   accessToken?: string;
   user?: AuthUserResponse;
   message?: string;
+  requires2FA?: boolean;
 };
 
 function normalizeUser(user: any): AuthUserResponse | null {
   if (!user) return null;
 
   return {
-    id: user.id,
+    id: user.id || user._id,
     email: user.email,
     username: user.username,
     formFinished: user.formFinished === true,
+    twoFactorEnabled: user.twoFactorEnabled === true,
   };
 }
 
@@ -54,15 +57,21 @@ export async function loginUser(email: string, password: string) {
       password,
     });
 
-    const accessToken = response.data?.accessToken;
+    const data = normalizeAuthResponse(response.data);
 
-    if (!accessToken) {
+    if (!data.user) {
+      throw new Error("User data missing from login response");
+    }
+
+    if (data.requires2FA === true || data.user.twoFactorEnabled === true) {
+      return data;
+    }
+
+    if (!data.accessToken) {
       throw new Error("Access token missing from login response");
     }
 
-    await saveAccessToken(accessToken);
-
-    return normalizeAuthResponse(response.data);
+    return data;
   } catch (error: any) {
     throw new Error(getErrorMessage(error, "Login failed"));
   }
@@ -131,5 +140,15 @@ export async function getCurrentUser() {
     }
 
     throw new Error(getErrorMessage(error, "Failed to get current user"));
+  }
+}
+
+export async function toggleTwoFactor() {
+  try {
+    const response = await api.post("/user/toggle-2fa");
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(getErrorMessage(error, "Toggle 2FA failed"));
   }
 }

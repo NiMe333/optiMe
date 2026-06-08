@@ -1,4 +1,5 @@
 var SnapshotModel = require("../models/userSnapshotModel");
+var User = require("../models/userModel");
 
 const DAYS_TO_SHOW = 7;
 const DAILY_STEP_GOAL = 8000;
@@ -706,6 +707,118 @@ exports.trendsData = async function (req, res) {
     return res.status(500).json({
       success: false,
       message: "Trends retrieval failed",
+      error: err.message,
+    });
+  }
+};
+
+exports.submitUserSnapshot = async function (req, res) {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token payload",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User with your ID not found",
+      });
+    }
+
+    const { date, sleepHours, screenTimeHours, mood, stress, anxiety } =
+      req.body;
+
+    const missingFields = [];
+
+    if (sleepHours === undefined) missingFields.push("sleepHours");
+    if (screenTimeHours === undefined) missingFields.push("screenTimeHours");
+    if (mood === undefined) missingFields.push("mood");
+    if (stress === undefined) missingFields.push("stress");
+    if (anxiety === undefined) missingFields.push("anxiety");
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required snapshot data",
+        missingFields,
+      });
+    }
+
+    const snapshotDate = date ? new Date(date) : new Date();
+
+    if (Number.isNaN(snapshotDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid snapshot date",
+      });
+    }
+
+    snapshotDate.setHours(0, 0, 0, 0);
+
+    const numericValues = {
+      sleepHours: Number(sleepHours),
+      screenTimeHours: Number(screenTimeHours),
+      mood: Number(mood),
+      stress: Number(stress),
+      anxiety: Number(anxiety),
+    };
+
+    const invalidFields = Object.entries(numericValues)
+      .filter(([, value]) => Number.isNaN(value))
+      .map(([field]) => field);
+
+    if (invalidFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Snapshot fields must be valid numbers",
+        invalidFields,
+      });
+    }
+
+    await SnapshotModel.updateOne(
+      {
+        userId,
+        date: snapshotDate,
+      },
+      {
+        $set: {
+          userId,
+          date: snapshotDate,
+          sleepHours: numericValues.sleepHours,
+          screenTimeHours: numericValues.screenTimeHours,
+          mood: numericValues.mood,
+          stress: numericValues.stress,
+          anxiety: numericValues.anxiety,
+        },
+      },
+      {
+        upsert: true,
+      },
+    );
+
+    const snapshot = await SnapshotModel.findOne({
+      userId,
+      date: snapshotDate,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Snapshot saved successfully",
+      snapshot,
+    });
+  } catch (err) {
+    console.error("submitUserSnapshot error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Snapshot saving failed",
       error: err.message,
     });
   }
